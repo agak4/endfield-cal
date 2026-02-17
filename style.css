@@ -105,7 +105,7 @@ body::before {
     -webkit-backdrop-filter: var(--backdrop-blur);
     border: var(--glass-border);
     border-radius: 20px;
-    padding: 10px;
+    padding: 15px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -638,7 +638,7 @@ input[type="range"]::-webkit-slider-thumb {
     margin-bottom: 20px;
     position: relative;
     overflow: hidden;
-    min-height: 250px;
+    min-height: 150px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -772,17 +772,6 @@ input[type="range"]::-webkit-slider-thumb {
     margin-top: 10px;
 }
 
-.detail-list li {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    padding: 4px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.detail-list li:last-child {
-    border-bottom: none;
-}
-
 /* 숨김 체크박스 */
 .hidden-checkbox {
     display: none;
@@ -828,19 +817,12 @@ input[type="range"]::-webkit-slider-thumb {
 
 .detail-list li {
     color: var(--text-muted);
-    padding: 6px 10px;
-    margin: 2px 0;
+    margin: 5px 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.03);
     border-left: 2px solid transparent;
     transition: all var(--transition-speed) ease;
     line-height: 1.5;
     border-radius: 4px;
-}
-
-/* Removed .detail-list li:hover */
-
-.detail-list li:last-child {
-    border-bottom: none;
 }
 
 /* 출처 강조 스타일 */
