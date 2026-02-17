@@ -917,19 +917,60 @@ input[type="range"]::-webkit-slider-thumb {
     margin-right: 6px;
     font-size: 0.7rem;
 }
+
 /* ============ 유틸리티 클래스 ============ */
-.u-display-none { display: none !important; }
-.u-flex-center-wrap { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.u-flex-column-center { display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
-.u-mt-10 { margin-top: 10px; }
-.u-mt-15 { margin-top: 15px; }
-.u-ml-10 { margin-left: 10px; }
-.u-mb-10 { margin-bottom: 10px; }
-.u-mb-20 { margin-bottom: 20px; }
-.u-font-small { font-size: 0.8rem; }
-.u-font-xsmall { font-size: 0.75rem; }
-.u-text-muted { color: var(--text-muted); }
-.u-text-white { color: #fff; }
+.u-display-none {
+    display: none !important;
+}
+
+.u-flex-center-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.u-flex-column-center {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.u-mt-10 {
+    margin-top: 10px;
+}
+
+.u-mt-15 {
+    margin-top: 15px;
+}
+
+.u-ml-10 {
+    margin-left: 10px;
+}
+
+.u-mb-10 {
+    margin-bottom: 10px;
+}
+
+.u-mb-20 {
+    margin-bottom: 20px;
+}
+
+.u-font-small {
+    font-size: 0.8rem;
+}
+
+.u-font-xsmall {
+    font-size: 0.75rem;
+}
+
+.u-text-muted {
+    color: var(--text-muted);
+}
+
+.u-text-white {
+    color: #fff;
+}
 
 /* ============ 특정 레이아웃 클래스 ============ */
 .sub-op-summary-text {

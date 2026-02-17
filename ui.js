@@ -506,7 +506,9 @@ function renderWeaponComparison(currentDmg) {
     const savedWepPot = state.mainOp.wepPot;
     const savedWepState = state.mainOp.wepState;
 
-    const validWeapons = DATA_WEAPONS.filter(w => currentOp.usableWeapons.includes(w.type));
+    const validWeapons = DATA_WEAPONS.filter(w =>
+        currentOp.usableWeapons.includes(w.type) && w.id !== savedWepId
+    );
 
     const comparisons = validWeapons.map(w => {
         state.mainOp.wepId = w.id;
@@ -525,7 +527,7 @@ function renderWeaponComparison(currentDmg) {
     state.mainOp.wepState = savedWepState;
 
     // 새로운 HTML 생성
-    const maxDmg = comparisons.length > 0 ? comparisons[0].finalDmg : 0;
+    const maxDmg = comparisons.length > 0 ? Math.max(comparisons[0].finalDmg, currentDmg) : currentDmg;
     box.innerHTML = '';
 
     comparisons.forEach(item => {
