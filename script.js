@@ -65,6 +65,33 @@ function updateState() {
     const result = calculateDamage(state);
     if (typeof renderResult === 'function') renderResult(result);
     if (typeof renderWeaponComparison === 'function') renderWeaponComparison(result ? result.finalDmg : 0);
+
+    saveState();
+}
+
+/** 로컬 스토리지에 현재 상태를 저장합니다. */
+function saveState() {
+    try {
+        localStorage.setItem('endfield_cal_save', JSON.stringify(state));
+    } catch (e) {
+        console.error('State save failed:', e);
+    }
+}
+
+/** 로컬 스토리지에서 상태를 로드합니다. */
+function loadState() {
+    try {
+        const saved = localStorage.getItem('endfield_cal_save');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            // 객체 구조 병합 (신규 필드 추가 등 대비)
+            state = { ...state, ...parsed };
+            return true;
+        }
+    } catch (e) {
+        console.error('State load failed:', e);
+    }
+    return false;
 }
 
 // ============ 데미지 계산 엔진 ============
@@ -358,7 +385,7 @@ function isSubOpTargetValid(effect) {
 function isApplicableEffect(opData, effectType, effectName) {
     if (!effectType) return false;
     const type = effectType.toString();
-    const ALWAYS_APPLICABLE = ['공격력 증가', '치명타 확률', '치명타 피해', '최대 체력', '궁극기 충전', '치유 효율', '연타', '주는 피해', '스탯', '스탯%', '스킬 피해', '궁극기 피해', '오리지늄 아츠', '오리지늄 아츠 강도', '모든 스킬 피해'];
+    const ALWAYS_APPLICABLE = ['공격력 증가', '치명타 확률', '치명타 피해', '최대 체력', '궁극기 충전', '치유 효율', '연타', '주는 피해', '스탯', '스탯%', '스킬 피해', '궁극기 피해', '연계 스킬 피해', '배틀 스킬 피해', '일반 공격 피해', '오리지늄 아츠', '오리지늄 아츠 강도', '모든 스킬 피해'];
     if (ALWAYS_APPLICABLE.includes(type)) return true;
     if (type === '불균형 피해') return true;
 
@@ -408,9 +435,16 @@ function getSetEffects(setId, opData, isSelf = true) {
     const skillStr = JSON.stringify(opData.skill);
     const talentStr = JSON.stringify(opData.talents);
 
+    const matchTrigger = (t) => {
+        if (t === '아츠 부착') {
+            return ['열기 부착', '냉기 부착', '전기 부착', '자연 부착'].some(el => skillStr.includes(el) || talentStr.includes(el));
+        }
+        return skillStr.includes(t) || talentStr.includes(t);
+    };
+
     const canTrigger = (triggers) => {
         if (!triggers) return true;
-        return triggers.some(t => skillStr.includes(t) || talentStr.includes(t));
+        return triggers.some(matchTrigger);
     };
 
     set.effects.forEach(eff => {
@@ -445,11 +479,18 @@ function checkSetViability(setId, opData) {
     const skillStr = JSON.stringify(opData.skill);
     const talentStr = JSON.stringify(opData.talents);
 
+    const matchTrigger = (t) => {
+        if (t === '아츠 부착') {
+            return ['열기 부착', '냉기 부착', '전기 부착', '자연 부착'].some(el => skillStr.includes(el) || talentStr.includes(el));
+        }
+        return skillStr.includes(t) || talentStr.includes(t);
+    };
+
     // 조건(triggers)이 있는 효과가 하나라도 있고, 그 중 하나라도 발동 가능하면 true
     const conditionalEffects = set.effects.filter(e => e.triggers);
     if (conditionalEffects.length === 0) return true; // 조건 없는 세트는 항상 발동가능
 
     return conditionalEffects.some(eff =>
-        eff.triggers.some(t => skillStr.includes(t) || talentStr.includes(t))
+        eff.triggers.some(matchTrigger)
     );
 }

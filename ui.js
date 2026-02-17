@@ -7,7 +7,13 @@ window.onload = function () {
     // UI 초기화
     initUI();
 
-    // 메인 오퍼레이터 초기 설정
+    // 저장된 상태 로드 시도
+    if (typeof loadState === 'function' && loadState()) {
+        applyStateToUI();
+        return;
+    }
+
+    // 저장된 상태가 없는 경우 메인 오퍼레이터 초기 설정
     const mainOpSelect = document.getElementById('main-op-select');
     if (mainOpSelect) {
         mainOpSelect.value = DEFAULT_OP_ID;
@@ -614,4 +620,105 @@ function renderWeaponComparison(currentDmg) {
             }
         });
     });
+}
+
+/** 저장된 상태를 UI 요소에 적용합니다. */
+function applyStateToUI() {
+    if (!state.mainOp.id) return;
+
+    // 메인 오퍼레이터
+    const mainOpSelect = document.getElementById('main-op-select');
+    if (mainOpSelect) {
+        mainOpSelect.value = state.mainOp.id;
+        const opData = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
+        document.getElementById('main-op-select-btn').innerText = opData ? opData.name : '선택하세요';
+        updateMainWeaponList(state.mainOp.id);
+        updateEntityImage(state.mainOp.id, 'main-op-image', 'operators');
+    }
+
+    document.getElementById('main-op-pot').value = state.mainOp.pot;
+    setupPotencyButtons('main-op-pot', 'main-op-pot-group');
+
+    // 메인 무기
+    const mainWepSelect = document.getElementById('main-wep-select');
+    if (mainWepSelect) {
+        mainWepSelect.value = state.mainOp.wepId;
+        updateEntityImage(state.mainOp.wepId, 'main-wep-image', 'weapons');
+    }
+    document.getElementById('main-wep-pot').value = state.mainOp.wepPot;
+    setupPotencyButtons('main-wep-pot', 'main-wep-pot-group');
+
+    const wepCb = document.getElementById('main-wep-state');
+    if (wepCb) {
+        wepCb.checked = state.mainOp.wepState;
+        updateToggleButton(document.getElementById('main-wep-toggle'), wepCb.checked, '기질');
+    }
+
+    // 메인 장비 단조 토글
+    const gearForgeCb = document.getElementById('main-gear-forge');
+    if (gearForgeCb) {
+        gearForgeCb.checked = state.mainOp.gearForge;
+        updateToggleButton(document.getElementById('main-forge-toggle'), gearForgeCb.checked, '단조');
+    }
+
+    const gearIds = ['gear-glove-select', 'gear-armor-select', 'gear-comp1-select', 'gear-comp2-select'];
+    const forgeIds = ['gear-glove-forge', 'gear-armor-forge', 'gear-comp1-forge', 'gear-comp2-forge'];
+
+    gearIds.forEach((id, idx) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.value = state.mainOp.gears[idx] || '';
+            updateEntityImage(el.value, id.replace('-select', '-image'), 'gears');
+        }
+    });
+    forgeIds.forEach((id, idx) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.checked = state.mainOp.gearForged[idx];
+            updateToggleButton(document.getElementById(id + '-toggle'), el.checked, '단조');
+        }
+    });
+
+    // 서브 오퍼레이터
+    for (let i = 0; i < 3; i++) {
+        const s = state.subOps[i];
+        const opSel = document.getElementById(`sub-${i}-op`);
+        if (opSel) {
+            opSel.value = s.id || '';
+            const opData = DATA_OPERATORS.find(o => o.id === s.id);
+            document.getElementById(`sub-${i}-op-btn`).innerText = opData ? opData.name : '선택하세요';
+            document.getElementById(`sub-${i}-summary`).innerText = opData ? opData.name : '';
+            updateSubWeaponList(i, s.id);
+            updateEntityImage(s.id, `sub-${i}-image`, 'operators');
+        }
+
+        document.getElementById(`sub-${i}-pot`).value = s.pot;
+        setupPotencyButtons(`sub-${i}-pot`, `sub-${i}-pot-group`);
+
+        const wepSel = document.getElementById(`sub-${i}-wep`);
+        if (wepSel) {
+            wepSel.value = s.wepId || '';
+            updateEntityImage(s.wepId, `sub-${i}-wep-image`, 'weapons');
+        }
+        document.getElementById(`sub-${i}-wep-pot`).value = s.wepPot;
+        setupPotencyButtons(`sub-${i}-wep-pot`, `sub-${i}-wep-pot-group`);
+
+        const wepStateCb = document.getElementById(`sub-${i}-wep-state`);
+        if (wepStateCb) {
+            wepStateCb.checked = s.wepState;
+            updateToggleButton(document.getElementById(`sub-${i}-wep-toggle`), wepStateCb.checked, '기질');
+        }
+
+        const setSel = document.getElementById(`sub-${i}-set`);
+        if (setSel) setSel.value = s.equipSet || '';
+    }
+
+    // 적 상태
+    const enemyCb = document.getElementById('enemy-unbalanced');
+    if (enemyCb) {
+        enemyCb.checked = state.enemyUnbalanced;
+        updateToggleButton(document.getElementById('enemy-unbalanced-toggle'), enemyCb.checked, '불균형');
+    }
+
+    updateState();
 }
