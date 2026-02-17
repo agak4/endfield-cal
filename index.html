@@ -35,7 +35,6 @@
                 </div>
             </div>
 
-            <h3>무기 설정</h3>
             <div class="wep-row">
                 <div class="wep-left">
                     <div id="main-wep-image-container" class="op-image-container wep-image-container">
@@ -45,7 +44,7 @@
                 <div class="wep-right">
                     <div class="control-row">
                         <label>무기 선택</label>
-                        <select id="main-wep-select"></select>
+                        <select id="main-wep-select" class="visual-select-btn btn-select"></select>
                     </div>
                     <div class="control-row potency-row">
                         <label>잠재효과</label>
@@ -58,41 +57,39 @@
                 </div>
             </div>
 
-            <h3>장비 (4파츠)</h3>
-            <div class="control-group" id="main-forge-wrapper">
-                <label style="display:none">전체 단조</label>
-                <input type="checkbox" id="main-gear-forge" class="hidden-checkbox">
-            </div>
             <div id="main-gear-slots" class="gear-grid">
-                <!-- JS에서 슬롯별 단조 버튼 생성 시 wrapper ID 참조 -->
                 <div class="gear-slot" data-slot="glove">
                     <div class="gear-image-container op-image-container">
                         <img id="gear-glove-image" src="" alt="글러브">
                     </div>
-                    <select id="gear-glove-select"></select>
+                    <select id="gear-glove-select" class="visual-select-btn btn-select"></select>
                     <input type="checkbox" id="gear-glove-forge" class="hidden-checkbox">
                 </div>
                 <div class="gear-slot" data-slot="comp1">
                     <div class="gear-image-container op-image-container">
                         <img id="gear-comp1-image" src="" alt="부품">
                     </div>
-                    <select id="gear-comp1-select"></select>
+                    <select id="gear-comp1-select" class="visual-select-btn btn-select"></select>
                     <input type="checkbox" id="gear-comp1-forge" class="hidden-checkbox">
                 </div>
                 <div class="gear-slot" data-slot="armor">
                     <div class="gear-image-container op-image-container">
                         <img id="gear-armor-image" src="" alt="방어구">
                     </div>
-                    <select id="gear-armor-select"></select>
+                    <select id="gear-armor-select" class="visual-select-btn btn-select"></select>
                     <input type="checkbox" id="gear-armor-forge" class="hidden-checkbox">
                 </div>
                 <div class="gear-slot" data-slot="comp2">
                     <div class="gear-image-container op-image-container">
                         <img id="gear-comp2-image" src="" alt="부품">
                     </div>
-                    <select id="gear-comp2-select"></select>
+                    <select id="gear-comp2-select" class="visual-select-btn btn-select"></select>
                     <input type="checkbox" id="gear-comp2-forge" class="hidden-checkbox">
                 </div>
+            </div>
+            <div class="control-group" id="main-forge-wrapper" style="margin-top: 15px;">
+                <label style="display:none">전체 단조</label>
+                <input type="checkbox" id="main-gear-forge" class="hidden-checkbox">
             </div>
         </section>
 
@@ -136,7 +133,7 @@
                             <div class="sub-wep-right">
                                 <div class="control-row">
                                     <label>무기 선택</label>
-                                    <select id="sub-0-wep"></select>
+                                    <select id="sub-0-wep" class="visual-select-btn btn-select"></select>
                                 </div>
                                 <div class="control-row potency-row">
                                     <label>잠재효과</label>
@@ -148,9 +145,9 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="sub-set-row">
+                        <div class="sub-set-row" style="margin-top:10px">
                             <label>장비 세트</label>
-                            <select id="sub-0-set">
+                            <select id="sub-0-set" class="visual-select-btn btn-select">
                                 <option value="">(세트 없음)</option>
                             </select>
                         </div>
@@ -194,7 +191,7 @@
                             <div class="sub-wep-right">
                                 <div class="control-row">
                                     <label>무기 선택</label>
-                                    <select id="sub-1-wep"></select>
+                                    <select id="sub-1-wep" class="visual-select-btn btn-select"></select>
                                 </div>
                                 <div class="control-row potency-row">
                                     <label>잠재효과</label>
@@ -206,9 +203,9 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="sub-set-row">
+                        <div class="sub-set-row" style="margin-top:10px">
                             <label>장비 세트</label>
-                            <select id="sub-1-set">
+                            <select id="sub-1-set" class="visual-select-btn btn-select">
                                 <option value="">(세트 없음)</option>
                             </select>
                         </div>
@@ -252,7 +249,7 @@
                             <div class="sub-wep-right">
                                 <div class="control-row">
                                     <label>무기 선택</label>
-                                    <select id="sub-2-wep"></select>
+                                    <select id="sub-2-wep" class="visual-select-btn btn-select"></select>
                                 </div>
                                 <div class="control-row potency-row">
                                     <label>잠재효과</label>
@@ -264,9 +261,9 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="sub-set-row">
+                        <div class="sub-set-row" style="margin-top:10px">
                             <label>장비 세트</label>
-                            <select id="sub-2-set">
+                            <select id="sub-2-set" class="visual-select-btn btn-select">
                                 <option value="">(세트 없음)</option>
                             </select>
                         </div>
@@ -277,11 +274,9 @@
 
         <section class="panel right-panel">
             <h2>전투 분석 대시보드</h2>
-            <div class="control-group">
-                <label>적 상태</label>
-                <input type="checkbox" id="enemy-unbalanced" class="hidden-checkbox">
-                <button id="enemy-unbalanced-toggle" class="toggle-btn" style="width:100%">불균형: OFF</button>
-                <!-- 버튼은 JS에서 이벤트 바인딩 -->
+            <div class="result-box total-dmg-box">
+                <h3>최종 데미지</h3>
+                <span id="final-damage">0</span>
             </div>
             <div class="result-box total-dmg-box">
                 <h3>최종 데미지</h3>
@@ -323,7 +318,14 @@
                     <ul id="list-vuln" class="detail-list"></ul>
                 </div>
                 <div class="tile">
-                    <h4>불균형</h4>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h4>불균형</h4>
+                        <div style="display: flex; gap: 4px;">
+                            <input type="checkbox" id="enemy-unbalanced" class="hidden-checkbox">
+                            <button id="enemy-unbalanced-toggle" class="toggle-btn"
+                                style="font-size: 0.7rem; padding: 2px 8px; min-width: 50px;">OFF</button>
+                        </div>
+                    </div>
                     <span id="stat-unbal">0%</span>
                     <ul id="list-unbal" class="detail-list"></ul>
                 </div>

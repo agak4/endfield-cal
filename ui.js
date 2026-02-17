@@ -125,6 +125,7 @@ function setupSubOperatorEvents(i) {
 
     const setSel = document.getElementById(`sub-${i}-set`);
     if (setSel) {
+        setSel.classList.add('visual-select-btn', 'btn-select');
         DATA_SETS.forEach(s => setSel.add(new Option(s.name, s.id)));
         setSel.onchange = updateState;
     }
@@ -144,7 +145,6 @@ function setupSubOperatorEvents(i) {
         const removeBtn = document.createElement('button');
         removeBtn.className = 'potency-btn';
         removeBtn.innerText = 'X';
-        removeBtn.style.marginLeft = '10px';
         removeBtn.style.color = '#ff4d4d';
         removeBtn.title = '선택 해제';
         removeBtn.onclick = () => {

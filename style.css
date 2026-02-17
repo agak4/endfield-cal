@@ -105,7 +105,7 @@ body::before {
     -webkit-backdrop-filter: var(--backdrop-blur);
     border: var(--glass-border);
     border-radius: 20px;
-    padding: 25px;
+    padding: 10px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -247,8 +247,6 @@ input:focus {
         inset 0 0 10px rgba(0, 217, 255, 0.1);
 }
 
-/* Removed select:hover, input:hover */
-
 /* ============ 버튼 스타일 ============ */
 .btn-select,
 .toggle-btn,
@@ -270,7 +268,6 @@ input:focus {
 .btn-select::before,
 .toggle-btn::before,
 .pot-btn::before {
-    /* Kept structure but removing hover scale triggers below */
     content: '';
     position: absolute;
     top: 50%;
@@ -281,19 +278,6 @@ input:focus {
     background: rgba(0, 217, 255, 0.2);
     transform: translate(-50%, -50%);
     transition: width 0.6s, height 0.6s;
-}
-
-/* Removed .btn-select:hover::before etc */
-/* Removed .btn-select:hover etc */
-
-.toggle-btn.active {
-    background: rgba(0, 217, 255, 0.2);
-    border-color: var(--neon-blue);
-    color: var(--neon-cyan);
-    box-shadow:
-        0 0 20px rgba(0, 217, 255, 0.5),
-        inset 0 0 15px rgba(0, 217, 255, 0.2);
-    font-weight: 600;
 }
 
 .visual-select-btn {
@@ -308,10 +292,17 @@ input:focus {
     content: '▼';
     font-size: 0.7rem;
     opacity: 0.7;
-    transition: transform var(--transition-speed) ease;
 }
 
-/* Removed .visual-select-btn:hover::after */
+.toggle-btn.active {
+    background: rgba(0, 217, 255, 0.2);
+    border-color: var(--neon-blue);
+    color: var(--neon-cyan);
+    box-shadow:
+        0 0 20px rgba(0, 217, 255, 0.5),
+        inset 0 0 15px rgba(0, 217, 255, 0.2);
+    font-weight: 600;
+}
 
 /* ============ 체크박스 래퍼 ============ */
 .checkbox-wrapper {
@@ -328,7 +319,8 @@ input:focus {
 /* Removed .checkbox-wrapper:hover */
 
 /* ============ 이미지 컨테이너 ============ */
-.op-image-container {
+.op-image-container,
+.wep-image-container {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -346,11 +338,8 @@ input:focus {
     transition: all var(--transition-speed) ease;
 }
 
-/* Removed .op-image-container::before (shimmer) */
-
-/* Removed .op-image-container:hover */
-
-.op-image-container img {
+.op-image-container img,
+.wep-image-container img {
     max-width: 90%;
     max-height: 90%;
     object-fit: contain;
@@ -501,11 +490,6 @@ input[type="range"]::-webkit-slider-thumb {
     overflow: hidden;
 }
 
-/* Removed .modal-item::before */
-/* Removed .modal-item:hover::before */
-
-/* Removed .modal-item:hover */
-
 .modal-item.selected {
     background: rgba(0, 217, 255, 0.15);
     border-color: var(--neon-blue);
@@ -611,7 +595,7 @@ input[type="range"]::-webkit-slider-thumb {
 .sub-char-left,
 .sub-wep-left,
 .wep-left {
-    flex: 0 0 auto;
+    flex: 0 0 110px;
 }
 
 .sub-char-right,
@@ -631,14 +615,15 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .gear-slot {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     background: rgba(0, 0, 0, 0.3);
     padding: 15px;
     border-radius: 12px;
     border: 1px solid rgba(0, 217, 255, 0.2);
     transition: all var(--transition-speed) ease;
 }
-
-/* Removed .gear-slot:hover */
 
 /* ============ 결과 대시보드 ============ */
 .total-dmg-box {
@@ -739,8 +724,6 @@ input[type="range"]::-webkit-slider-thumb {
     justify-content: center;
 }
 
-/* Removed .potency-btn:hover */
-
 .potency-btn.active {
     background: var(--gradient-glow);
     color: #000;
@@ -805,9 +788,9 @@ input[type="range"]::-webkit-slider-thumb {
     display: none;
 }
 
-/* 무기/장비 이미지 컨테이너 크기 조정 */
-.wep-image-container,
+/* 장비 이미지 컨테이너 크기 조정 */
 .gear-image-container {
+    flex: 1;
     width: 80px;
     height: 80px;
 }
