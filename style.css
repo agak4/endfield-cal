@@ -917,3 +917,77 @@ input[type="range"]::-webkit-slider-thumb {
     margin-right: 6px;
     font-size: 0.7rem;
 }
+/* ============ 유틸리티 클래스 ============ */
+.u-display-none { display: none !important; }
+.u-flex-center-wrap { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.u-flex-column-center { display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
+.u-mt-10 { margin-top: 10px; }
+.u-mt-15 { margin-top: 15px; }
+.u-ml-10 { margin-left: 10px; }
+.u-mb-10 { margin-bottom: 10px; }
+.u-mb-20 { margin-bottom: 20px; }
+.u-font-small { font-size: 0.8rem; }
+.u-font-xsmall { font-size: 0.75rem; }
+.u-text-muted { color: var(--text-muted); }
+.u-text-white { color: #fff; }
+
+/* ============ 특정 레이아웃 클래스 ============ */
+.sub-op-summary-text {
+    font-weight: normal;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-left: 10px;
+}
+
+.tile-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.tile-ctrl-group {
+    display: flex;
+    gap: 4px;
+}
+
+.enemy-toggle-btn {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    min-width: 50px;
+}
+
+.comp-settings-panel {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 217, 255, 0.2);
+}
+
+.comp-settings-header {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.comp-settings-indicator {
+    display: inline-block;
+    width: 4px;
+    height: 12px;
+    background: var(--neon-blue);
+}
+
+.comp-settings-body {
+    display: flex;
+    gap: 12px;
+}
+
+.modal-header-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--neon-cyan);
+}

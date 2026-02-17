@@ -22,7 +22,7 @@
                     <div class="control-row">
                         <label>오퍼레이터</label>
                         <!-- 기존 Select는 숨김 처리하고 JS로 제어 -->
-                        <select id="main-op-select" style="display:none"></select>
+                        <select id="main-op-select" class="u-display-none"></select>
                         <button id="main-op-select-btn" class="visual-select-btn btn-select">선택하세요</button>
                     </div>
                     <div class="control-row potency-row">
@@ -48,7 +48,7 @@
                     </div>
                     <div class="control-row potency-row">
                         <label>잠재효과</label>
-                        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                        <div class="u-flex-center-wrap">
                             <div class="potency-group" id="main-wep-pot-group"></div>
                             <input type="checkbox" id="main-wep-state" class="hidden-checkbox">
                         </div>
@@ -87,8 +87,8 @@
                     <input type="checkbox" id="gear-comp2-forge" class="hidden-checkbox">
                 </div>
             </div>
-            <div class="control-group" id="main-forge-wrapper" style="margin-top: 15px;">
-                <label style="display:none">전체 단조</label>
+            <div class="control-group u-mt-15" id="main-forge-wrapper">
+                <label class="u-display-none">전체 단조</label>
                 <input type="checkbox" id="main-gear-forge" class="hidden-checkbox">
             </div>
         </section>
@@ -100,8 +100,7 @@
                 <div class="sub-op-card" id="sub-op-card-0">
                     <div class="sub-op-header" onclick="toggleSubOp(0)">
                         <span>서브 오퍼레이터 1</span>
-                        <span id="sub-0-summary"
-                            style="font-weight:normal; font-size:0.8rem; color:#aaa; margin-left:10px;"></span>
+                        <span id="sub-0-summary" class="sub-op-summary-text"></span>
                         <span class="toggle-icon">▼</span>
                     </div>
                     <div class="sub-op-content" id="sub-op-content-0">
@@ -114,7 +113,7 @@
                             <div class="sub-char-right">
                                 <div class="control-row">
                                     <label>오퍼레이터</label>
-                                    <select id="sub-0-op" style="display:none"></select>
+                                    <select id="sub-0-op" class="u-display-none"></select>
                                     <button id="sub-0-op-btn" class="visual-select-btn btn-select">선택하세요</button>
                                 </div>
                                 <div class="control-row potency-row">
@@ -137,7 +136,7 @@
                                 </div>
                                 <div class="control-row potency-row">
                                     <label>잠재효과</label>
-                                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                                    <div class="u-flex-center-wrap">
                                         <div class="potency-group" id="sub-0-wep-pot-group"></div>
                                         <input type="checkbox" id="sub-0-wep-state" class="hidden-checkbox">
                                     </div>
@@ -158,8 +157,7 @@
                 <div class="sub-op-card" id="sub-op-card-1">
                     <div class="sub-op-header" onclick="toggleSubOp(1)">
                         <span>서브 오퍼레이터 2</span>
-                        <span id="sub-1-summary"
-                            style="font-weight:normal; font-size:0.8rem; color:#aaa; margin-left:10px;"></span>
+                        <span id="sub-1-summary" class="sub-op-summary-text"></span>
                         <span class="toggle-icon">▼</span>
                     </div>
                     <div class="sub-op-content" id="sub-op-content-1">
@@ -172,7 +170,7 @@
                             <div class="sub-char-right">
                                 <div class="control-row">
                                     <label>오퍼레이터</label>
-                                    <select id="sub-1-op" style="display:none"></select>
+                                    <select id="sub-1-op" class="u-display-none"></select>
                                     <button id="sub-1-op-btn" class="visual-select-btn btn-select">선택하세요</button>
                                 </div>
                                 <div class="control-row potency-row">
@@ -195,7 +193,7 @@
                                 </div>
                                 <div class="control-row potency-row">
                                     <label>잠재효과</label>
-                                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                                    <div class="u-flex-center-wrap">
                                         <div class="potency-group" id="sub-1-wep-pot-group"></div>
                                         <input type="checkbox" id="sub-1-wep-state" class="hidden-checkbox">
                                     </div>
@@ -203,7 +201,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="sub-set-row" style="margin-top:10px">
+                        <div class="sub-set-row u-mt-10">
                             <label>장비 세트</label>
                             <select id="sub-1-set" class="visual-select-btn btn-select">
                                 <option value="">(세트 없음)</option>
@@ -216,8 +214,7 @@
                 <div class="sub-op-card" id="sub-op-card-2">
                     <div class="sub-op-header" onclick="toggleSubOp(2)">
                         <span>서브 오퍼레이터 3</span>
-                        <span id="sub-2-summary"
-                            style="font-weight:normal; font-size:0.8rem; color:#aaa; margin-left:10px;"></span>
+                        <span id="sub-2-summary" class="sub-op-summary-text"></span>
                         <span class="toggle-icon">▼</span>
                     </div>
                     <div class="sub-op-content" id="sub-op-content-2">
@@ -230,7 +227,7 @@
                             <div class="sub-char-right">
                                 <div class="control-row">
                                     <label>오퍼레이터</label>
-                                    <select id="sub-2-op" style="display:none"></select>
+                                    <select id="sub-2-op" class="u-display-none"></select>
                                     <button id="sub-2-op-btn" class="visual-select-btn btn-select">선택하세요</button>
                                 </div>
                                 <div class="control-row potency-row">
@@ -253,7 +250,7 @@
                                 </div>
                                 <div class="control-row potency-row">
                                     <label>잠재효과</label>
-                                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                                    <div class="u-flex-center-wrap">
                                         <div class="potency-group" id="sub-2-wep-pot-group"></div>
                                         <input type="checkbox" id="sub-2-wep-state" class="hidden-checkbox">
                                     </div>
@@ -261,7 +258,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="sub-set-row" style="margin-top:10px">
+                        <div class="sub-set-row u-mt-10">
                             <label>장비 세트</label>
                             <select id="sub-2-set" class="visual-select-btn btn-select">
                                 <option value="">(세트 없음)</option>
@@ -287,9 +284,9 @@
                 <div class="tile">
                     <h4>치명타 기대값</h4>
                     <span id="stat-crit">0</span>
-                    <div class="sub-stat" style="font-size:0.8rem; color:#aaa; margin-bottom:5px;">
-                        확률: <span id="val-crit-rate" style="color:#fff"></span>% / 피해: <span id="val-crit-dmg"
-                            style="color:#fff"></span>%
+                    <div class="sub-stat u-mb-10">
+                        확률: <span id="val-crit-rate" class="u-text-white"></span>% / 피해: <span id="val-crit-dmg"
+                            class="u-text-white"></span>%
                     </div>
                     <ul id="list-crit" class="detail-list"></ul>
                 </div>
@@ -314,12 +311,11 @@
                     <ul id="list-vuln" class="detail-list"></ul>
                 </div>
                 <div class="tile">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <div class="tile-header-row">
                         <h4>불균형</h4>
-                        <div style="display: flex; gap: 4px;">
+                        <div class="tile-ctrl-group">
                             <input type="checkbox" id="enemy-unbalanced" class="hidden-checkbox">
-                            <button id="enemy-unbalanced-toggle" class="toggle-btn"
-                                style="font-size: 0.7rem; padding: 2px 8px; min-width: 50px;">OFF</button>
+                            <button id="enemy-unbalanced-toggle" class="toggle-btn enemy-toggle-btn">OFF</button>
                         </div>
                     </div>
                     <span id="stat-unbal">0%</span>
@@ -337,22 +333,18 @@
                 </div>
             </div>
             <h3>무기 비교</h3>
-            <div class="comparison-settings"
-                style="margin-bottom: 20px; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid rgba(0, 217, 255, 0.2);">
-                <div
-                    style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 10px; display: flex; align-items: center; gap: 5px;">
-                    <span style="display:inline-block; width:4px; height:12px; background:var(--neon-blue);"></span>
+            <div class="comparison-settings comp-settings-panel">
+                <div class="comp-settings-header">
+                    <span class="comp-settings-indicator"></span>
                     비교 대상 설정 (일괄 적용)
                 </div>
-                <div style="display: flex; flex-direction: low; gap: 12px;">
-                    <div class="control-row potency-row" style="margin-top:0">
-                        <label style="font-size: 0.75rem;">무기 잠재</label>
+                <div class="comp-settings-body">
+                    <div class="control-row potency-row">
+                        <label class="u-font-xsmall">무기 잠재</label>
                         <div class="potency-group" id="comp-wep-pot-group"></div>
                         <input type="hidden" id="comp-wep-pot" value="0">
                     </div>
-                    <div
-                        style="display: flex; flex-direction: column; align-items: center; justify-content: space-between;">
-                        <label style="font-size: 0.75rem;">무기 기질</label>
+                    <div class="u-flex-column-center">
                         <input type="checkbox" id="comp-wep-state" class="hidden-checkbox">
                     </div>
                 </div>
@@ -365,7 +357,7 @@
     <div id="op-selector-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <span style="font-size:1.2rem; font-weight:bold; color:var(--accent);">오퍼레이터 선택</span>
+                <span class="modal-header-title">오퍼레이터 선택</span>
                 <button class="modal-close" id="modal-close-btn">&times;</button>
             </div>
             <div class="modal-grid" id="op-modal-grid">
