@@ -446,9 +446,12 @@ function renderResult(res) {
     const mapping = {
         'final-damage': Math.floor(res.finalDmg).toLocaleString(),
         'stat-atk': Math.floor(res.stats.finalAtk).toLocaleString(),
+        'stat-atk-inc': res.stats.atkInc.toFixed(1) + '%',
+        'stat-main-val': Math.floor(res.stats.mainStatVal),
+        'stat-sub-val': Math.floor(res.stats.subStatVal),
         'stat-crit': Math.floor(res.stats.critExp * 100) + '%',
-        'val-crit-rate': res.stats.finalCritRate,
-        'val-crit-dmg': res.stats.critDmg,
+        'val-crit-rate': res.stats.finalCritRate + '%',
+        'val-crit-dmg': res.stats.critDmg + '%',
         'stat-dmg-inc': res.stats.dmgInc.toFixed(1) + '%',
         'stat-amp': res.stats.amp.toFixed(1) + '%',
         'stat-vuln': res.stats.vuln.toFixed(1) + '%',
@@ -461,6 +464,11 @@ function renderResult(res) {
         const el = document.getElementById(id);
         if (el) el.innerText = val;
     }
+
+    const mainLabel = document.getElementById('label-main-stat');
+    if (mainLabel) mainLabel.innerText = res.stats.mainStatName;
+    const subLabel = document.getElementById('label-sub-stat');
+    if (subLabel) subLabel.innerText = res.stats.subStatName;
 
     const multihitSpan = document.getElementById('stat-multihit');
     if (multihitSpan) multihitSpan.innerText = (res.logs.multihit.length > 0 ? "ON" : "OFF");

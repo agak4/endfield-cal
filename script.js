@@ -148,7 +148,8 @@ function collectAllEffects(state, opData, wepData, stats, allEffects) {
     // 무기 특성
     wepData.traits.forEach((trait, idx) => {
         if (!trait) return;
-        let label = idx >= 2 ? `${wepData.name} 특성3` : `${wepData.name} 특성${idx + 1}`;
+        let traitIdx = idx >= 2 ? 3 : idx + 1;
+        let label = `${wepData.name} 특성${traitIdx}`;
         let finalLv = calculateWeaponTraitLevel(idx, state.mainOp.wepState, state.mainOp.wepPot);
         label += `(Lv${finalLv})`;
 
@@ -182,11 +183,12 @@ function collectAllEffects(state, opData, wepData, stats, allEffects) {
         if (sub.wepId) {
             const sWep = DATA_WEAPONS.find(w => w.id === sub.wepId);
             if (sWep) {
-                for (let ti = 1; ti < sWep.traits.length; ti++) {
+                for (let ti = 0; ti < sWep.traits.length; ti++) {
                     const trait = sWep.traits[ti];
                     if (!trait) continue;
+                    let traitIdx = ti >= 2 ? 3 : ti + 1;
                     let val = calculateWeaponTraitValue(trait, (sub.wepState ? 4 : 1) + (sub.wepPot || 0), sub.wepState);
-                    addEffect({ ...trait, val }, `${prefix} 무기특성${ti + 1}`, 1.0, true);
+                    addEffect({ ...trait, val }, `${prefix} ${sWep.name} 특성${traitIdx}`, 1.0, true);
                 }
             }
         }
@@ -281,7 +283,16 @@ function applyPercentStats(allEffects, stats) {
 function computeFinalDamageOutput(state, opData, wepData, stats, allEffects) {
     let baseAtk = opData.baseAtk + wepData.baseAtk;
     let atkInc = 0, critRate = 5, critDmg = 50, dmgInc = 0, amp = 0, vuln = 0, takenDmg = 0, multiHit = 1.0, unbalanceDmg = 0, originiumArts = 0;
-    let logs = { atk: [`오퍼레이터 공격력: ${opData.baseAtk.toLocaleString()}`, `무기 공격력: ${wepData.baseAtk.toLocaleString()}`], dmgInc: [], amp: [], vuln: [], taken: [], unbal: [], multihit: [], crit: [], arts: [] };
+    let logs = {
+        atk: [],
+        atkBuffs: [],
+        dmgInc: [], amp: [], vuln: [], taken: [], unbal: [], multihit: [], crit: [], arts: []
+    };
+
+    let atkBaseLogs = [
+        `오퍼레이터 공격력: ${opData.baseAtk.toLocaleString()}`,
+        `무기 공격력: ${wepData.baseAtk.toLocaleString()}`
+    ];
 
     const resolveVal = (val) => {
         if (typeof val === 'number') return val;
@@ -309,7 +320,7 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects) {
         }
         else if (t === '공격력 증가') {
             atkInc += val;
-            logs.atk.push(`[${eff.name}] +${val.toFixed(1)}% (공격력)`);
+            logs.atkBuffs.push(`[${eff.name}] +${val.toFixed(1)}% (공격력)`);
         }
         else if (t === '치명타 확률') {
             critRate += val;
@@ -331,10 +342,12 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects) {
     const statBonusPct = (stats[opData.mainStat] * 0.005) + (stats[opData.subStat] * 0.002);
     const finalAtk = baseAtk * (1 + atkInc / 100) * (1 + statBonusPct);
 
-    // 공격력 로그 추가
-    logs.atk.push(`스탯 공격보너스: +${(statBonusPct * 100).toFixed(2)}%`);
-    logs.atk.push(`주스탯 (${STAT_NAME_MAP[opData.mainStat]}): ${Math.floor(stats[opData.mainStat])}`);
-    logs.atk.push(`부스탯 (${STAT_NAME_MAP[opData.subStat]}): ${Math.floor(stats[opData.subStat])}`);
+    // 공격력 로그 조립
+    logs.atk = [
+        ...atkBaseLogs,
+        `스탯 공격보너스: +${(statBonusPct * 100).toFixed(2)}%`,
+        ...logs.atkBuffs
+    ];
 
     const finalCritRate = Math.min(Math.max(critRate, 0), 100);
     const critExp = ((finalCritRate / 100) * (critDmg / 100)) + 1;
@@ -354,7 +367,15 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects) {
 
     return {
         finalDmg: finalWithExtra,
-        stats: { finalAtk, critExp, finalCritRate, critDmg, dmgInc, amp, vuln, takenDmg, unbalanceDmg: finalUnbal, originiumArts },
+        stats: {
+            finalAtk,
+            atkInc,
+            mainStatName: STAT_NAME_MAP[opData.mainStat],
+            mainStatVal: stats[opData.mainStat],
+            subStatName: STAT_NAME_MAP[opData.subStat],
+            subStatVal: stats[opData.subStat],
+            critExp, finalCritRate, critDmg, dmgInc, amp, vuln, takenDmg, unbalanceDmg: finalUnbal, originiumArts
+        },
         logs
     };
 }
@@ -379,7 +400,7 @@ function getValidWeapons(opId) {
 }
 
 function isSubOpTargetValid(effect) {
-    return effect && (effect.target === '팀' || effect.target === '적');
+    return effect && (effect.target === '팀' || effect.target === '팀_외' || effect.target === '적');
 }
 
 function isApplicableEffect(opData, effectType, effectName) {

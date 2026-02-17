@@ -16,7 +16,7 @@
                 <h1 class="header-title">엔드필드 세팅 시뮬레이터</h1>
             </div>
             <div class="header-nav">
-                <span class="nav-item active">계산기</span>
+                <span class="nav-item active">시뮬레이터</span>
                 <span class="nav-item">가이드</span>
             </div>
         </div>
@@ -281,21 +281,45 @@
         <section class="panel right-panel">
             <h2>전투 분석 대시보드</h2>
             <div class="result-box total-dmg-box">
-                <h3>최종 데미지</h3>
+                <h3>최종 계산값</h3>
                 <span id="final-damage">0</span>
             </div>
             <div class="dashboard-grid">
                 <div class="tile">
                     <h4>공격력</h4>
-                    <span id="stat-atk">0</span>
+                    <div class="tile-main-stat-row">
+                        <span id="stat-atk">0</span>
+                        <div class="tile-sub-stats">
+                            <div class="sub-stat-item">
+                                <label>공격력%</label>
+                                <span id="stat-atk-inc">0%</span>
+                            </div>
+                            <div class="sub-stat-item">
+                                <label id="label-main-stat">힘</label>
+                                <span id="stat-main-val">0</span>
+                            </div>
+                            <div class="sub-stat-item">
+                                <label id="label-sub-stat">민첩</label>
+                                <span id="stat-sub-val">0</span>
+                            </div>
+                        </div>
+                    </div>
                     <ul id="list-atk" class="detail-list"></ul>
                 </div>
                 <div class="tile">
                     <h4>치명타 기대값</h4>
-                    <span id="stat-crit">0</span>
-                    <div class="sub-stat u-mb-10">
-                        확률: <span id="val-crit-rate" class="u-text-white"></span>% / 피해: <span id="val-crit-dmg"
-                            class="u-text-white"></span>%
+                    <div class="tile-main-stat-row">
+                        <span id="stat-crit">0</span>
+                        <div class="tile-sub-stats">
+                            <div class="sub-stat-item">
+                                <label>치명타 확률</label>
+                                <span id="val-crit-rate">0%</span>
+                            </div>
+                            <div class="sub-stat-item">
+                                <label>치명타 피해</label>
+                                <span id="val-crit-dmg">0%</span>
+                            </div>
+                        </div>
                     </div>
                     <ul id="list-crit" class="detail-list"></ul>
                 </div>
@@ -336,7 +360,7 @@
                     <ul id="list-multihit" class="detail-list"></ul>
                 </div>
                 <div class="tile">
-                    <h4>오리지늄 아츠</h4>
+                    <h4>오리지늄 아츠 강도</h4>
                     <span id="stat-arts">0</span>
                     <ul id="list-arts" class="detail-list"></ul>
                 </div>
@@ -379,7 +403,7 @@
     <footer class="app-footer">
         <div class="footer-content">
             <div class="footer-info">
-                <span>© 2026 Endfield Damage Calculator</span>
+                <span>© 2026 Endfield Simulator</span>
                 <span class="divider">|</span>
                 <span>Powered by Antigravity</span>
             </div>

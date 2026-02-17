@@ -154,8 +154,7 @@ const DATA_SETS = [
     id: 'set_bio_support',
     name: '생체 보조',
     effects: [
-      { type: '치유 효율', val: 20 },
-      { type: '받는 피해', val: -30, target: '팀', nonStack: true, triggers: ['치유'] }
+      { type: '치유 효율', val: 20 }
     ]
   },
   {
