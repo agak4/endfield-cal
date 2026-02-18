@@ -379,7 +379,6 @@ input[type="range"]::-webkit-slider-thumb {
 
 .guide-body li {
     margin-bottom: 8px;
-    color: var(--text-secondary);
 }
 
 .guide-body strong {
