@@ -134,8 +134,8 @@ function collectAllEffects(state, opData, wepData, stats, allEffects) {
                 activeNonStackTypes.add(nonStackKey);
             }
 
-            // 고유 ID 생성 (출처_타입_인덱스)
-            const uid = `${name}_${eff.type}_${i}`;
+            // 고유 ID 생성 (출처_타입_인덱스) - 고유성 강화를 위해 인덱스 명시
+            const uid = `${name}_${eff.type}_v${i}`;
             allEffects.push({ ...eff, name, forgeMult, uid });
         });
     };
@@ -218,15 +218,17 @@ function collectAllEffects(state, opData, wepData, stats, allEffects) {
             let val = calculateWeaponTraitValue(trait, finalLv, entry.state);
 
             // 무기 ID를 sourceId로 설정하여 nonStack 체크에 사용
-            const eff = { ...trait, val, sourceId: entry.data.id };
-
-            if (trait.type === '스탯') {
-                const targetStat = trait.stat === '주스탯' ? opData.mainStat : trait.stat === '부스탯' ? opData.subStat : trait.stat;
-                const type = idx >= 2 ? '스탯%' : '스탯';
-                addEffect({ ...eff, type, stat: targetStat }, label, 1.0, wIdx > 0);
-            } else {
-                addEffect(eff, label, 1.0, wIdx > 0);
-            }
+                        const eff = { ...trait, val, sourceId: entry.data.id };
+                        // uid의 고유성을 위해 라벨 뒤에 특성 인덱스 추가
+                        const uniqueLabel = `${label}_t${idx}`; 
+            
+                        if (trait.type === '스탯') {
+                            const targetStat = trait.stat === '주스탯' ? opData.mainStat : trait.stat === '부스탯' ? opData.subStat : trait.stat;
+                            const type = idx >= 2 ? '스탯%' : '스탯';
+                            addEffect({ ...eff, type, stat: targetStat }, uniqueLabel, 1.0, wIdx > 0);
+                        } else {
+                            addEffect(eff, uniqueLabel, 1.0, wIdx > 0);
+                        }
         });
     });
 
@@ -369,6 +371,8 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects) {
     allEffects.forEach(eff => {
         // 비활성화 여부 체크
         const isDisabled = state.disabledEffects.includes(eff.uid);
+        // 표시용 이름에서 내부 식별용 접미사(_t0, _t1 등) 제거
+        const displayName = (eff.name || '').replace(/_t\d+$/, '');
 
         // 스탯 관련 특성은 별도 로그 처리
         if (eff.type === '스탯' || eff.type === '스탯%') {
@@ -376,8 +380,8 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects) {
             const t = (eff.type || '').toString();
             const targetName = getStatName(eff.stat || eff.stats);
             // 로그는 항상 추가
-            if (t === '스탯') statLogs.push({ txt: `[${eff.name}] +${val.toFixed(1)} (${targetName})`, uid: eff.uid });
-            else if (t === '스탯%') statLogs.push({ txt: `[${eff.name}] +${val.toFixed(1)}% (${targetName})`, uid: eff.uid });
+            if (t === '스탯') statLogs.push({ txt: `[${displayName}] +${val.toFixed(1)} (${targetName})`, uid: eff.uid });
+            else if (t === '스탯%') statLogs.push({ txt: `[${displayName}] +${val.toFixed(1)}% (${targetName})`, uid: eff.uid });
             return; // 계산은 이미 applyFixed/PercentStats에서 처리됨
         }
 
@@ -390,45 +394,45 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects) {
         // 로그는 항상 추가하지만, 수치 합산은 비활성화되지 않은 경우만 수행
         if (t === '공격력 증가') {
             if (!isDisabled) atkInc += val;
-            logs.atkBuffs.push({ txt: `[${eff.name}] +${val.toFixed(1)}% (공격력)`, uid });
+            logs.atkBuffs.push({ txt: `[${displayName}] +${val.toFixed(1)}% (공격력)`, uid });
         }
         else if (t === '치명타 확률') {
             if (!isDisabled) critRate += val;
-            logs.crit.push({ txt: `[${eff.name}] +${val.toFixed(1)}% (치명타 확률)`, uid });
+            logs.crit.push({ txt: `[${displayName}] +${val.toFixed(1)}% (치명타 확률)`, uid });
         }
         else if (t === '치명타 피해') {
             if (!isDisabled) critDmg += val;
-            logs.crit.push({ txt: `[${eff.name}] +${val.toFixed(1)}% (치명타 피해)`, uid });
+            logs.crit.push({ txt: `[${displayName}] +${val.toFixed(1)}% (치명타 피해)`, uid });
         }
         else if (t === '연타') {
             if (!isDisabled) multiHit = Math.max(multiHit, eff.val || 1);
-            logs.multihit.push({ txt: `[${eff.name}] x${eff.val || 1}`, uid });
+            logs.multihit.push({ txt: `[${displayName}] x${eff.val || 1}`, uid });
         }
         else if (t.endsWith('증폭')) {
             if (!isDisabled) amp += val;
-            logs.amp.push({ txt: `[${eff.name}] +${val.toFixed(1)}% (${t})`, uid });
+            logs.amp.push({ txt: `[${displayName}] +${val.toFixed(1)}% (${t})`, uid });
         }
         else if (t.endsWith('취약')) {
             if (!isDisabled) vuln += val;
-            logs.vuln.push({ txt: `[${eff.name}] +${val.toFixed(1)}% (${t})`, uid });
+            logs.vuln.push({ txt: `[${displayName}] +${val.toFixed(1)}% (${t})`, uid });
         }
         else if (t === '불균형 목표에 주는 피해') {
             if (state.enemyUnbalanced) {
                 if (!isDisabled) dmgInc += val;
-                logs.dmgInc.push({ txt: `[${eff.name}] +${val.toFixed(1)}% (불균형시 피해)`, uid });
+                logs.dmgInc.push({ txt: `[${displayName}] +${val.toFixed(1)}% (불균형시 피해)`, uid });
             }
         }
         else if (t.includes('받는')) {
             if (!isDisabled) takenDmg += val;
-            logs.taken.push({ txt: `[${eff.name}] +${val.toFixed(1)}% (${t})`, uid });
+            logs.taken.push({ txt: `[${displayName}] +${val.toFixed(1)}% (${t})`, uid });
         }
         else if (t === '오리지늄 아츠' || t === '오리지늄 아츠 강도') {
             if (!isDisabled) originiumArts += val;
-            logs.arts.push({ txt: `[${eff.name}] +${val.toFixed(1)}`, uid });
+            logs.arts.push({ txt: `[${displayName}] +${val.toFixed(1)}`, uid });
         }
         else if (t.includes('피해') || t === '주는 피해' || t === '모든 스킬 피해') {
             if (!isDisabled) dmgInc += val;
-            logs.dmgInc.push({ txt: `[${eff.name}] +${val.toFixed(1)}% (${t})`, uid });
+            logs.dmgInc.push({ txt: `[${displayName}] +${val.toFixed(1)}% (${t})`, uid });
         }
     });
 
