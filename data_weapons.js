@@ -565,7 +565,7 @@ const DATA_WEAPONS = [
     rarity: 6,
     traits: [
       { type: '스탯', stat: 'wil', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
-      { type: '최대 체력', valByLevel: [10, 18, 26, 34, 442, 50, 58, 66, 78] },
+      { type: '최대 체력', valByLevel: [10, 18, 26, 34, 42, 50, 58, 66, 78] },
       { type: '치유 효율', valByLevel: [10, 12, 14, 16, 18, 20, 22, 24, 28] },
       { type: '공격력 증가', valByLevel: [9, 10.8, 12.6, 14.4, 16.2, 18, 19.8, 21.6, 25.2], target: '팀' }
     ]

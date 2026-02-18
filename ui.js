@@ -1251,7 +1251,7 @@ const AppTooltip = {
             const isPercentType = !isExclusion && (
                 t.type.includes('확률') || t.type.includes('피해') || t.type.includes('충전') ||
                 t.type.includes('공격력') || t.type.includes('능력치') || t.type.includes('효율') ||
-                t.type.includes('증폭') || t.type.includes('취약') || (t.type === '스탯' && i >= 2)
+                t.type.includes('증폭') || t.type.includes('취약') || t.type.includes('체력') || (t.type === '스탯' && i >= 2)
             );
             const unit = isPercentType ? '%' : '';
 
