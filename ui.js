@@ -52,6 +52,13 @@ window.onload = function () {
         }
     });
 
+    // 첫 방문 시 가이드 자동 오픈
+    if (!localStorage.getItem('endfield_guide_seen')) {
+        const guideModal = document.getElementById('guide-modal');
+        if (guideModal) guideModal.classList.add('open');
+        localStorage.setItem('endfield_guide_seen', 'true');
+    }
+
     updateState();
 }
 
