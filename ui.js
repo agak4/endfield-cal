@@ -1187,44 +1187,54 @@ const AppTooltip = {
     },
 
     renderWeapon(wep) {
-        const traitGroups = { 1: [], 2: [], 3: [] };
-        wep.traits.forEach((t, i) => {
-            const groupIdx = i >= 2 ? 3 : i + 1;
-            let rangeStr = '';
-            const unit = t.type.includes('확률') || t.type.includes('피해') || t.type.includes('충전') ? '%' : '';
+        // [내부 규칙] 툴팁 분류 기준
+        // 1. 시너지: target이 '팀' 또는 '적'이거나, SYNERGY_TYPES에 포함된 타입인 경우
+        // 2. 무기 특성: 그 외 모든 개인용 버프
+        const SYNERGY_TYPES = [
+            '물리 증폭', '아츠 증폭', '열기 증폭', '전기 증폭', '냉기 증폭', '자연 증폭',
+            '물리 취약', '아츠 취약', '열기 취약', '전기 취약', '냉기 취약', '자연 취약',
+            '받는 물리 피해', '받는 아츠 피해', '받는 열기 피해', '받는 전기 피해', '받는 냉기 피해', '받는 자연 피해',
+            '받는 불균형 피해', '받는 피해', '연타'
+        ];
 
+        const traitItems = [];
+        const synergyItems = [];
+
+        wep.traits.forEach((t, i) => {
+            // [내부 규칙] 단위(%) 표시 기준
+            // 1. traits[0]과 traits[1]은 기본 스탯(힘/민첩 등) 고정 수치이므로 무조건 단위 제외.
+            // 2. traits[2] 이상인 항목들 중 '확률/피해/충전/공격력/스탯/능력치' 포함 시에만 '%' 추가.
+            const isBaseStatIdx = (i < 2);
+            const isPercentType = !isBaseStatIdx && (
+                t.type.includes('확률') || t.type.includes('피해') || t.type.includes('충전') || 
+                t.type.includes('공격력') || t.type.includes('스탯') || t.type.includes('능력치')
+            );
+            const unit = isPercentType ? '%' : '';
+            
+            let rangeStr = '';
             let min, max;
-            // valByLevel 배열이 있는 경우 배열 내 최소/최대값 사용
             if (t.valByLevel && t.valByLevel.length > 0) {
                 min = Math.min(...t.valByLevel);
                 max = Math.max(...t.valByLevel);
-            } else {
-                min = 0;
-                max = 0;
             }
 
-            if (t.type === '스탯') {
-                // 스탯인 경우 범위로 표시
-                if (min !== undefined && max !== undefined) {
-                    rangeStr = `${getStatName(t.stat)} +${min}~${max}`;
-                } else {
-                    rangeStr = `${getStatName(t.stat)} +${t.val || 0}`;
-                }
+            const label = t.type === '스탯' ? getStatName(t.stat) : t.type;
+            
+            if (min !== undefined && max !== undefined) {
+                rangeStr = `${label} +${min}${unit}~${max}${unit}`;
             } else {
-                if (min !== undefined && max !== undefined) {
-                    rangeStr = `${t.type} +${min}${unit}~${max}${unit}`;
-                } else {
-                    rangeStr = t.type;
-                }
+                rangeStr = `${label} +${t.val || 0}${unit}`;
             }
-            traitGroups[groupIdx].push(rangeStr);
+
+            const itemHtml = `<div style="margin-bottom:2px;"><span style="color: var(--accent)">•</span> ${rangeStr}</div>`;
+            
+            // [내부 규칙] 시너지 분류 로직
+            // 타입이 '공격력 증가' 등일지라도 target이 '팀'/'적'이면 무조건 시너지 탭으로 분류함.
+            const isSynergy = (t.target === '팀' || t.target === '적' || SYNERGY_TYPES.some(syn => t.type.includes(syn)));
+            
+            if (isSynergy) synergyItems.push(itemHtml);
+            else traitItems.push(itemHtml);
         });
-
-        const traitLines = Object.entries(traitGroups).map(([idx, lines]) => {
-            if (lines.length === 0) return '';
-            const content = lines.join(', ');
-            return `<div style="margin-bottom:5px;"><span style="color: var(--accent)">•</span> ${content}</div>`;
-        }).join('');
 
         return `
             <div class="tooltip-header">
@@ -1240,10 +1250,8 @@ const AppTooltip = {
                     <div class="tooltip-stat-item" title="공격력"><span class="tooltip-stat-key">ATK</span><span class="tooltip-stat-val">${wep.baseAtk}</span></div>
                 </div>
             </div>
-            <div class="tooltip-section">
-                <div class="tooltip-label">무기 특성</div>
-                <div class="tooltip-desc">${traitLines}</div>
-            </div>
+            ${traitItems.length > 0 ? `<div class="tooltip-section"><div class="tooltip-label">무기 특성</div><div class="tooltip-desc">${traitItems.join('')}</div></div>` : ''}
+            ${synergyItems.length > 0 ? `<div class="tooltip-section"><div class="tooltip-label">시너지</div><div class="tooltip-desc">${synergyItems.join('')}</div></div>` : ''}
         `;
     },
 
