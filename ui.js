@@ -608,12 +608,21 @@ function setupGearForgeToggles() {
 
 function updateMainWeaponList(opId) {
     const validWeps = getValidWeapons(opId);
-    renderSelect('main-wep-select', validWeps);
-
     const mainWepSelect = document.getElementById('main-wep-select');
     const mainWepBtn = document.getElementById('main-wep-select-btn');
+    if (!mainWepSelect) return;
 
-    if (validWeps.length > 0) {
+    const currentVal = mainWepSelect.value;
+    renderSelect('main-wep-select', validWeps);
+
+    // 기존에 선택된 무기가 여전히 유효한지 확인
+    const stillValid = validWeps.find(w => w.id === currentVal);
+
+    if (stillValid) {
+        mainWepSelect.value = currentVal;
+        if (mainWepBtn) mainWepBtn.innerText = stillValid.name;
+    } else if (validWeps.length > 0) {
+        // 유효하지 않은 경우에만 첫 번째 무기로 설정 (신규 선택 상황)
         const firstWepId = validWeps[0].id;
         mainWepSelect.value = firstWepId;
         if (mainWepBtn) mainWepBtn.innerText = validWeps[0].name;
@@ -928,7 +937,10 @@ function applyStateToUI() {
 
     const mainWepSelect = document.getElementById('main-wep-select');
     if (mainWepSelect) {
-        mainWepSelect.value = state.mainOp.wepId;
+        mainWepSelect.value = state.mainOp.wepId || '';
+        const wepData = DATA_WEAPONS.find(w => w.id === state.mainOp.wepId);
+        const mainWepBtn = document.getElementById('main-wep-select-btn');
+        if (mainWepBtn) mainWepBtn.innerText = wepData ? wepData.name : '== 선택 해제 ==';
         updateEntityImage(state.mainOp.wepId, 'main-wep-image', 'weapons');
     }
     document.getElementById('main-wep-pot').value = state.mainOp.wepPot;
@@ -981,8 +993,11 @@ function applyStateToUI() {
         }
 
         const wepSel = document.getElementById(`sub-${i}-wep`);
+        const wepBtn = document.getElementById(`sub-${i}-wep-btn`);
         if (wepSel) {
             wepSel.value = s.wepId || '';
+            const wepData = DATA_WEAPONS.find(w => w.id === s.wepId);
+            if (wepBtn) wepBtn.innerText = wepData ? wepData.name : '== 선택 해제 ==';
             updateEntityImage(s.wepId, `sub-${i}-wep-image`, 'weapons');
         }
         document.getElementById(`sub-${i}-wep-pot`).value = s.wepPot;
