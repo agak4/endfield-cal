@@ -75,7 +75,7 @@ const DATA_WEAPONS = [
     name: '테르밋 커터',
     type: 'sword',
     baseAtk: 490,
-    rarity: 5,
+    rarity: 6,
     traits: [
       { type: '스탯', stat: 'wil', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
       { type: '공격력 증가', valByLevel: [5, 9, 13, 17, 21, 25, 29, 33, 39] },
@@ -146,7 +146,7 @@ const DATA_WEAPONS = [
     name: '암흑의 횃불',
     type: 'sword',
     baseAtk: 490,
-    rarity: 5,
+    rarity: 6,
     traits: [
       { type: '스탯', stat: 'int', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
       { type: '열기 피해', valByLevel: [5.56, 10, 14.44, 18.89, 23.33, 27.78, 32.22, 36.67, 43.33] },
@@ -415,7 +415,7 @@ const DATA_WEAPONS = [
     name: '중심력',
     type: 'polearm',
     baseAtk: 411,
-    rarity: 6,
+    rarity: 5,
     traits: [
       { type: '스탯', stat: 'wil', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '전기 피해', valByLevel: [4.4, 8, 11.6, 15.1, 18.7, 22.2, 25.8, 29.3, 34.7] },

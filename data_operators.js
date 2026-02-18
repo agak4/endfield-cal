@@ -43,6 +43,7 @@ const DATA_OPERATORS = [
     {
         id: 'Endministrator',
         name: '관리자',
+        rarity: 6,
         baseAtk: 312,
         mainStat: 'agi',
         subStat: 'str',
@@ -70,6 +71,7 @@ const DATA_OPERATORS = [
     {
         id: 'Lifeng',
         name: '여풍',
+        rarity: 6,
         baseAtk: 312,
         mainStat: 'agi',
         subStat: 'str',
@@ -97,6 +99,7 @@ const DATA_OPERATORS = [
     {
         id: 'Chen Qianyu',
         name: '진천우',
+        rarity: 5,
         baseAtk: 297,
         mainStat: 'agi',
         subStat: 'str',
@@ -124,6 +127,7 @@ const DATA_OPERATORS = [
     {
         id: 'Estella',
         name: '에스텔라',
+        rarity: 4,
         baseAtk: 312,
         mainStat: 'wil',
         subStat: 'str',
@@ -151,6 +155,7 @@ const DATA_OPERATORS = [
     {
         id: 'Ember',
         name: '엠버',
+        rarity: 6,
         baseAtk: 323,
         mainStat: 'str',
         subStat: 'wil',
@@ -178,6 +183,7 @@ const DATA_OPERATORS = [
     {
         id: 'Snowshine',
         name: '스노우샤인',
+        rarity: 5,
         baseAtk: 297,
         mainStat: 'str',
         subStat: 'wil',
@@ -205,6 +211,7 @@ const DATA_OPERATORS = [
     {
         id: 'Catcher',
         name: '카치르',
+        rarity: 4,
         baseAtk: 300,
         mainStat: 'str',
         subStat: 'wil',
@@ -232,6 +239,7 @@ const DATA_OPERATORS = [
     {
         id: 'Gilberta',
         name: '질베르타',
+        rarity: 6,
         baseAtk: 329,
         mainStat: 'wil',
         subStat: 'int',
@@ -259,6 +267,7 @@ const DATA_OPERATORS = [
     {
         id: 'Ardelia',
         name: '아델리아',
+        rarity: 6,
         baseAtk: 323,
         mainStat: 'int',
         subStat: 'wil',
@@ -286,6 +295,7 @@ const DATA_OPERATORS = [
     {
         id: 'Xaihi',
         name: '자이히',
+        rarity: 5,
         baseAtk: 291,
         mainStat: 'wil',
         subStat: 'int',
@@ -313,6 +323,7 @@ const DATA_OPERATORS = [
     {
         id: 'Antal',
         name: '안탈',
+        rarity: 4,
         baseAtk: 297,
         mainStat: 'int',
         subStat: 'str',
@@ -340,6 +351,7 @@ const DATA_OPERATORS = [
     {
         id: 'Perlica',
         name: '펠리카',
+        rarity: 5,
         baseAtk: 303,
         mainStat: 'int',
         subStat: 'wil',
@@ -367,6 +379,7 @@ const DATA_OPERATORS = [
     {
         id: 'Wulfgard',
         name: '울프가드',
+        rarity: 5,
         baseAtk: 294,
         mainStat: 'str',
         subStat: 'agi',
@@ -394,6 +407,7 @@ const DATA_OPERATORS = [
     {
         id: 'Fluorite',
         name: '플루라이트',
+        rarity: 4,
         baseAtk: 303,
         mainStat: 'agi',
         subStat: 'int',
@@ -421,6 +435,7 @@ const DATA_OPERATORS = [
     {
         id: 'Laevatain',
         name: '레바테인',
+        rarity: 6,
         baseAtk: 318,
         mainStat: 'int',
         subStat: 'str',
@@ -448,6 +463,7 @@ const DATA_OPERATORS = [
     {
         id: 'Last Rite',
         name: '라스트 라이트',
+        rarity: 6,
         baseAtk: 332,
         mainStat: 'str',
         subStat: 'wil',
@@ -475,6 +491,7 @@ const DATA_OPERATORS = [
     {
         id: 'Yvonne',
         name: '이본',
+        rarity: 6,
         baseAtk: 321,
         mainStat: 'int',
         subStat: 'agi',
@@ -502,6 +519,7 @@ const DATA_OPERATORS = [
     {
         id: 'Avywenna',
         name: '아비웨나',
+        rarity: 5,
         baseAtk: 312,
         mainStat: 'wil',
         subStat: 'agi',
@@ -529,6 +547,7 @@ const DATA_OPERATORS = [
     {
         id: 'Da Pan',
         name: '판',
+        rarity: 5,
         baseAtk: 303,
         mainStat: 'str',
         subStat: 'wil',
@@ -556,6 +575,7 @@ const DATA_OPERATORS = [
     {
         id: 'Pogranichnik',
         name: '포그라니치니크',
+        rarity: 6,
         baseAtk: 321,
         mainStat: 'wil',
         subStat: 'agi',
@@ -583,6 +603,7 @@ const DATA_OPERATORS = [
     {
         id: 'Arclight',
         name: '아크라이트',
+        rarity: 5,
         baseAtk: 306,
         mainStat: 'agi',
         subStat: 'int',
@@ -610,6 +631,7 @@ const DATA_OPERATORS = [
     {
         id: 'Alesh',
         name: '알레쉬',
+        rarity: 5,
         baseAtk: 309,
         mainStat: 'str',
         subStat: 'int',
@@ -637,6 +659,7 @@ const DATA_OPERATORS = [
     {
         id: 'Akekuri',
         name: '아케쿠리',
+        rarity: 4,
         baseAtk: 319,
         mainStat: 'agi',
         subStat: 'int',
