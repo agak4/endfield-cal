@@ -317,7 +317,16 @@
         <section class="panel right-panel">
             <h2>전투 분석 대시보드</h2>
             <div class="result-box total-dmg-box">
-                <h3>최종 계산값</h3>
+                <div class="total-dmg-header">
+                    <h3>최종 계산값</h3>
+                    <span class="info-icon" id="formula-info-btn">ⓘ</span>
+                    <div id="formula-tooltip" class="formula-tooltip">
+                        <div class="formula-title">데미지 계산 공식</div>
+                        <div class="formula-content">
+                            공격력 × 치명타 기대값 × 주는 피해 × 증폭 × 적이 받는 피해 × 취약 × 불균형 × 연타
+                        </div>
+                    </div>
+                </div>
                 <span id="final-damage">0</span>
             </div>
             <div class="dashboard-grid">

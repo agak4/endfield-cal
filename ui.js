@@ -119,6 +119,19 @@ function initUI() {
         };
     }
 
+    // 데미지 공식 툴팁 토글
+    const formulaBtn = document.getElementById('formula-info-btn');
+    const formulaTooltip = document.getElementById('formula-tooltip');
+    if (formulaBtn && formulaTooltip) {
+        formulaBtn.onclick = (e) => {
+            e.stopPropagation();
+            formulaTooltip.classList.toggle('open');
+        };
+        document.addEventListener('click', () => {
+            formulaTooltip.classList.remove('open');
+        });
+    }
+
     AppTooltip.init();
 }
 
@@ -487,6 +500,20 @@ function syncPotencyToTooltip(inputId, potValue) {
     }
 }
 
+function syncForgedToTooltip(checkboxId, isForged) {
+    const gearSlotMap = {
+        'gear-gloves-forge': 'gear-gloves-image',
+        'gear-armor-forge': 'gear-armor-image',
+        'gear-kit1-forge': 'gear-kit1-image',
+        'gear-kit2-forge': 'gear-kit2-image'
+    };
+    const imgId = gearSlotMap[checkboxId];
+    if (imgId) {
+        const img = document.getElementById(imgId);
+        if (img) img.setAttribute('data-tooltip-forged', isForged);
+    }
+}
+
 function toggleSubOp(idx) {
     const content = document.getElementById(`sub-op-content-${idx}`);
     if (content) {
@@ -527,6 +554,7 @@ function setupMainForgeToggle() {
             const gbtn = document.getElementById(gid + '-toggle');
             if (gcb) gcb.checked = mainForgeCb.checked;
             if (gbtn) updateToggleButton(gbtn, mainForgeCb.checked, '단조');
+            syncForgedToTooltip(gid, mainForgeCb.checked);
         });
         updateToggleButton(mainForgeToggle, mainForgeCb.checked, '단조');
         updateState();
@@ -551,6 +579,7 @@ function setupGearForgeToggles() {
         btn.onclick = () => {
             cb.checked = !cb.checked;
             updateToggleButton(btn, cb.checked, '단조');
+            syncForgedToTooltip(id, cb.checked);
             const allOn = gearForgeIds.every(gid => {
                 const c = document.getElementById(gid);
                 return c ? c.checked : false;
@@ -561,6 +590,7 @@ function setupGearForgeToggles() {
         };
         cb.parentNode.appendChild(btn);
         updateToggleButton(btn, cb.checked, '단조');
+        syncForgedToTooltip(id, cb.checked);
     });
 }
 
@@ -653,6 +683,13 @@ function updateEntityImage(entityId, imgElementId, folder) {
         }
         imgElement.setAttribute('data-tooltip-pot', potency);
 
+        if (folder === 'gears') {
+            const slot = imgElementId.replace('gear-', '').replace('-image', '');
+            const forgeId = `gear-${slot}-forge`;
+            const forged = document.getElementById(forgeId)?.checked || false;
+            imgElement.setAttribute('data-tooltip-forged', forged);
+        }
+
         imgElement.onerror = function () {
             this.style.display = 'none';
         };
@@ -688,7 +725,7 @@ function renderResult(res) {
         'stat-atk-inc': res.stats.atkInc.toFixed(1) + '%',
         'stat-main-val': Math.floor(res.stats.mainStatVal),
         'stat-sub-val': Math.floor(res.stats.subStatVal),
-        'stat-crit': Math.floor(res.stats.critExp * 100) + '%',
+        'stat-crit': (res.stats.critExp * 100).toFixed(1) + '%',
         'val-crit-rate': res.stats.finalCritRate + '%',
         'val-crit-dmg': res.stats.critDmg + 100 + '%',
         'stat-dmg-inc': res.stats.dmgInc.toFixed(1) + '%',
@@ -912,6 +949,7 @@ function applyStateToUI() {
         if (el) {
             el.checked = state.mainOp.gearForged[idx];
             updateToggleButton(document.getElementById(id + '-toggle'), el.checked, '단조');
+            syncForgedToTooltip(id, el.checked);
         }
     });
 
@@ -970,8 +1008,9 @@ const AppTooltip = {
                 const id = target.getAttribute('data-tooltip-id');
                 const type = target.getAttribute('data-tooltip-type');
                 const pot = Number(target.getAttribute('data-tooltip-pot')) || 0;
+                const forged = target.getAttribute('data-tooltip-forged') === 'true';
                 if (id && type) {
-                    this.show(id, type, pot, e);
+                    this.show(id, type, pot, e, forged);
                 }
             }
         });
@@ -990,14 +1029,14 @@ const AppTooltip = {
         });
     },
 
-    show(id, type, pot, event) {
+    show(id, type, pot, event, forged = false) {
         let content = '';
         const data = this.getData(id, type);
         if (!data) return;
 
         if (type === 'operator') content = this.renderOperator(data, pot);
         else if (type === 'weapon') content = this.renderWeapon(data);
-        else if (type === 'gear') content = this.renderGear(data);
+        else if (type === 'gear') content = this.renderGear(data, forged);
 
         this.el.innerHTML = content;
         this.el.style.display = 'block';
@@ -1183,21 +1222,25 @@ const AppTooltip = {
         `;
     },
 
-    renderGear(gear) {
+    renderGear(gear, forged = false) {
         const setName = (typeof DATA_SETS !== 'undefined' && DATA_SETS.find(s => s.id === gear.set)?.name) || '일반';
         const typeMap = { armor: '방어구', gloves: '글러브', kit: '부품' };
         const stats = [];
-        if (gear.stat1) stats.push({ type: gear.stat1, val: gear.val1 });
-        if (gear.stat2) stats.push({ type: gear.stat2, val: gear.val2 });
-        const statsHtml = stats.map(s => `<div class="tooltip-stat-item"><span class="tooltip-stat-key">${getStatName(s.type)}</span><span class="tooltip-stat-val">+${s.val}</span></div>`).join('');
+        const mult = forged ? 1.5 : 1.0;
+        const valStyle = forged ? 'style="color: var(--accent); font-weight: bold;"' : '';
+
+        if (gear.stat1) stats.push({ type: gear.stat1, val: gear.val1 * mult });
+        if (gear.stat2) stats.push({ type: gear.stat2, val: gear.val2 * mult });
+        const statsHtml = stats.map(s => `<div class="tooltip-stat-item"><span class="tooltip-stat-key">${getStatName(s.type)}</span><span class="tooltip-stat-val" ${valStyle}>+${Math.floor(s.val)}</span></div>`).join('');
 
         let traitHtml = '';
         if (gear.trait) {
             const traits = Array.isArray(gear.trait) ? gear.trait : [gear.trait];
             const traitLines = traits.map(t => {
                 const unit = t.type.includes('확률') || t.type.includes('피해') || t.type.includes('충전') || t.type.includes('효율') ? '%' : '';
-                const valStr = t.val !== undefined ? ` +${t.val}${unit}` : '';
-                return `<div style="margin-bottom:2px;"><span style="color:var(--accent)">•</span> ${t.type}${valStr}</div>`;
+                const valStr = t.val !== undefined ? ` +${(t.val * mult).toFixed(1)}${unit}` : '';
+                const spanStyle = forged ? `style="color: var(--accent); font-weight: bold;"` : '';
+                return `<div style="margin-bottom:2px;"><span style="color:var(--accent)">•</span> ${t.type}<span ${spanStyle}>${valStr}</span></div>`;
             }).join('');
             traitHtml = `<div class="tooltip-section"><div class="tooltip-label">장비 특성</div><div class="tooltip-desc">${traitLines}</div></div>`;
         }
