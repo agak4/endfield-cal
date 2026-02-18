@@ -140,9 +140,6 @@ function renderGearSidebar(filterPart) {
     const unequipBtn = document.createElement('div');
     unequipBtn.className = 'sidebar-item unequip-item';
     unequipBtn.innerHTML = `
-        <div class="sidebar-item-img unequip-img">
-            <span>-</span>
-        </div>
         <span class="sidebar-item-name">== 장착 해제 ==</span>
     `;
     unequipBtn.onclick = () => selectGear('');
@@ -345,6 +342,15 @@ function openWeaponModal(onSelect, validWeapons) {
 
     grid.innerHTML = '';
 
+    const unequipItem = document.createElement('div');
+    unequipItem.className = 'modal-item unselect-item';
+    unequipItem.innerHTML = `<span class="name">선택 해제</span>`;
+    unequipItem.onclick = () => {
+        modal.classList.remove('open');
+        onSelect('');
+    };
+    grid.appendChild(unequipItem);
+
     validWeapons.forEach(wep => {
         const item = document.createElement('div');
         item.className = 'modal-item';
@@ -378,6 +384,15 @@ function openOperatorModal(onSelect, excludedIds = []) {
     if (!modal || !grid) return;
 
     grid.innerHTML = '';
+
+    const unequipItem = document.createElement('div');
+    unequipItem.className = 'modal-item unselect-item';
+    unequipItem.innerHTML = `<span class="name">선택 해제</span>`;
+    unequipItem.onclick = () => {
+        modal.classList.remove('open');
+        onSelect('');
+    };
+    grid.appendChild(unequipItem);
 
     DATA_OPERATORS.forEach(op => {
         const item = document.createElement('div');
