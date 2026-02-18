@@ -610,7 +610,7 @@ const DATA_WEAPONS = [
       { type: '스탯', stat: 'int', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
       { type: '치유 효율', valByLevel: [6, 10.7, 15.5, 20.2, 25, 29.8, 34.5, 39.3, 46.4] },
       { type: '스탯', stat: '부스탯', valByLevel: [16, 19.2, 22.4, 25.6, 28.8, 32, 35.2, 38.4, 44.8] },
-      { type: '받는 아츠 피해', valByLevel: [10, 12, 14, 16, 18, 20, 22, 24, 28], target: '적' }
+      { type: '받는 아츠 피해', valByLevel: [10, 12, 14, 16, 18, 20, 22, 24, 28], nonStack: true, target: '적' }
     ]
   },
 
