@@ -14,6 +14,7 @@ let state = {
         { id: null, pot: 0, wepId: null, wepPot: 0, wepState: false, equipSet: null },
         { id: null, pot: 0, wepId: null, wepPot: 0, wepState: false, equipSet: null }
     ],
+    subOpsCollapsed: [false, true, true], // 기본값: 첫 번째만 펼침
     enemyUnbalanced: false,
     activeSetId: null
 };
@@ -51,6 +52,12 @@ function updateState() {
         state.subOps[i].wepPot = Number(document.getElementById(`sub-${i}-wep-pot`)?.value) || 0;
         state.subOps[i].wepState = document.getElementById(`sub-${i}-wep-state`)?.checked || false;
         state.subOps[i].equipSet = document.getElementById(`sub-${i}-set`)?.value || null;
+        
+        // 접힘 상태 업데이트
+        const content = document.getElementById(`sub-op-content-${i}`);
+        if (content) {
+            state.subOpsCollapsed[i] = content.classList.contains('collapsed');
+        }
     }
 
     state.enemyUnbalanced = document.getElementById('enemy-unbalanced')?.checked || false;

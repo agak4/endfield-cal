@@ -525,6 +525,8 @@ function toggleSubOp(idx) {
     const content = document.getElementById(`sub-op-content-${idx}`);
     if (content) {
         content.classList.toggle('collapsed');
+        // 상태 저장 트리거
+        if (typeof updateState === 'function') updateState();
     }
 }
 
@@ -991,6 +993,16 @@ function applyStateToUI() {
 
         const setSel = document.getElementById(`sub-${i}-set`);
         if (setSel) setSel.value = s.equipSet || '';
+
+        // 접힘 상태 복구
+        const content = document.getElementById(`sub-op-content-${i}`);
+        if (content && state.subOpsCollapsed) {
+            if (state.subOpsCollapsed[i]) {
+                content.classList.add('collapsed');
+            } else {
+                content.classList.remove('collapsed');
+            }
+        }
     }
 
     const enemyCb = document.getElementById('enemy-unbalanced');
