@@ -193,6 +193,15 @@ function collectAllEffects(state, opData, wepData, stats, allEffects) {
             }
         }
 
+        if (sub.equipSet) {
+            const set = DATA_SETS.find(s => s.id === sub.equipSet);
+            if (set && set.effect) {
+                let active = true;
+                if (set.effect.cond === 'arts_only' && subOpData.type !== 'arts') active = false;
+                if (set.effect.cond === 'phys_only' && subOpData.type !== 'phys') active = false;
+                if (active) addEffect(set.effect, `${prefix} 세트`, 1.0, true);
+            }
+        }
 
         if (subOpData) {
             if (subOpData.skill) subOpData.skill.forEach((s, i) => addEffect(s, `${prefix} ${skillNames[i] || `스킬${i + 1}`}`, 1.0, true));
@@ -451,10 +460,6 @@ function getSetEffects(setId, opData, isSelf = true) {
         if (t === '아츠 부착') {
             return ['열기 부착', '냉기 부착', '전기 부착', '자연 부착'].some(el => skillStr.includes(el) || talentStr.includes(el));
         }
-        if (t === '스킬 게이지 회복' || t === '궁극기 충전') {
-            return skillStr.includes('스킬 게이지 회복') || talentStr.includes('스킬 게이지 회복') ||
-                skillStr.includes('궁극기 충전') || talentStr.includes('궁극기 충전');
-        }
         return skillStr.includes(t) || talentStr.includes(t);
     };
 
@@ -498,10 +503,6 @@ function checkSetViability(setId, opData) {
     const matchTrigger = (t) => {
         if (t === '아츠 부착') {
             return ['열기 부착', '냉기 부착', '전기 부착', '자연 부착'].some(el => skillStr.includes(el) || talentStr.includes(el));
-        }
-        if (t === '스킬 게이지 회복' || t === '궁극기 충전') {
-            return skillStr.includes('스킬 게이지 회복') || talentStr.includes('스킬 게이지 회복') ||
-                skillStr.includes('궁극기 충전') || talentStr.includes('궁극기 충전');
         }
         return skillStr.includes(t) || talentStr.includes(t);
     };
