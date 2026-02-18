@@ -4,6 +4,9 @@ window.onload = function () {
     const DEFAULT_OP_ID = 'Endministrator';
     const DEFAULT_WEP_ID = 'Grand Vision';
 
+    // 이미지 프리로딩
+    preloadAllImages();
+
     // UI 초기화
     initUI();
 
@@ -1022,6 +1025,9 @@ const AppTooltip = {
         if (!this.el) return;
 
         document.addEventListener('mouseover', (e) => {
+            // 모바일/태블릿(<= 1024px)에서는 툴팁 표시 방지
+            if (window.innerWidth <= 1024) return;
+
             const target = e.target.closest('[data-tooltip-id]');
             if (target) {
                 const id = target.getAttribute('data-tooltip-id');
@@ -1245,21 +1251,36 @@ const AppTooltip = {
         const setName = (typeof DATA_SETS !== 'undefined' && DATA_SETS.find(s => s.id === gear.set)?.name) || '일반';
         const typeMap = { armor: '방어구', gloves: '글러브', kit: '부품' };
         const stats = [];
-        const mult = forged ? 1.5 : 1.0;
         const valStyle = forged ? 'style="color: var(--accent); font-weight: bold;"' : '';
 
-        if (gear.stat1) stats.push({ type: gear.stat1, val: gear.val1 * mult });
-        if (gear.stat2) stats.push({ type: gear.stat2, val: gear.val2 * mult });
+        // Stat1
+        if (gear.stat1) {
+            let v = gear.val1;
+            if (forged) v = (gear.val1_f !== undefined) ? gear.val1_f : gear.val1;
+            stats.push({ type: gear.stat1, val: v });
+        }
+        // Stat2
+        if (gear.stat2) {
+            let v = gear.val2;
+            if (forged) v = (gear.val2_f !== undefined) ? gear.val2_f : gear.val2;
+            stats.push({ type: gear.stat2, val: v });
+        }
+
         const statsHtml = stats.map(s => `<div class="tooltip-stat-item"><span class="tooltip-stat-key">${getStatName(s.type)}</span><span class="tooltip-stat-val" ${valStyle}>+${Math.floor(s.val)}</span></div>`).join('');
 
         let traitHtml = '';
         if (gear.trait) {
             const traits = Array.isArray(gear.trait) ? gear.trait : [gear.trait];
             const traitLines = traits.map(t => {
-                const unit = t.type.includes('확률') || t.type.includes('피해') || t.type.includes('충전') || t.type.includes('효율') ? '%' : '';
-                const valStr = t.val !== undefined ? ` +${(t.val * mult).toFixed(1)}${unit}` : '';
+                const isStatTrait = t.type === '스탯';
+                const unit = (isStatTrait || t.type.includes('확률') || t.type.includes('피해') || t.type.includes('충전') || t.type.includes('효율')) ? '%' : '';
+                let v = t.val;
+                if (forged) v = (t.val_f !== undefined) ? t.val_f : t.val;
+                const valStr = v !== undefined ? ` +${(v).toFixed(1)}${unit}` : '';
                 const spanStyle = forged ? `style="color: var(--accent); font-weight: bold;"` : '';
-                return `<div style="margin-bottom:2px;"><span style="color:var(--accent)">•</span> ${t.type}<span ${spanStyle}>${valStr}</span></div>`;
+                
+                const label = isStatTrait ? getStatName(t.stat) : t.type;
+                return `<div style="margin-bottom:2px;"><span style="color:var(--accent)">•</span> ${label}<span ${spanStyle}>${valStr}</span></div>`;
             }).join('');
             traitHtml = `<div class="tooltip-section"><div class="tooltip-label">장비 특성</div><div class="tooltip-desc">${traitLines}</div></div>`;
         }
@@ -1280,3 +1301,21 @@ const AppTooltip = {
         `;
     }
 };
+
+/** 이미지 프리로딩 */
+function preloadAllImages() {
+    const categories = {
+        'operators': typeof DATA_OPERATORS !== 'undefined' ? DATA_OPERATORS : [],
+        'weapons': typeof DATA_WEAPONS !== 'undefined' ? DATA_WEAPONS : [],
+        'gears': typeof DATA_GEAR !== 'undefined' ? DATA_GEAR : []
+    };
+
+    Object.entries(categories).forEach(([folder, data]) => {
+        data.forEach(item => {
+            if (item.name) {
+                const img = new Image();
+                img.src = `images/${folder}/${item.name}.webp`;
+            }
+        });
+    });
+}

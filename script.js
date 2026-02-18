@@ -52,7 +52,7 @@ function updateState() {
         state.subOps[i].wepPot = Number(document.getElementById(`sub-${i}-wep-pot`)?.value) || 0;
         state.subOps[i].wepState = document.getElementById(`sub-${i}-wep-state`)?.checked || false;
         state.subOps[i].equipSet = document.getElementById(`sub-${i}-set`)?.value || null;
-        
+
         // 접힘 상태 업데이트
         const content = document.getElementById(`sub-op-content-${i}`);
         if (content) {
@@ -119,31 +119,63 @@ function collectAllEffects(state, opData, wepData, stats, allEffects) {
         });
     };
 
-        // 1. 장비
-        for (let i = 0; i < state.mainOp.gears.length; i++) {
-            const gId = state.mainOp.gears[i];
-            if (!gId) continue;
-            const gear = DATA_GEAR.find(g => g.id === gId);
-            if (gear) {
-                const mult = state.mainOp.gearForged[i] ? 1.5 : 1.0;
-                
-                // gear.stat1/2가 'str' 등 영어일 수도 있고 '힘' 등 한글일 수도 있음
-                // stats 객체의 키(영어)를 정확히 찾아야 함
-                [gear.stat1, gear.stat2].forEach((s, idx) => {
-                    if (!s) return;
-                    const val = (idx === 0 ? gear.val1 : gear.val2) * mult;
-                    let key = s;
-                    if (stats[s] === undefined) {
-                        if (STAT_NAME_MAP[s] && stats[STAT_NAME_MAP[s]] !== undefined) {
-                            key = STAT_NAME_MAP[s];
-                        }
+    // 1. 장비
+    for (let i = 0; i < state.mainOp.gears.length; i++) {
+        const gId = state.mainOp.gears[i];
+        if (!gId) continue;
+        const gear = DATA_GEAR.find(g => g.id === gId);
+        if (gear) {
+            const isForged = state.mainOp.gearForged[i];
+
+            [1, 2].forEach(num => {
+                const statKey = gear[`stat${num}`];
+                if (!statKey) return;
+
+                let val;
+                if (isForged) {
+                    // 단조 상태면 _f 값을 우선 사용, 없으면 기본값 사용 (자동 1.5배 제거)
+                    val = (gear[`val${num}_f`] !== undefined) ? gear[`val${num}_f`] : gear[`val${num}`];
+                } else {
+                    val = gear[`val${num}`];
+                }
+
+                let key = statKey;
+                if (stats[statKey] === undefined) {
+                    if (STAT_NAME_MAP[statKey] && stats[STAT_NAME_MAP[statKey]] !== undefined) {
+                        key = STAT_NAME_MAP[statKey];
                     }
-                    if (stats[key] !== undefined) stats[key] += val;
-                });
-                
-                if (gear.trait) addEffect(gear.trait, gear.name, mult);
+                }
+                if (stats[key] !== undefined) stats[key] += val;
+            });
+
+            if (gear.trait) {
+                const processSingleTrait = (t) => {
+                    let val = t.val;
+                    if (isForged) {
+                        val = (t.val_f !== undefined) ? t.val_f : t.val;
+                    }
+
+                    // 장비의 trait가 '스탯'인 경우 무기의 3번 특성처럼 '스탯%'로 변환하여 최종 곱연산 처리
+                    let processedType = t.type;
+                    let targetStat = t.stat;
+                    if (t.type === '스탯') {
+                        processedType = '스탯%';
+                        targetStat = t.stat === '주스탯' ? opData.mainStat :
+                            t.stat === '부스탯' ? opData.subStat : t.stat;
+                    }
+
+                    return { ...t, type: processedType, stat: targetStat, val };
+                };
+
+                if (Array.isArray(gear.trait)) {
+                    const traitsWithForged = gear.trait.map(processSingleTrait);
+                    addEffect(traitsWithForged, gear.name);
+                } else {
+                    addEffect(processSingleTrait(gear.trait), gear.name);
+                }
             }
         }
+    }
     // 2. 무기
     wepData.traits.forEach((trait, idx) => {
         if (!trait) return;
@@ -329,7 +361,7 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects) {
             const t = (eff.type || '').toString();
             const targetName = getStatName(eff.stat || eff.stats);
             if (t === '스탯') statLogs.push(`[${eff.name}] +${val.toFixed(1)} (${targetName})`);
-            else if (t === '스탯%') statLogs.push(`[${eff.name}] +${val.toFixed(1)}% (${targetName} 증가)`);
+            else if (t === '스탯%') statLogs.push(`[${eff.name}] +${val.toFixed(1)}% (${targetName})`);
             return; // 계산은 이미 apply functions에서 처리됨
         }
 

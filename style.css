@@ -41,6 +41,16 @@
     box-sizing: border-box;
 }
 
+img {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-select: none;
+    -webkit-touch-callout: none; /* iOS 꾹 누르기 방지 */
+}
+
+
 body {
     margin: 0;
     padding: 0;
@@ -1029,7 +1039,7 @@ input[type="range"]::-webkit-slider-thumb {
     }
 
     .gear-sidebar-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
     }
 }
 
@@ -1095,12 +1105,34 @@ input[type="range"]::-webkit-slider-thumb {
     .modal-content {
         width: 95%;
         padding: 15px;
+        max-height: 90%;
+        /* 모바일에서 더 많은 공간 활용 */
     }
 
     .modal-grid {
-        grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
-        gap: 10px;
-        padding: 5px;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        /* 아이템 너비 확보 */
+        gap: 12px;
+        padding: 10px 5px;
+        -webkit-overflow-scrolling: touch;
+        /* 부드러운 스크롤 */
+    }
+
+    .modal-item {
+        padding: 15px 10px;
+        /* 터치 영역 확대 */
+        min-height: 120px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-item div {
+        width: 60px !important;
+        /* 이미지 컨테이너 크기 고정 */
+        height: 60px !important;
+        margin-bottom: 10px !important;
     }
 
     .header-content {
