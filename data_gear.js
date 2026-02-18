@@ -9,7 +9,7 @@ const DATA_GEAR = [
   { id: 'gear_7', name: '현하 산소 공급 장치', part: 'kit', set: 'set_joryu', stat1: 'str', val1: 32, val1_f: 41, stat2: 'wil', val2: 21, val2_f: 27, trait: [{ type: '냉기 피해', val: 23, val_f: 29.9 }, { type: '전기 피해', val: 23, val_f: 29.9 }] },
   { id: 'gear_8', name: '조류의 물결 건틀릿', part: 'gloves', set: 'set_joryu', stat1: 'str', val1: 65, val1_f: 84, stat2: 'wil', val2: 43, val2_f: 55, trait: [{ type: '냉기 피해', val: 19.2, val_f: 24.9 }, { type: '전기 피해', val: 19.2, val_f: 24.9 }] },
   { id: 'gear_9', name: '낙조 경갑', part: 'armor', set: 'set_joryu', stat1: 'int', val1: 87, val1_f: 113, stat2: 'str', val2: 58, val2_f: 75, trait: { type: '궁극기 충전', val: 12.3, val_f: 16 } },
-  { id: 'gear_10', name: '응룡 50식 탐지기', part: 'armor', set: 'set_eungryong', stat1: 'str', val1: 32, val1_f: 41, stat2: 'wil', val2: 21, val2_f: 27, trait: { type: '물리 피해', val: 23, val_f: 29.9 } },
+  { id: 'gear_10', name: '응룡 50식 탐지기', part: 'kit', set: 'set_eungryong', stat1: 'str', val1: 32, val1_f: 41, stat2: 'wil', val2: 21, val2_f: 27, trait: { type: '물리 피해', val: 23, val_f: 29.9 } },
   { id: 'gear_11', name: '응룡 50식 단검 · I', part: 'kit', set: 'set_eungryong', stat1: 'int', val1: 32, val1_f: 41, stat2: 'str', val2: 21, val2_f: 27, trait: { type: '모든 스킬 피해', val: 27.6, val_f: 35.9 } },
   { id: 'gear_12', name: '응룡 50식 단검', part: 'kit', set: 'set_eungryong', stat1: 'wil', val1: 32, val1_f: 41, stat2: 'agi', val2: 21, val2_f: 27, trait: { type: '연계 스킬 피해', val: 41.4, val_f: 53.8 } },
   { id: 'gear_13', name: '응룡 50식 글러브 · I', part: 'gloves', set: 'set_eungryong', stat1: 'wil', val1: 65, val1_f: 84, stat2: 'agi', val2: 43, val2_f: 55, trait: { type: '연계 스킬 피해', val: 34.5, val_f: 44.9 } },
