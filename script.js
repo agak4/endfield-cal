@@ -118,12 +118,22 @@ function calculateDamage(currentState) {
 }
 
 function collectAllEffects(state, opData, wepData, stats, allEffects) {
+    const activeNonStackTypes = new Set();
+
     const addEffect = (source, name, forgeMult = 1.0, isSub = false) => {
         if (!source) return;
         const sources = Array.isArray(source) ? source : [source];
         sources.forEach((eff, i) => {
             if (!eff) return;
             if (isSub && !isSubOpTargetValid(eff)) return;
+
+            // 중복 불가 체크
+            if (eff.nonStack) {
+                const nonStackKey = `${eff.sourceId || name}_${eff.type}`;
+                if (activeNonStackTypes.has(nonStackKey)) return;
+                activeNonStackTypes.add(nonStackKey);
+            }
+
             // 고유 ID 생성 (출처_타입_인덱스)
             const uid = `${name}_${eff.type}_${i}`;
             allEffects.push({ ...eff, name, forgeMult, uid });
@@ -187,22 +197,37 @@ function collectAllEffects(state, opData, wepData, stats, allEffects) {
             }
         }
     }
-    // 2. 무기
-    wepData.traits.forEach((trait, idx) => {
-        if (!trait) return;
-        let traitIdx = idx >= 2 ? 3 : idx + 1;
-        let finalLv = calculateWeaponTraitLevel(idx, state.mainOp.wepState, state.mainOp.wepPot);
-        let label = `${wepData.name} 특성${traitIdx}(Lv${finalLv})`;
-        let val = calculateWeaponTraitValue(trait, finalLv, state.mainOp.wepState);
+    // 2. 무기 (메인 + 서브 통합 처리)
+    const weaponsToProcess = [
+        { data: wepData, state: state.mainOp.wepState, pot: state.mainOp.wepPot, name: opData.name },
+        ...state.subOps.map((sub, idx) => {
+            const sOpData = DATA_OPERATORS.find(o => o.id === sub.id);
+            const sWepData = DATA_WEAPONS.find(w => w.id === sub.wepId);
+            return { data: sWepData, state: sub.wepState, pot: sub.wepPot, name: sOpData ? sOpData.name : `서브${idx + 1}` };
+        })
+    ];
 
-        if (trait.type === '스탯') {
-            const targetStat = trait.stat === '주스탯' ? opData.mainStat :
-                trait.stat === '부스탯' ? opData.subStat : trait.stat;
-            const type = idx >= 2 ? '스탯%' : '스탯';
-            addEffect({ type, stat: targetStat, val }, label);
-        } else {
-            addEffect({ ...trait, val }, label);
-        }
+    weaponsToProcess.forEach((entry, wIdx) => {
+        if (!entry.data) return;
+        entry.data.traits.forEach((trait, idx) => {
+            if (!trait) return;
+            let traitIdx = idx >= 2 ? 3 : idx + 1;
+            let finalLv = calculateWeaponTraitLevel(idx, entry.state, entry.pot);
+            let label = `${entry.data.name} 특성${traitIdx}(Lv${finalLv})`;
+            if (wIdx > 0) label = `${entry.name} ${entry.data.name} 특성${traitIdx}`;
+            let val = calculateWeaponTraitValue(trait, finalLv, entry.state);
+
+            // 무기 ID를 sourceId로 설정하여 nonStack 체크에 사용
+            const eff = { ...trait, val, sourceId: entry.data.id };
+
+            if (trait.type === '스탯') {
+                const targetStat = trait.stat === '주스탯' ? opData.mainStat : trait.stat === '부스탯' ? opData.subStat : trait.stat;
+                const type = idx >= 2 ? '스탯%' : '스탯';
+                addEffect({ ...eff, type, stat: targetStat }, label, 1.0, wIdx > 0);
+            } else {
+                addEffect(eff, label, 1.0, wIdx > 0);
+            }
+        });
     });
 
     // 3. 메인 오퍼레이터
@@ -215,47 +240,20 @@ function collectAllEffects(state, opData, wepData, stats, allEffects) {
         if (opData.potential && opData.potential[p]) addEffect(opData.potential[p], `${opData.name} 잠재${p + 1}`);
     }
 
-    // 4. 서브 오퍼레이터
+    // 4. 서브 오퍼레이터 (시너지)
     state.subOps.forEach((sub, idx) => {
         if (!sub.id) return;
         const subOpData = DATA_OPERATORS.find(o => o.id === sub.id);
         const prefix = subOpData ? subOpData.name : `서브${idx + 1}`;
 
-        if (sub.wepId) {
-            const sWep = DATA_WEAPONS.find(w => w.id === sub.wepId);
-            if (sWep) {
-                for (let ti = 0; ti < sWep.traits.length; ti++) {
-                    const trait = sWep.traits[ti];
-                    if (!trait) continue;
-                    let traitIdx = ti >= 2 ? 3 : ti + 1;
-                    let val = calculateWeaponTraitValue(trait, (sub.wepState ? 4 : 1) + (sub.wepPot || 0), sub.wepState);
-                    addEffect({ ...trait, val }, `${prefix} ${sWep.name} 특성${traitIdx}`, 1.0, true);
-                }
-            }
-        }
-
-        if (sub.equipSet) {
-            const set = DATA_SETS.find(s => s.id === sub.equipSet);
-            if (set && set.effect) {
-                let active = true;
-                if (set.effect.cond === 'arts_only' && subOpData.type !== 'arts') active = false;
-                if (set.effect.cond === 'phys_only' && subOpData.type !== 'phys') active = false;
-                if (active) addEffect(set.effect, `${prefix} 세트`, 1.0, true);
-            }
-        }
-
-        if (subOpData) {
-            if (subOpData.skill) subOpData.skill.forEach((s, i) => addEffect(s, `${prefix} ${skillNames[i] || `스킬${i + 1}`}`, 1.0, true));
-            if (subOpData.talents) subOpData.talents.forEach((t, i) => addEffect(t, `${prefix} 재능${i + 1}`, 1.0, true));
-            const subPot = Number(sub.pot) || 0;
-            for (let sp = 0; sp < subPot; sp++) {
-                if (subOpData.potential && subOpData.potential[sp]) addEffect(subOpData.potential[sp], `${prefix} 잠재${sp + 1}`, 1.0, true);
-            }
+        if (subOpData && subOpData.talents) {
+            subOpData.talents.forEach((t, ti) => addEffect(t, `${prefix} 재능${ti + 1}`, 1.0, true));
+            const sp = sub.pot;
+            if (subOpData.potential && subOpData.potential[sp]) addEffect(subOpData.potential[sp], `${prefix} 잠재${sp + 1}`, 1.0, true);
         }
     });
 
     // 5. 세트 효과
-    const activeNonStackTypes = new Set();
     const opsForSet = [
         { opData: opData, setId: getActiveSetID(state.mainOp.gears), name: opData.name },
         ...state.subOps.map((sub, idx) => {
@@ -273,8 +271,10 @@ function collectAllEffects(state, opData, wepData, stats, allEffects) {
 
         setEffects.forEach(eff => {
             if (eff.nonStack) {
-                if (activeNonStackTypes.has(eff.type)) return;
-                activeNonStackTypes.add(eff.type);
+                // 세트 ID와 효과 타입을 조합하여 고유 키 생성 (다른 세트간 중첩 허용)
+                const nonStackKey = `${entry.setId}_${eff.type}`;
+                if (activeNonStackTypes.has(nonStackKey)) return;
+                activeNonStackTypes.add(nonStackKey);
             }
             if (idx > 0 && !isSubOpTargetValid(eff)) return;
 
