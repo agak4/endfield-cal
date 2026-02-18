@@ -47,7 +47,7 @@ const DATA_GEAR = [
   { id: 'gear_45', name: '펄스식 방해 슈트', part: 'armor', set: 'set_pulse', stat1: 'int', val1: 87, val1_f: 113, stat2: 'wil', val2: 58, val2_f: 75, trait: { type: '오리지늄 아츠 강도', val: 20, val_f: 27 } },
   { id: 'gear_46', name: '본 크러셔 조각상 · I', part: 'kit', set: 'set_bone_crusher', stat1: 'wil', val1: 32, val1_f: 41, stat2: 'int', val2: 21, val2_f: 27, trait: { type: '연계 스킬 피해', val: 41.4, val_f: 53.8 } },
   { id: 'gear_47', name: '본 크러셔 조각상', part: 'kit', set: 'set_bone_crusher', stat1: 'wil', val1: 32, val1_f: 41, stat2: 'agi', val2: 21, val2_f: 27, trait: { type: '배틀 스킬 피해', val: 41.4, val_f: 53.8 } },
-  { id: 'gear_48', name: '본 크러셔 마스크 · I', part: 'kit', set: 'set_bone_crusher', stat1: 'wil', val1: 32, val1_f: 41, stat2: 'int', val2: 21, val2_f: 27, trait: { type: '치명타 확률', val: 10.4, val_f: 13.5 } },
+  { id: 'gear_48', name: '본 크러셔 마스크 · I', part: 'kit', set: 'set_bone_crusher', stat1: 'agi', val1: 32, val1_f: 41, stat2: 'str', val2: 21, val2_f: 27, trait: { type: '치명타 확률', val: 10.4, val_f: 13.5 } },
   { id: 'gear_49', name: '본 크러셔 마스크', part: 'kit', set: 'set_bone_crusher', stat1: 'agi', val1: 32, val1_f: 41, stat2: 'str', val2: 21, val2_f: 27, trait: { type: '불균형 목표에 주는 피해', val: 41.4, val_f: 53.8 } },
   { id: 'gear_50', name: '본 크러셔 머플러 · I', part: 'armor', set: 'set_bone_crusher', stat1: 'wil', val1: 87, val1_f: 113, stat2: 'agi', val2: 58, val2_f: 75, trait: { type: '궁극기 충전', val: 12.3, val_f: 16 } },
   { id: 'gear_51', name: '본 크러셔 머플러', part: 'armor', set: 'set_bone_crusher', stat1: 'wil', val1: 87, val1_f: 113, stat2: 'str', val2: 58, val2_f: 75, trait: { type: '연계 스킬 피해', val: 20.7, val_f: 26.9 } },

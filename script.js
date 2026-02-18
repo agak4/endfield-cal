@@ -218,17 +218,17 @@ function collectAllEffects(state, opData, wepData, stats, allEffects) {
             let val = calculateWeaponTraitValue(trait, finalLv, entry.state);
 
             // 무기 ID를 sourceId로 설정하여 nonStack 체크에 사용
-                        const eff = { ...trait, val, sourceId: entry.data.id };
-                        // uid의 고유성을 위해 라벨 뒤에 특성 인덱스 추가
-                        const uniqueLabel = `${label}_t${idx}`; 
-            
-                        if (trait.type === '스탯') {
-                            const targetStat = trait.stat === '주스탯' ? opData.mainStat : trait.stat === '부스탯' ? opData.subStat : trait.stat;
-                            const type = idx >= 2 ? '스탯%' : '스탯';
-                            addEffect({ ...eff, type, stat: targetStat }, uniqueLabel, 1.0, wIdx > 0);
-                        } else {
-                            addEffect(eff, uniqueLabel, 1.0, wIdx > 0);
-                        }
+            const eff = { ...trait, val, sourceId: entry.data.id };
+            // uid의 고유성을 위해 라벨 뒤에 특성 인덱스 추가
+            const uniqueLabel = `${label}_t${idx}`;
+
+            if (trait.type === '스탯') {
+                const targetStat = trait.stat === '주스탯' ? opData.mainStat : trait.stat === '부스탯' ? opData.subStat : trait.stat;
+                const type = idx >= 2 ? '스탯%' : '스탯';
+                addEffect({ ...eff, type, stat: targetStat }, uniqueLabel, 1.0, wIdx > 0);
+            } else {
+                addEffect(eff, uniqueLabel, 1.0, wIdx > 0);
+            }
         });
     });
 
@@ -247,11 +247,24 @@ function collectAllEffects(state, opData, wepData, stats, allEffects) {
         if (!sub.id) return;
         const subOpData = DATA_OPERATORS.find(o => o.id === sub.id);
         const prefix = subOpData ? subOpData.name : `서브${idx + 1}`;
-
         if (subOpData && subOpData.talents) {
+            // 스킬 시너지 수집 추가
+            if (subOpData.skill) {
+                subOpData.skill.forEach((s, i) => {
+                    const skillName = i === 0 ? '배틀스킬' : i === 1 ? '연계스킬' : '궁극기';
+                    addEffect(s, `${prefix} ${skillName}`, 1.0, true);
+                });
+            }
+
             subOpData.talents.forEach((t, ti) => addEffect(t, `${prefix} 재능${ti + 1}`, 1.0, true));
-            const sp = sub.pot;
-            if (subOpData.potential && subOpData.potential[sp]) addEffect(subOpData.potential[sp], `${prefix} 잠재${sp + 1}`, 1.0, true);
+
+            // 잠재 효과 누적 적용 (1잠재부터 선택 레벨까지)
+            const subPot = Number(sub.pot) || 0;
+            for (let sp = 0; sp < subPot; sp++) {
+                if (subOpData.potential && subOpData.potential[sp]) {
+                    addEffect(subOpData.potential[sp], `${prefix} 잠재${sp + 1}`, 1.0, true);
+                }
+            }
         }
     });
 
