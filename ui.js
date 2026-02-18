@@ -1105,9 +1105,8 @@ const AppTooltip = {
                 min = Math.min(...t.valByLevel);
                 max = Math.max(...t.valByLevel);
             } else {
-                // 기존 방식 (valBase ~ valMax)
-                min = t.valBase;
-                max = t.valMax;
+                min = 0;
+                max = 0;
             }
 
             if (t.type === '스탯') {

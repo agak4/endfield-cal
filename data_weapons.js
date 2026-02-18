@@ -1,6 +1,6 @@
 // Weapon Traits 구조:
 // traits[0]: type:'스탯' (스탯 증가)
-//   - stat: '주스탯' | '부스탯' | '힘' | '민첩' | '지능' | '의지'
+//   - stat: '주스탯' | '부스탯' | 'str' | 'agi' | 'int' | 'wil'
 //   - 예: { type: '스탯', stat: '주스탯', valBase: 30, valMax: 60 }
 //   - 예: { type: '스탯', stat: '부스탯', valBase: 25, valMax: 50 }
 //
@@ -77,7 +77,7 @@ const DATA_WEAPONS = [
     baseAtk: 490,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '의지', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
+      { type: '스탯', stat: 'wil', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
       { type: '공격력 증가', valByLevel: [5, 9, 13, 17, 21, 25, 29, 33, 39] },
       { type: '공격력 증가', valByLevel: [10, 12, 14, 16, 18, 20, 22, 24, 28] },
       { type: '공격력 증가', valByLevel: [5, 6, 7, 8, 9, 10, 11, 12, 14], target: '팀' }
@@ -105,7 +105,7 @@ const DATA_WEAPONS = [
     baseAtk: 500,
     rarity: 6,
     traits: [
-      { type: '스탯', stat: '의지', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
+      { type: '스탯', stat: 'wil', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
       { type: '공격력 증가', valByLevel: [5, 9, 13, 17, 21, 25, 29, 33, 39] },
       { type: '물리 피해', valByLevel: [16, 19.2, 22.4, 25.6, 28.8, 32, 35.2, 38.4, 44.8] },
       { type: '물리 피해', valByLevel: [5, 6, 7, 8, 9, 10, 11, 12, 14] },
@@ -120,7 +120,7 @@ const DATA_WEAPONS = [
     baseAtk: 500,
     rarity: 6,
     traits: [
-      { type: '스탯', stat: '민첩', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
+      { type: '스탯', stat: 'agi', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
       { type: '공격력 증가', valByLevel: [5, 9, 13, 17, 21, 25, 29, 33, 39] },
       { type: '오리지늄 아츠 강도', valByLevel: [30, 36, 42, 48, 54, 60, 66, 72, 84] },
       { type: '물리 피해', valByLevel: [36, 43.2, 50.4, 57.6, 64.8, 72, 79.2, 86.4, 100.8] }
@@ -134,7 +134,7 @@ const DATA_WEAPONS = [
     baseAtk: 510,
     rarity: 6,
     traits: [
-      { type: '스탯', stat: '지능', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
+      { type: '스탯', stat: 'int', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
       { type: '공격력 증가', valByLevel: [5, 9, 13, 17, 21, 25, 29, 33, 39] },
       { type: '열기 피해', valByLevel: [16, 19.2, 22.4, 25.6, 28.8, 32, 35.2, 38.4, 44.8] },
       { type: '아츠 피해', valByLevel: [75, 90, 105, 120, 135, 150, 165, 180, 210] },
@@ -148,7 +148,7 @@ const DATA_WEAPONS = [
     baseAtk: 490,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '지능', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
+      { type: '스탯', stat: 'int', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
       { type: '열기 피해', valByLevel: [5.56, 10, 14.44, 18.89, 23.33, 27.78, 32.22, 36.67, 43.33] },
       { type: '공격력 증가', valByLevel: [7, 8.4, 9.8, 11.2, 12.6, 14, 15.4, 16.8, 19.6] },
       { type: '열기 피해', valByLevel: [8, 9.6, 11.2, 12.8, 14.4, 16, 17.6, 19.2, 22.4] },
@@ -163,7 +163,7 @@ const DATA_WEAPONS = [
     baseAtk: 411,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '민첩', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
+      { type: '스탯', stat: 'agi', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '물리 피해', valByLevel: [4.4, 8, 11.6, 15.1, 18.7, 22.2, 25.8, 29.3, 34.7] },
       { type: '공격력 증가', valByLevel: [5, 6, 7, 8, 9, 10, 11, 12, 14] },
       { type: '공격력 증가', valByLevel: [7.5, 9, 10.5, 12, 13.5, 15, 16.5, 18, 21] }
@@ -177,7 +177,7 @@ const DATA_WEAPONS = [
     baseAtk: 411,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '민첩', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
+      { type: '스탯', stat: 'agi', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '물리 피해', valByLevel: [4.4, 8, 11.6, 15.1, 18.7, 22.2, 25.8, 29.3, 34.7] },
       { type: '궁극기 피해', valByLevel: [16, 19.2, 22.4, 25.6, 28.8, 32, 35.2, 38.4, 44.8] },
       { type: '물리 피해', valByLevel: [12, 14.4, 16.8, 19.2, 21.6, 24, 26.4, 28.8, 33.6] }
@@ -191,7 +191,7 @@ const DATA_WEAPONS = [
     baseAtk: 411,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '민첩', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
+      { type: '스탯', stat: 'agi', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '물리 피해', valByLevel: [4, 7.2, 10.4, 13.6, 16.8, 20, 23.2, 26.4, 31.2] },
       { type: '스탯', stat: '부스탯', valByLevel: [5, 6, 7, 8, 9, 10, 11, 12, 14] },
       { type: '열기 피해', valByLevel: [3, 3.6, 4.2, 4.8, 5.4, 6, 6.6, 7.2, 8.4], target: '팀' },
@@ -206,7 +206,7 @@ const DATA_WEAPONS = [
     baseAtk: 411,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '민첩', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
+      { type: '스탯', stat: 'agi', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '물리 피해', valByLevel: [4, 7.2, 10.4, 13.6, 16.8, 20, 23.2, 26.4, 31.2] },
       { type: '스탯', stat: '부스탯', valByLevel: [5, 6, 7, 8, 9, 10, 11, 12, 14] },
       { type: '공격력 증가', valByLevel: [7.5, 9, 10.5, 12, 13.5, 15, 16.5, 18, 21] }
@@ -220,7 +220,7 @@ const DATA_WEAPONS = [
     baseAtk: 411,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '힘', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
+      { type: '스탯', stat: 'str', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '궁극기 충전', valByLevel: [4.8, 8.6, 12.3, 16.2, 20, 23.8, 27.6, 31.4, 37.1] },
       { type: '공격력 증가', valByLevel: [5, 6, 7, 8, 9, 10, 11, 12, 14] },
       { type: '받는 냉기 피해', valByLevel: [8, 9.6, 11.2, 12.8, 14.4, 16, 17.6, 19.2, 22.4], target: '적' }
@@ -234,7 +234,7 @@ const DATA_WEAPONS = [
     baseAtk: 411,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '지능', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
+      { type: '스탯', stat: 'int', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '궁극기 충전', valByLevel: [4.8, 8.6, 12.3, 16.2, 20, 23.8, 27.6, 31.4, 37.1] },
       { type: '공격력 증가', valByLevel: [5, 6, 7, 8, 9, 10, 11, 12, 14] },
       { type: '오리지늄 아츠 강도', valByLevel: [25, 30, 35, 40, 45, 50, 55, 60, 70] }
@@ -250,7 +250,7 @@ const DATA_WEAPONS = [
     baseAtk: 490,
     rarity: 6,
     traits: [
-      { type: '스탯', stat: '힘', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
+      { type: '스탯', stat: 'str', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
       { type: '치명타 확률', valByLevel: [2.5, 4.5, 6.5, 8.5, 10.5, 12.5, 14.5, 16.5, 19.5] },
       { type: '공격력 증가', valByLevel: [10, 12, 14, 16, 18, 20, 22, 24, 28] }
     ]
@@ -263,7 +263,7 @@ const DATA_WEAPONS = [
     baseAtk: 495,
     rarity: 6,
     traits: [
-      { type: '스탯', stat: '의지', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
+      { type: '스탯', stat: 'wil', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
       { type: '최대 체력', valByLevel: [10, 18, 26, 34, 42, 50, 58, 66, 78] },
       { type: '치유 효율', valByLevel: [10, 12, 14, 16, 18, 20, 22, 24, 28] },
     ]
@@ -290,7 +290,7 @@ const DATA_WEAPONS = [
     baseAtk: 505,
     rarity: 6,
     traits: [
-      { type: '스탯', stat: '힘', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
+      { type: '스탯', stat: 'str', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
       { type: '공격력 증가', valByLevel: [5, 9, 13, 17, 21, 25, 29, 33, 39] },
       { type: '모든 스킬 피해', valByLevel: [20, 24, 28, 32, 36, 40, 44, 48, 56] },
       { type: '냉기 피해', valByLevel: [10, 12, 14, 16, 18, 20, 22, 24, 28] },
@@ -305,7 +305,7 @@ const DATA_WEAPONS = [
     baseAtk: 495,
     rarity: 6,
     traits: [
-      { type: '스탯', stat: '힘', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
+      { type: '스탯', stat: 'str', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
       { type: '최대 체력', valByLevel: [10, 18, 26, 34, 442, 50, 58, 66, 78] }
     ]
   },
@@ -317,7 +317,7 @@ const DATA_WEAPONS = [
     baseAtk: 411,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '힘', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
+      { type: '스탯', stat: 'str', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '최대 체력', valByLevel: [8, 14.4, 20.8, 27.2, 33.6, 40, 46.4, 52.8, 62.4] },
       { type: '스탯', stat: '부스탯', valByLevel: [5, 6, 7, 8, 9, 10, 11, 12, 14] }
     ]
@@ -330,7 +330,7 @@ const DATA_WEAPONS = [
     baseAtk: 411,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '힘', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
+      { type: '스탯', stat: 'str', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '최대 체력', valByLevel: [8, 14.4, 20.8, 27.2, 33.6, 40, 46.4, 52.8, 62.4] },
       { type: '스탯', stat: '부스탯', valByLevel: [5, 6, 7, 8, 9, 10, 11, 12, 14] },
       { type: '치유 효율', valByLevel: [20, 24, 28, 32, 36, 40, 44, 48, 56] }
@@ -344,7 +344,7 @@ const DATA_WEAPONS = [
     baseAtk: 411,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '힘', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
+      { type: '스탯', stat: 'str', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '오리지늄 아츠 강도', valByLevel: [8, 14, 20, 27, 33, 40, 46, 52, 62] },
       { type: '오리지늄 아츠 강도', valByLevel: [10, 12, 14, 16, 18, 20, 22, 24, 28] },
       { type: '물리 피해', valByLevel: [20, 24, 28, 32, 36, 40, 44, 48, 56] }
@@ -358,7 +358,7 @@ const DATA_WEAPONS = [
     baseAtk: 411,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '힘', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
+      { type: '스탯', stat: 'str', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '궁극기 충전', valByLevel: [4.8, 8.6, 12.3, 16.2, 20, 23.8, 27.6, 31.4, 37.1] },
       { type: '스탯', stat: '주스탯', valByLevel: [5, 6, 7, 8, 9, 10, 11, 12, 14] },
       { type: '공격력 증가', valByLevel: [6, 7.2, 8.4, 9.6, 10.8, 12, 13.2, 14.4, 16.8] }
@@ -389,7 +389,7 @@ const DATA_WEAPONS = [
     baseAtk: 495,
     rarity: 6,
     traits: [
-      { type: '스탯', stat: '민첩', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
+      { type: '스탯', stat: 'agi', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
       { type: '물리 피해', valByLevel: [5.56, 10, 14.44, 18.89, 23.33, 27.78, 32.22, 36.67, 43.33] },
       { type: '공격력 증가', valByLevel: [10, 12, 14, 16, 18, 20, 22, 24, 28] }
     ]
@@ -402,7 +402,7 @@ const DATA_WEAPONS = [
     baseAtk: 500,
     rarity: 6,
     traits: [
-      { type: '스탯', stat: '민첩', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
+      { type: '스탯', stat: 'agi', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
       { type: '물리 피해', valByLevel: [5.56, 10, 14.44, 18.89, 23.33, 27.78, 32.22, 36.67, 43.33] },
       { type: '주는 피해', valByLevel: [20, 24, 28, 32, 36, 40, 44, 48, 56] },
       { type: '모든 능력치', valByLevel: [8, 9.6, 11.2, 12.8, 14.4, 16, 17.6, 19.2, 22.4] },
@@ -417,7 +417,7 @@ const DATA_WEAPONS = [
     baseAtk: 411,
     rarity: 6,
     traits: [
-      { type: '스탯', stat: '의지', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
+      { type: '스탯', stat: 'wil', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '전기 피해', valByLevel: [4.4, 8, 11.6, 15.1, 18.7, 22.2, 25.8, 29.3, 34.7] },
       { type: '연계 스킬 피해', valByLevel: [10, 12, 14, 16, 18, 20, 22, 24, 28] },
       { type: '전기 피해', valByLevel: [10, 12, 14, 16, 18, 20, 22, 24, 28] }
@@ -431,7 +431,7 @@ const DATA_WEAPONS = [
     baseAtk: 411,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '의지', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
+      { type: '스탯', stat: 'wil', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '물리 피해', valByLevel: [4.4, 8, 11.6, 15.1, 18.7, 22.2, 25.8, 29.3, 34.7] },
       { type: '주는 피해', valByLevel: [8, 9.6, 11.2, 12.8, 14.4, 16, 17.6, 19.2, 22.4] },
       { type: '공격력 증가', valByLevel: [12, 14.4, 16.8, 19.2, 21.6, 24, 26.4, 28.8, 33.6] }
@@ -445,7 +445,7 @@ const DATA_WEAPONS = [
     baseAtk: 411,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '힘', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
+      { type: '스탯', stat: 'str', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '궁극기 충전', valByLevel: [4.8, 8.6, 12.3, 16.2, 20, 23.8, 27.6, 31.4, 37.1] },
       { type: '치명타 확률', valByLevel: [3, 3.6, 4.2, 4.8, 5.4, 6, 6.6, 7.2, 8.4] },
       { type: '공격력 증가', valByLevel: [15, 18, 21, 24, 27, 30, 33, 36, 42] }
@@ -490,7 +490,7 @@ const DATA_WEAPONS = [
     baseAtk: 505,
     rarity: 6,
     traits: [
-      { type: '스탯', stat: '지능', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
+      { type: '스탯', stat: 'int', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
       { type: '치명타 확률', valByLevel: [2.5, 4.5, 6.5, 8.5, 10.5, 12.5, 14.5, 16.5, 19.5] },
       { type: '냉기 피해', valByLevel: [16, 19.2, 22.4, 25.6, 28.8, 32, 35.2, 38.4, 44.8] },
       { type: '냉기 피해', valByLevel: [36, 43.2, 50.4, 57.6, 64.8, 72, 79.2, 86.4, 100.8] }
@@ -504,7 +504,7 @@ const DATA_WEAPONS = [
     baseAtk: 490,
     rarity: 6,
     traits: [
-      { type: '스탯', stat: '지능', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
+      { type: '스탯', stat: 'int', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
       { type: '냉기 피해', valByLevel: [5.56, 10, 14.44, 18.89, 23.33, 27.78, 32.22, 36.67, 43.33] },
       { type: '치명타 확률', valByLevel: [3.5, 4.2, 4.9, 5.6, 6.3, 7, 7.7, 8.4, 9.8] },
       { type: '받는 냉기 피해', valByLevel: [7, 8.4, 9.8, 11.2, 12.6, 14, 15.4, 16.8, 19.6], target: '적' },
@@ -520,7 +520,7 @@ const DATA_WEAPONS = [
     baseAtk: 411,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '힘', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
+      { type: '스탯', stat: 'str', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '열기 피해', valByLevel: [4.4, 8, 11.6, 15.1, 18.7, 22.2, 25.8, 29.3, 34.7] },
       { type: '배틀 스킬 피해', valByLevel: [10, 12, 14, 16, 18, 20, 22, 24, 28] },
       { type: '공격력 증가', valByLevel: [16, 19.2, 22.4, 25.6, 28.8, 32, 35.2, 38.4, 44.8] }
@@ -534,7 +534,7 @@ const DATA_WEAPONS = [
     baseAtk: 411,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '민첩', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
+      { type: '스탯', stat: 'agi', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '궁극기 충전', valByLevel: [4.8, 8.6, 12.3, 16.2, 20, 23.8, 27.6, 31.4, 37.1] },
       { type: '공격력 증가', valByLevel: [5, 6, 7, 8, 9, 10, 11, 12, 14] },
       { type: '자연 피해', valByLevel: [20, 24, 28, 32, 36, 40, 44, 48, 56] }
@@ -548,7 +548,7 @@ const DATA_WEAPONS = [
     baseAtk: 411,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '민첩', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
+      { type: '스탯', stat: 'agi', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '아츠 피해', valByLevel: [4.4, 8, 11.6, 15.1, 18.7, 22.2, 25.8, 29.3, 34.7] },
       { type: '치명타 확률', valByLevel: [3, 3.6, 4.2, 4.8, 5.4, 6, 6.6, 7.2, 8.4] },
       { type: '공격력 증가', valByLevel: [15, 18, 21, 24, 27, 30, 33, 36, 42] }
@@ -564,7 +564,7 @@ const DATA_WEAPONS = [
     baseAtk: 485,
     rarity: 6,
     traits: [
-      { type: '스탯', stat: '의지', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
+      { type: '스탯', stat: 'wil', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
       { type: '최대 체력', valByLevel: [10, 18, 26, 34, 442, 50, 58, 66, 78] },
       { type: '치유 효율', valByLevel: [10, 12, 14, 16, 18, 20, 22, 24, 28] },
       { type: '공격력 증가', valByLevel: [9, 10.8, 12.6, 14.4, 16.2, 18, 19.8, 21.6, 25.2], target: '팀' }
@@ -578,7 +578,7 @@ const DATA_WEAPONS = [
     baseAtk: 495,
     rarity: 6,
     traits: [
-      { type: '스탯', stat: '지능', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
+      { type: '스탯', stat: 'int', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
       { type: '아츠 피해', valByLevel: [5.56, 10, 14.44, 18.89, 23.33, 27.78, 32.22, 36.67, 43.33] },
       { type: '치명타 확률', valByLevel: [5, 6, 7, 8, 9, 10, 11, 12, 14] },
       { type: '아츠 피해', valByLevel: [24, 28.8, 33.6, 38.4, 43.2, 48, 52.8, 57.6, 67.2] },
@@ -607,7 +607,7 @@ const DATA_WEAPONS = [
     baseAtk: 495,
     rarity: 6,
     traits: [
-      { type: '스탯', stat: '지능', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
+      { type: '스탯', stat: 'int', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
       { type: '치유 효율', valByLevel: [6, 10.7, 15.5, 20.2, 25, 29.8, 34.5, 39.3, 46.4] },
       { type: '스탯', stat: '부스탯', valByLevel: [16, 19.2, 22.4, 25.6, 28.8, 32, 35.2, 38.4, 44.8] },
       { type: '받는 아츠 피해', valByLevel: [10, 12, 14, 16, 18, 20, 22, 24, 28], target: '적' }
@@ -621,7 +621,7 @@ const DATA_WEAPONS = [
     baseAtk: 500,
     rarity: 6,
     traits: [
-      { type: '스탯', stat: '의지', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
+      { type: '스탯', stat: 'wil', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
       { type: '궁극기 충전', valByLevel: [6, 11, 15, 20, 25, 30, 35, 39, 46] },
       { type: '자연 피해', valByLevel: [16, 19.2, 22.4, 25.6, 28.8, 32, 35.2, 38.4, 44.8] },
       { type: '아츠 피해', valByLevel: [10, 12, 14, 16, 18, 20, 22, 24, 28], target: '팀' },
@@ -636,7 +636,7 @@ const DATA_WEAPONS = [
     baseAtk: 485,
     rarity: 6,
     traits: [
-      { type: '스탯', stat: '의지', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
+      { type: '스탯', stat: 'wil', valByLevel: [20, 36, 52, 68, 84, 100, 116, 132, 156] },
       { type: '자연 피해', valByLevel: [5.56, 10, 14.44, 18.89, 23.33, 27.78, 32.22, 36.67, 43.33] },
       { type: '공격력 증가', valByLevel: [7, 8.4, 9.8, 11.2, 12.6, 14, 15.4, 16.8, 19.6] },
       { type: '아츠 피해', valByLevel: [5, 6, 7, 8, 9, 10, 11, 12, 14], target: '팀' },
@@ -651,7 +651,7 @@ const DATA_WEAPONS = [
     baseAtk: 411,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '지능', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
+      { type: '스탯', stat: 'int', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '오리지늄 아츠 강도', valByLevel: [8, 14, 20, 27, 33, 40, 46, 52, 62] },
       { type: '최대 체력', valByLevel: [10, 12, 14, 16, 18, 20, 22, 24, 28] },
       { type: '열기 피해', valByLevel: [8, 9.6, 11.2, 12.8, 14.4, 16, 17.6, 19.2, 22.4], target: '팀' },
@@ -666,7 +666,7 @@ const DATA_WEAPONS = [
     baseAtk: 411,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '의지', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
+      { type: '스탯', stat: 'wil', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '치유 효율', valByLevel: [4.8, 8.6, 12.4, 16.2, 20, 23.8, 27.6, 31.4, 37.1] },
       { type: '스탯', stat: '주스탯', valByLevel: [5, 6, 7, 8, 9, 10, 11, 12, 14] }
     ]
@@ -679,7 +679,7 @@ const DATA_WEAPONS = [
     baseAtk: 411,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '지능', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
+      { type: '스탯', stat: 'int', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '전기 피해', valByLevel: [4.4, 8, 11.6, 15.1, 18.7, 22.2, 25.8, 29.3, 34.7] },
       { type: '오리지늄 아츠 강도', valByLevel: [10, 12, 14, 16, 18, 20, 22, 24, 28] },
       { type: '전기 피해', valByLevel: [8, 9.6, 11.2, 12.8, 14.4, 16, 17.6, 19.2, 22.4], target: '팀' },
@@ -694,7 +694,7 @@ const DATA_WEAPONS = [
     baseAtk: 411,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '의지', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
+      { type: '스탯', stat: 'wil', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '궁극기 충전', valByLevel: [4.8, 8.6, 12.3, 16.2, 20, 23.8, 27.6, 31.4, 37.1] },
       { type: '스탯', stat: '주스탯', valByLevel: [5, 6, 7, 8, 9, 10, 11, 12, 14] },
       { type: '오리지늄 아츠 강도', valByLevel: [25, 30, 35, 40, 45, 50, 55, 60, 70] }
@@ -708,7 +708,7 @@ const DATA_WEAPONS = [
     baseAtk: 411,
     rarity: 5,
     traits: [
-      { type: '스탯', stat: '지능', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
+      { type: '스탯', stat: 'int', valByLevel: [16, 28, 41, 54, 67, 80, 92, 105, 124] },
       { type: '공격력 증가', valByLevel: [4, 7.2, 10.4, 13.6, 16.8, 20, 23.2, 26.4, 31.2] },
       { type: '최대 체력', valByLevel: [10, 12, 14, 16, 18, 20, 22, 24, 28] },
       { type: '공격력 증가', valByLevel: [8, 9.6, 11.2, 12.8, 14.4, 16, 17.6, 19.2, 22.4], target: '팀' }

@@ -5,7 +5,7 @@ let state = {
     mainOp: {
         id: null, pot: 0,
         wepId: null, wepPot: 0, wepState: false,
-        gearForge: false, 
+        gearForge: false,
         gears: [null, null, null, null],
         gearForged: [false, false, false, false]
     },
@@ -19,8 +19,7 @@ let state = {
 };
 
 const STAT_NAME_MAP = {
-    str: '힘', agi: '민첩', int: '지능', wil: '의지',
-    '힘': 'str', '민첩': 'agi', '지능': 'int', '의지': 'wil'
+    str: '힘', agi: '민첩', int: '지능', wil: '의지'
 };
 
 function getStatName(key) {
@@ -122,10 +121,10 @@ function collectAllEffects(state, opData, wepData, stats, allEffects) {
             const mult = state.mainOp.gearForged[i] ? 1.5 : 1.0;
             const s1 = STAT_NAME_MAP[gear.stat1];
             const s2 = STAT_NAME_MAP[gear.stat2];
-            
+
             if (s1 && stats[s1] !== undefined) stats[s1] += gear.val1 * mult;
             if (s2 && stats[s2] !== undefined) stats[s2] += gear.val2 * mult;
-            
+
             if (gear.trait) addEffect(gear.trait, gear.name, mult);
         }
     }
@@ -152,7 +151,7 @@ function collectAllEffects(state, opData, wepData, stats, allEffects) {
     const skillNames = ['배틀스킬', '연계스킬', '궁극기'];
     if (opData.skill) opData.skill.forEach((s, i) => addEffect(s, `${opData.name} ${skillNames[i] || `스킬${i + 1}`}`));
     if (opData.talents) opData.talents.forEach((t, i) => addEffect(t, `${opData.name} 재능${i + 1}`));
-    
+
     const mainPot = Number(state.mainOp.pot) || 0;
     for (let p = 0; p < mainPot; p++) {
         if (opData.potential && opData.potential[p]) addEffect(opData.potential[p], `${opData.name} 잠재${p + 1}`);
@@ -213,14 +212,14 @@ function collectAllEffects(state, opData, wepData, stats, allEffects) {
         if (!entry.setId || !entry.opData) return;
         const isSelf = (idx === 0);
         const setEffects = getSetEffects(entry.setId, entry.opData, isSelf);
-        
+
         setEffects.forEach(eff => {
             if (eff.nonStack) {
                 if (activeNonStackTypes.has(eff.type)) return;
                 activeNonStackTypes.add(eff.type);
             }
             if (idx > 0 && !isSubOpTargetValid(eff)) return;
-            
+
             const setName = DATA_SETS.find(s => s.id === entry.setId)?.name || entry.setId;
             allEffects.push({ ...eff, name: `${entry.name} ${setName} 세트효과` });
         });
@@ -235,8 +234,22 @@ function applyFixedStats(allEffects, stats) {
             if (target === '모든 능력치') {
                 ['str', 'agi', 'int', 'wil'].forEach(k => stats[k] += val);
             } else {
-                const sKey = STAT_NAME_MAP[target] || target;
-                if (stats[sKey] !== undefined) stats[sKey] += val;
+                // target이 'str'이면 'str', '힘'이면 'str'로 변환
+                const sKey = STAT_NAME_MAP[target] === undefined ? target : (STAT_NAME_MAP[target].match(/^[a-z]+$/) ? STAT_NAME_MAP[target] : target);
+                // 위 로직이 복잡하므로, 단순하게 처리:
+                // STAT_NAME_MAP은 {str:'힘', '힘':'str'} 형태임.
+                // target이 'str'이면 STAT_NAME_MAP['str']='힘'. stats['힘']은 undefined.
+                // target이 '힘'이면 STAT_NAME_MAP['힘']='str'. stats['str']은 존재.
+
+                let realKey = target;
+                if (stats[target] === undefined) {
+                    // target이 영어 키가 아님. 매핑 시도
+                    if (STAT_NAME_MAP[target] && stats[STAT_NAME_MAP[target]] !== undefined) {
+                        realKey = STAT_NAME_MAP[target];
+                    }
+                }
+
+                if (stats[realKey] !== undefined) stats[realKey] += val;
             }
         }
     });
@@ -251,8 +264,13 @@ function applyPercentStats(allEffects, stats) {
             if (target === '모든 능력치') {
                 ['str', 'agi', 'int', 'wil'].forEach(k => statPct[k] += val);
             } else {
-                const sKey = STAT_NAME_MAP[target] || target;
-                if (statPct[sKey] !== undefined) statPct[sKey] += val;
+                let realKey = target;
+                if (statPct[target] === undefined) {
+                    if (STAT_NAME_MAP[target] && statPct[STAT_NAME_MAP[target]] !== undefined) {
+                        realKey = STAT_NAME_MAP[target];
+                    }
+                }
+                if (statPct[realKey] !== undefined) statPct[realKey] += val;
             }
         }
     });
@@ -264,9 +282,9 @@ function applyPercentStats(allEffects, stats) {
 function computeFinalDamageOutput(state, opData, wepData, stats, allEffects) {
     let baseAtk = opData.baseAtk + wepData.baseAtk;
     let atkInc = 0, critRate = 5, critDmg = 50, dmgInc = 0, amp = 0, vuln = 0, takenDmg = 0, multiHit = 1.0, unbalanceDmg = 0, originiumArts = 0;
-    
+
     let logs = {
-        atk: [], atkBuffs: [], dmgInc: [], amp: [], vuln: [], 
+        atk: [], atkBuffs: [], dmgInc: [], amp: [], vuln: [],
         taken: [], unbal: [], multihit: [], crit: [], arts: []
     };
 
@@ -337,7 +355,7 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects) {
     let finalWithExtra = finalDmg;
     const swordsman = allEffects.find(e => e.setId === 'set_swordsman' && e.triggered);
     if (swordsman) {
-        const extraDmg = finalAtk * 2.5; 
+        const extraDmg = finalAtk * 2.5;
         finalWithExtra += extraDmg;
         logs.dmgInc.push(`[검술사 추가피해] +${Math.floor(extraDmg).toLocaleString()}`);
     }
@@ -366,11 +384,8 @@ function calculateWeaponTraitValue(trait, level, state) {
     if (trait.valByLevel && trait.valByLevel.length > 0) {
         return trait.valByLevel[Math.min(level - 1, trait.valByLevel.length - 1)];
     }
-    
-    // 기존 로직 유지 (하위 호환성)
-    if (trait.valStep !== undefined) return trait.valBase + (trait.valStep * (level - 1));
-    if (trait.valBase !== undefined && trait.valMax !== undefined) return trait.valBase + (trait.valMax - trait.valBase) * ((level - 1) / 8);
-    return state ? trait.valMax : (trait.valBase || trait.val || 0);
+
+    return 0;
 }
 
 function getValidWeapons(opId) {
