@@ -204,7 +204,7 @@ function renderGearSidebar(filterPart) {
 
             item.innerHTML = `
                 <div class="sidebar-item-img">
-                    <img src="images/gears/${gear.name}.webp" loading="lazy">
+                    <img src="images/gears/${gear.name}.webp">
                 </div>
                 <span class="sidebar-item-name">${gear.name}</span>
             `;
@@ -1244,12 +1244,14 @@ const AppTooltip = {
 
         wep.traits.forEach((t, i) => {
             // [내부 규칙] 단위(%) 표시 기준
-            // 1. traits[0]과 traits[1]은 기본 스탯(힘/민첩 등) 고정 수치이므로 무조건 단위 제외.
-            // 2. traits[2] 이상인 항목들 중 '확률/피해/충전/공격력/스탯/능력치' 포함 시에만 '%' 추가.
-            const isBaseStatIdx = (i < 2);
-            const isPercentType = !isBaseStatIdx && (
+            // 1. '오리지늄 아츠 강도'는 무조건 단위 제외.
+            // 2. '스탯' 타입 중 traits[0], traits[1]은 고정 수치이므로 단위 제외 (traits[2] 이상은 포함).
+            // 3. 그 외 백분율 관련 키워드 포함 시 '%' 추가.
+            const isExclusion = (t.type === '오리지늄 아츠 강도') || (t.type === '스탯' && i < 2);
+            const isPercentType = !isExclusion && (
                 t.type.includes('확률') || t.type.includes('피해') || t.type.includes('충전') ||
-                t.type.includes('공격력') || t.type.includes('스탯') || t.type.includes('능력치')
+                t.type.includes('공격력') || t.type.includes('능력치') || t.type.includes('효율') ||
+                t.type.includes('증폭') || t.type.includes('취약') || (t.type === '스탯' && i >= 2)
             );
             const unit = isPercentType ? '%' : '';
 
@@ -1353,6 +1355,7 @@ const AppTooltip = {
 };
 
 /** 이미지 프리로딩 */
+window._preloadedImages = [];
 function preloadAllImages() {
     const categories = {
         'operators': typeof DATA_OPERATORS !== 'undefined' ? DATA_OPERATORS : [],
@@ -1365,6 +1368,7 @@ function preloadAllImages() {
             if (item.name) {
                 const img = new Image();
                 img.src = `images/${folder}/${item.name}.webp`;
+                window._preloadedImages.push(img);
             }
         });
     });
