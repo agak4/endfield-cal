@@ -736,7 +736,7 @@ function renderResult(res) {
         'stat-sub-val': Math.floor(res.stats.subStatVal),
         'stat-crit': (res.stats.critExp * 100).toFixed(1) + '%',
         'val-crit-rate': res.stats.finalCritRate + '%',
-        'val-crit-dmg': res.stats.critDmg + 100 + '%',
+        'val-crit-dmg': res.stats.critDmg + '%',
         'stat-dmg-inc': res.stats.dmgInc.toFixed(1) + '%',
         'stat-amp': res.stats.amp.toFixed(1) + '%',
         'stat-vuln': res.stats.vuln.toFixed(1) + '%',
