@@ -132,7 +132,6 @@ h3::before {
 h4 {
     margin: 0 0 8px 0;
     font-size: 0.95rem;
-    color: var(--text-secondary);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;

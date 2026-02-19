@@ -176,7 +176,6 @@
 .modal-item .name {
     display: block;
     font-size: 0.80rem;
-    color: var(--text-secondary);
     font-weight: 500;
 }
 
@@ -508,7 +507,6 @@
 
 .sidebar-item-name {
     font-size: 0.7rem;
-    color: var(--text-secondary);
     text-align: center;
     line-height: 1.2;
     word-break: keep-all;
@@ -641,17 +639,12 @@
     justify-content: space-between;
 }
 
-.tooltip-stat-key {
-    color: var(--text-secondary);
-}
-
 .tooltip-stat-val {
     font-weight: 600;
 }
 
 .tooltip-desc {
     font-size: 0.85rem;
-    color: var(--text-secondary);
     line-height: 1.5;
     background: rgba(0, 0, 0, 0.2);
     padding: 10px;
