@@ -333,6 +333,53 @@
                     </div>
                     <span id="final-damage">0</span>
                 </div>
+                <!-- 스킬 사용 횟수 입력 타일 (이동됨) -->
+                <div class="result-box skill-count-tile">
+                    <h4>사이클 설정 <span class="skill-count-subtitle">(스킬 사용 횟수)</span></h4>
+                    <div class="skill-count-grid">
+                        <div class="skill-count-item">
+                            <label for="skill-count-일반공격">일반공격</label>
+                            <div class="skill-count-controls">
+                                <button class="skill-count-btn" onclick="adjustSkillCount('일반공격', -1)">−</button>
+                                <input type="number" id="skill-count-일반공격" class="skill-count-input" min="0" max="99"
+                                    value="0" onchange="onSkillCountChange('일반공격', this.value)"
+                                    oninput="onSkillCountChange('일반공격', this.value)">
+                                <button class="skill-count-btn" onclick="adjustSkillCount('일반공격', 1)">+</button>
+                            </div>
+                        </div>
+                        <div class="skill-count-item">
+                            <label for="skill-count-배틀스킬">배틀스킬</label>
+                            <div class="skill-count-controls">
+                                <button class="skill-count-btn" onclick="adjustSkillCount('배틀스킬', -1)">−</button>
+                                <input type="number" id="skill-count-배틀스킬" class="skill-count-input" min="0" max="99"
+                                    value="0" onchange="onSkillCountChange('배틀스킬', this.value)"
+                                    oninput="onSkillCountChange('배틀스킬', this.value)">
+                                <button class="skill-count-btn" onclick="adjustSkillCount('배틀스킬', 1)">+</button>
+                            </div>
+                        </div>
+                        <div class="skill-count-item">
+                            <label for="skill-count-연계스킬">연계스킬</label>
+                            <div class="skill-count-controls">
+                                <button class="skill-count-btn" onclick="adjustSkillCount('연계스킬', -1)">−</button>
+                                <input type="number" id="skill-count-연계스킬" class="skill-count-input" min="0" max="99"
+                                    value="0" onchange="onSkillCountChange('연계스킬', this.value)"
+                                    oninput="onSkillCountChange('연계스킬', this.value)">
+                                <button class="skill-count-btn" onclick="adjustSkillCount('연계스킬', 1)">+</button>
+                            </div>
+                        </div>
+                        <div class="skill-count-item">
+                            <label for="skill-count-궁극기">궁극기</label>
+                            <div class="skill-count-controls">
+                                <button class="skill-count-btn" onclick="adjustSkillCount('궁극기', -1)">−</button>
+                                <input type="number" id="skill-count-궁극기" class="skill-count-input" min="0" max="99"
+                                    value="0" onchange="onSkillCountChange('궁극기', this.value)"
+                                    oninput="onSkillCountChange('궁극기', this.value)">
+                                <button class="skill-count-btn" onclick="adjustSkillCount('궁극기', 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 사이클 계산값 (3) -->
                 <div class="result-box cycle-dmg-box">
                     <h3>사이클 계산값</h3>
@@ -510,51 +557,7 @@
             </div>
 
             <!-- 스킬 사용 횟수 입력 타일 -->
-            <div class="skill-count-tile">
-                <h4>사이클 설정 <span class="skill-count-subtitle">(스킬 사용 횟수)</span></h4>
-                <div class="skill-count-grid">
-                    <div class="skill-count-item">
-                        <label for="skill-count-일반공격">일반공격</label>
-                        <div class="skill-count-controls">
-                            <button class="skill-count-btn" onclick="adjustSkillCount('일반공격', -1)">−</button>
-                            <input type="number" id="skill-count-일반공격" class="skill-count-input" min="0" max="99"
-                                value="0" onchange="onSkillCountChange('일반공격', this.value)"
-                                oninput="onSkillCountChange('일반공격', this.value)">
-                            <button class="skill-count-btn" onclick="adjustSkillCount('일반공격', 1)">+</button>
-                        </div>
-                    </div>
-                    <div class="skill-count-item">
-                        <label for="skill-count-배틀스킬">배틀스킬</label>
-                        <div class="skill-count-controls">
-                            <button class="skill-count-btn" onclick="adjustSkillCount('배틀스킬', -1)">−</button>
-                            <input type="number" id="skill-count-배틀스킬" class="skill-count-input" min="0" max="99"
-                                value="0" onchange="onSkillCountChange('배틀스킬', this.value)"
-                                oninput="onSkillCountChange('배틀스킬', this.value)">
-                            <button class="skill-count-btn" onclick="adjustSkillCount('배틀스킬', 1)">+</button>
-                        </div>
-                    </div>
-                    <div class="skill-count-item">
-                        <label for="skill-count-연계스킬">연계스킬</label>
-                        <div class="skill-count-controls">
-                            <button class="skill-count-btn" onclick="adjustSkillCount('연계스킬', -1)">−</button>
-                            <input type="number" id="skill-count-연계스킬" class="skill-count-input" min="0" max="99"
-                                value="0" onchange="onSkillCountChange('연계스킬', this.value)"
-                                oninput="onSkillCountChange('연계스킬', this.value)">
-                            <button class="skill-count-btn" onclick="adjustSkillCount('연계스킬', 1)">+</button>
-                        </div>
-                    </div>
-                    <div class="skill-count-item">
-                        <label for="skill-count-궁극기">궁극기</label>
-                        <div class="skill-count-controls">
-                            <button class="skill-count-btn" onclick="adjustSkillCount('궁극기', -1)">−</button>
-                            <input type="number" id="skill-count-궁극기" class="skill-count-input" min="0" max="99"
-                                value="0" onchange="onSkillCountChange('궁극기', this.value)"
-                                oninput="onSkillCountChange('궁극기', this.value)">
-                            <button class="skill-count-btn" onclick="adjustSkillCount('궁극기', 1)">+</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
 
             <div class="dashboard-grid">
 
@@ -596,10 +599,19 @@
                     </div>
                     <ul id="list-crit" class="detail-list"></ul>
                 </div>
-                <div class="tile">
+                <!-- 주는 피해 (5분할 확장) -->
+                <div class="result-box dmg-inc-box" id="dmg-inc-box">
                     <h4>주는 피해</h4>
-                    <span id="stat-dmg-inc">0%</span>
-                    <ul id="list-dmg-inc" class="detail-list"></ul>
+                    <div class="tile-main-stat-row">
+                        <span id="dmg-inc-value">0%</span>
+                        <div id="dmg-inc-stats-container" class="tile-sub-stats"
+                            style="border:none; padding:0; margin-left: auto;">
+                            <!-- JS로 생성: sub-stat-item 5개 -->
+                        </div>
+                    </div>
+                    <div id="dmg-inc-list-container" class="dmg-inc-container">
+                        <!-- JS로 생성: 5개 컬럼 (리스트만 포함) -->
+                    </div>
                 </div>
                 <div class="tile">
                     <h4>증폭</h4>

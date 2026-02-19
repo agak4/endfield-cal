@@ -1,5 +1,16 @@
 /* ============ 결과 대시보드 ============ */
+/* ============ 최종/사이클 계산값 가로 배치 ============ */
+.result-area-row {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+    position: sticky;
+    top: 5px;
+    z-index: 100;
+}
+
 .total-dmg-box {
+    flex: 1;
     background: linear-gradient(135deg, #1e1e1e 0%, #121212 100%);
     border: 2px solid var(--accent);
     padding: 10px;
@@ -16,10 +27,9 @@
     align-items: center;
 }
 
-.total-dmg-box h3 {
-    position: relative;
-    z-index: 1;
-    margin: 0;
+.total-dmg-box h4 {
+    font-size: 0.8rem;
+    margin-bottom: 10px;
 }
 
 .total-dmg-header {
@@ -47,6 +57,143 @@
 .info-icon:hover {
     background: var(--accent);
     color: #000;
+}
+
+/* ============ 스킬 횟수 입력 타일 ============ */
+.skill-count-tile {
+    flex: 1;
+    background: linear-gradient(135deg, #1a1a1a 0%, #111 100%);
+    border: 1px solid rgba(0, 217, 255, 0.2);
+    padding: 14px 18px;
+    border-radius: 12px;
+}
+
+.skill-count-tile h4 {
+    margin: 0 0 12px;
+    font-size: 0.85rem;
+}
+
+.skill-count-subtitle {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.35);
+    font-weight: 400;
+}
+
+.skill-count-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.skill-count-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.skill-count-item label {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.skill-count-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.skill-count-btn {
+    width: 26px;
+    height: 100%;
+    border: 1px solid rgba(0, 217, 255, 0.3);
+    background: rgba(0, 0, 0, 0.4);
+    color: white;
+    border-radius: 6px;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.skill-count-input {
+    width: 42px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-primary);
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.9rem;
+    padding: 3px 2px;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.skill-count-input::-webkit-outer-spin-button,
+.skill-count-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.skill-count-input:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+/* ============ 사이클 데미지 UI 개편 (Flex Layout) ============ */
+.cycle-dmg-box {
+    flex: 1;
+    background: linear-gradient(135deg, #1a1a1a 0%, #111 100%);
+    border: 2px solid var(--accent);
+    padding: 10px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.cycle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    transition: background 0.15s;
+}
+
+.cycle-row:hover {
+    background: rgba(255, 180, 0, 0.07);
+}
+
+.cycle-label {
+    font-size: 0.8rem;
+}
+
+.cycle-val {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.cycle-total-row {
+    margin-top: 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: transparent;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+}
+
+.cycle-total-val {
+    font-size: 1.1rem;
+    color: var(--accent);
 }
 
 .formula-tooltip {
@@ -519,160 +666,10 @@
     display: none;
 }
 
-/* ============ 최종/사이클 계산값 가로 배치 ============ */
-.result-area-row {
-    display: flex;
-    gap: 12px;
-    align-items: stretch;
-    position: sticky;
-    top: 5px;
-    z-index: 100;
-}
-
-.total-dmg-box {
-    flex: 1;
-    overflow: visible;
-}
-
-.cycle-dmg-box {
-    flex: 3;
-    background: linear-gradient(135deg, #1a1a1a 0%, #111 100%);
-    border: 2px solid var(--accent);
-    padding: 10px;
-    border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
-
-.cycle-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 5px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.04);
-    transition: background 0.15s;
-}
-
-.cycle-row:hover {
-    background: rgba(255, 180, 0, 0.07);
-}
-
-.cycle-label {
-    font-size: 0.8rem;
-}
-
-.cycle-val {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    font-variant-numeric: tabular-nums;
-}
-
-.cycle-total-row {
-    margin-top: 4px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    background: transparent;
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 10px;
-}
-
-.cycle-total-val {
-    font-size: 1.1rem;
-    color: var(--accent);
-}
-
-/* ============ 스킬 횟수 입력 타일 ============ */
-.skill-count-tile {
-    background: linear-gradient(135deg, #1a1a1a 0%, #111 100%);
-    border: 1px solid rgba(0, 217, 255, 0.2);
-    padding: 14px 18px;
-    border-radius: 12px;
-}
-
-.skill-count-tile h4 {
-    margin: 0 0 12px;
-    font-size: 0.85rem;
-}
-
-.skill-count-subtitle {
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.35);
-    font-weight: 400;
-}
-
-.skill-count-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-}
-
-.skill-count-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-}
-
-.skill-count-item label {
-    font-size: 0.72rem;
-    color: var(--text-secondary);
-    text-align: center;
-}
-
-.skill-count-controls {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.skill-count-btn {
-    width: 26px;
-    height: 100%;
-    border: 1px solid rgba(0, 217, 255, 0.3);
-    background: rgba(0, 0, 0, 0.4);
-    color: white;
-    border-radius: 6px;
-    font-size: 1rem;
-    line-height: 1;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-}
-
-.skill-count-input {
-    width: 42px;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: var(--text-primary);
-    border-radius: 6px;
-    text-align: center;
-    font-size: 0.9rem;
-    padding: 3px 2px;
-    -moz-appearance: textfield;
-    appearance: textfield;
-}
-
-.skill-count-input::-webkit-outer-spin-button,
-.skill-count-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-.skill-count-input:focus {
-    border-color: var(--accent);
-    outline: none;
-}
-
 /* ============ 사이클 데미지 UI 개편 (Flex Layout) ============ */
 .cycle-dmg-list {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: 7px;
 }
 
@@ -691,9 +688,6 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: 8px;
-    margin-bottom: 8px;
 }
 
 .skill-name {
@@ -720,4 +714,72 @@
     font-size: 1.4rem;
     color: var(--accent);
     font-weight: 700;
+}
+
+/* 주는 피해 5분할 스타일 */
+.dmg-inc-box {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 18px;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 217, 255, 0.2);
+    transition: all var(--transition-speed) ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.dmg-inc-container {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+.dmg-inc-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.dmg-inc-column h4 {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin: 0 0 8px 0;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 5px;
+}
+
+/* 상단 통계와 하단 리스트 정렬 맞춤 */
+#dmg-inc-stats-container {
+    display: flex;
+    gap: 10px;
+    /* .dmg-inc-container와 동일한 gap */
+    flex: 1;
+    /* 남은 공간 차지 */
+}
+
+#dmg-inc-stats-container .sub-stat-item {
+    flex: 1;
+    /* 5개 항목 등분 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#dmg-inc-stats-container .sub-stat-item label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+}
+
+#dmg-inc-stats-container .sub-stat-item span {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent);
 }

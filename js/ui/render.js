@@ -74,7 +74,7 @@ function renderResult(res) {
     const logMapping = {
         'list-atk': res.logs.atk,
         'list-crit': res.logs.crit,
-        'list-dmg-inc': res.logs.dmgInc,
+        // 'list-dmg-inc': res.logs.dmgInc, // (제거: renderDmgInc 별도 처리)
         'list-amp': res.logs.amp,
         'list-vuln': res.logs.vuln,
         'list-taken': res.logs.taken,
@@ -90,9 +90,22 @@ function renderResult(res) {
 
     updateActiveSetUI();
 
-    // 사이클 계산
-    renderCycleDamage(calculateCycleDamage(state, res));
+    // 사이클 계산 및 주는 피해 5분할 렌더링
+    // (calc.js가 아니라 여기서 state.js의 calculateCycleDamage를 부르는 구조라면 import 확인 필요)
+    // 원래 코드: renderCycleDamage(calculateCycleDamage(state, res));
+    // calculateCycleDamage는 전역(calc.js)에 있는 것으로 추정
+    const cycleRes = typeof calculateCycleDamage === 'function' ? calculateCycleDamage(state, res) : null;
+
+    renderCycleDamage(cycleRes);
+    renderDmgInc(res, cycleRes);
 }
+
+/**
+ * 주는 피해 5분할을 렌더링한다.
+ * @param {object} res - calculateDamage 반환값
+ * @param {object|null} cycleRes - calculateCycleDamage 반환값
+ */
+
 
 /**
  * 활성 세트 배지를 업데이트한다.
@@ -199,55 +212,30 @@ function renderCycleDamage(cycleRes) {
         // 카드 헤더
         const header = document.createElement('div');
         header.className = 'skill-card-header';
-        header.innerHTML = `<span class="skill-name">${t}</span><span class="skill-dmg">${dmgVal.toLocaleString()}</span>`;
+        // 사용자 요청: 툴팁에 있던 dmgRate를 이름 오른쪽으로 이동
+        const rateText = data && data.dmgRate ? `<span class="skill-rate" style="color:var(--text-muted); margin-left:4px;">(${data.dmgRate})</span>` : '';
+        header.innerHTML = `<span class="skill-name">${t}${rateText}</span><span class="skill-dmg">${dmgVal.toLocaleString()}</span>`;
 
         // 툴팁 이벤트
         header.onmouseenter = (e) => {
+            // 사용자 요청: 툴팁의 dmg(dmgRate) 삭제
+            // tooltip-title에는 이름만 남김
             const content = `
-                <div class="tooltip-title">${t} <span>(${data.dmgRate})</span></div>
-                <div class="tooltip-desc">${data.desc || '설명 없음'}</div>
+                <div class="tooltip-title">${t}</div> 
+                <div class="tooltip-desc">${data && data.desc ? data.desc : '설명 없음'}</div>
             `;
-            AppTooltip.showCustom(content, e);
+            AppTooltip.showCustom(content, e, { width: '220px' });
         };
         header.onmouseleave = () => AppTooltip.hide();
 
         card.appendChild(header);
 
-        // 상세 로그 (타일 속의 타일)
+        // 상세 로그 제거됨
+        /*
         if (logs.length > 0) {
-            const ul = document.createElement('ul');
-            ul.className = 'skill-logs detail-list'; // detail-list 스타일 재사용
-
-            logs.forEach(log => {
-                const li = document.createElement('li');
-                li.innerText = log.txt;
-
-                // 클릭 비활성화 로직
-                const uid = log.uid;
-                if (uid) {
-                    li.dataset.uid = uid;
-                    const isProtected = PROTECTED_UIDS.includes(uid);
-
-                    if (!isProtected) {
-                        li.style.cursor = 'pointer';
-                        // 이미 비활성화된 효과는 취소선 클래스 적용
-                        if (state.disabledEffects?.includes(uid)) li.classList.add('disabled-effect');
-
-                        li.onclick = () => {
-                            if (!state.disabledEffects) state.disabledEffects = [];
-                            const idx = state.disabledEffects.indexOf(uid);
-                            if (idx > -1) state.disabledEffects.splice(idx, 1);
-                            else state.disabledEffects.push(uid);
-                            updateState(); // 재계산 및 렌더링
-                        };
-                    } else {
-                        li.style.cursor = 'default';
-                    }
-                }
-                ul.appendChild(li);
-            });
-            card.appendChild(ul);
+            // ... (제거) ...
         }
+        */
 
         list.appendChild(card);
     });
@@ -344,5 +332,149 @@ function renderWeaponComparison(currentDmg) {
                 requestAnimationFrame(() => { child.style.opacity = '1'; });
             }
         });
+    });
+}
+/**
+ * 주는 피해 세부 정보를 5개 컬럼으로 나누어 렌더링한다.
+ * @param {object} res - calculateDamage 결과
+ * @param {object} cycleRes - calculateCycleDamage 결과 (지분율 계산용)
+ */
+function renderDmgInc(res, cycleRes) {
+    const statsContainer = document.getElementById('dmg-inc-stats-container');
+    const listContainer = document.getElementById('dmg-inc-list-container');
+    const totalEl = document.getElementById('dmg-inc-value');
+
+    // 헤더 총 합계 표시
+    if (totalEl) {
+        const totalVal = res.stats.dmgIncData ? res.stats.dmgIncData.all : res.stats.dmgInc;
+        totalEl.innerText = (totalVal || 0).toFixed(1) + '%';
+    }
+
+    if (!statsContainer || !listContainer) return;
+
+    statsContainer.innerHTML = '';
+    listContainer.innerHTML = '';
+
+    const totalCycleDmg = cycleRes ? cycleRes.total : 0;
+
+    // 5개 카테고리 정의
+    const categories = [
+        { id: 'common', title: '공통', filter: (t) => t === 'all' },
+        { id: 'normal', title: '일반 공격', type: '일반공격' },
+        { id: 'battle', title: '배틀 스킬', type: '배틀스킬' },
+        { id: 'combo', title: '연계 스킬', type: '연계스킬' },
+        { id: 'ult', title: '궁극기', type: '궁극기' }
+    ];
+
+    // 로그 분류를 위한 임시 저장소
+    const catLogs = { common: [], normal: [], battle: [], combo: [], ult: [] };
+    const catSums = { common: 0, normal: 0, battle: 0, combo: 0, ult: 0 };
+
+    // 1. 로그 분류
+    (res.logs.dmgInc || []).forEach(log => {
+        // 정규식 개선: 부호와 숫자 사이, 숫자와 % 사이 공백 허용
+        const valMatch = log.txt.match(/([+-]?\s*\d+(\.\d+)?)\s*%/);
+        // 공백 제거 후 파싱
+        const val = valMatch ? parseFloat(valMatch[1].replace(/\s/g, '')) : 0;
+
+        const isDisabled = state.disabledEffects && state.disabledEffects.includes(log.uid);
+
+        // 태그 기반 분류
+        if (log.tag === 'all') {
+            if (log.txt.includes('스킬')) {
+                // 스킬 관련 공통 요소 -> 배틀, 연계, 궁극기에 복사
+                ['battle', 'combo', 'ult'].forEach(k => {
+                    catLogs[k].push({ ...log, txt: `(공통) ${log.txt}` });
+                    if (!isDisabled) catSums[k] += val;
+                });
+            } else {
+                // 순수 공통
+                catLogs.common.push(log);
+                if (!isDisabled) catSums.common += val;
+            }
+        } else if (log.tag === 'normal') {
+            catLogs.normal.push(log);
+            if (!isDisabled) catSums.normal += val;
+        } else if (log.tag === 'skill' || log.tag === 'skillMult') {
+            if (log.skillType) {
+                const key = categories.find(c => c.type === log.skillType)?.id;
+                if (key) {
+                    catLogs[key].push(log);
+                    if (!isDisabled) catSums[key] += val;
+                }
+            } else {
+                ['battle', 'combo', 'ult'].forEach(k => {
+                    catLogs[k].push(log);
+                    if (!isDisabled) catSums[k] += val;
+                });
+            }
+        } else {
+            const key = Object.keys(catLogs).find(k => k === log.tag);
+            if (key) {
+                catLogs[key].push(log);
+                if (!isDisabled) catSums[key] += val;
+            }
+        }
+    });
+
+    const PROTECTED_UIDS = ['base_op_atk', 'base_wep_atk', 'stat_bonus_atk', 'unbalance_base'];
+
+    categories.forEach(cat => {
+        // 1. 상단 통계 (Flex Item)
+        const statItem = document.createElement('div');
+        statItem.className = 'sub-stat-item';
+
+        if (cat.id === 'common') {
+            // "공통" 칸 -> 기존 "총 합계" 요소(totalEl)를 여기로 이동
+            // 기존 label("공통") 대신 "총 합계"라고 명시하거나, totalEl 자체만 보여줌
+            statItem.innerHTML = `<label>총 합계</label>`;
+            if (totalEl) {
+                // totalEl 스타일 조정 (필요시)
+                totalEl.style.fontSize = '1.1rem';
+                totalEl.style.color = 'var(--accent)';
+                statItem.appendChild(totalEl);
+            }
+        } else {
+            // 나머지 칸 -> 해당 카테고리 합계 표시
+            statItem.innerHTML = `
+                <label>${cat.title}</label>
+                <span>${catSums[cat.id].toFixed(1)}%</span>
+            `;
+        }
+        statsContainer.appendChild(statItem);
+
+        // 2. 하단 리스트 (Column)
+        const col = document.createElement('div');
+        col.className = 'dmg-inc-column';
+
+        const ul = document.createElement('ul');
+        ul.className = 'detail-list';
+
+        catLogs[cat.id].forEach(log => {
+            const li = document.createElement('li');
+            li.innerText = log.txt;
+
+            if (log.uid) {
+                li.dataset.uid = log.uid;
+                const isProtected = PROTECTED_UIDS.includes(log.uid);
+                if (!isProtected) {
+                    li.style.cursor = 'pointer';
+                    if (state.disabledEffects?.includes(log.uid)) li.classList.add('disabled-effect');
+                    li.onclick = () => {
+                        if (!state.disabledEffects) state.disabledEffects = [];
+                        const idx = state.disabledEffects.indexOf(log.uid);
+                        if (idx > -1) state.disabledEffects.splice(idx, 1);
+                        else state.disabledEffects.push(log.uid);
+                        updateState();
+                    };
+                } else {
+                    li.style.cursor = 'default';
+                }
+            }
+            ul.appendChild(li);
+        });
+
+        col.appendChild(ul);
+        listContainer.appendChild(col);
     });
 }
