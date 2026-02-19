@@ -192,7 +192,7 @@
 
 .detail-list li:hover {
     background: rgba(255, 255, 255, 0.05);
-    padding-left: 5px;
+    padding-left: 3px;
 }
 
 .detail-list li.disabled-effect {
@@ -211,7 +211,6 @@
     content: '▸ ';
     color: var(--accent);
     opacity: 0.8;
-    margin-right: 6px;
     font-size: 0.7rem;
 }
 
@@ -716,17 +715,7 @@
     font-size: 0.75rem;
 }
 
-.skill-logs li {
-    color: var(--text-muted);
-    margin-bottom: 4px;
-    line-height: 1.3;
-    padding-left: 8px;
-    border-left: 2px solid rgba(255, 255, 255, 0.1);
-}
-
 /* 총합 행 스타일 조정 */
-.cycle-total-row {}
-
 .cycle-total-val {
     font-size: 1.4rem;
     color: var(--accent);

@@ -98,8 +98,20 @@ const AppTooltip = {
         else if (type === 'gear') content = this.renderGear(data, forged);
         this.el.innerHTML = content;
         this.el.style.display = 'block';
-        this.position(event);
+        if (event) this.position(event);
     },
+
+    /**
+     * 커스텀 콘텐츠를 툴팁으로 표시한다.
+     * @param {string} content - HTML 콘텐츠
+     * @param {MouseEvent} event - 마우스 이벤트
+     */
+    showCustom(content, event) {
+        this.el.innerHTML = content;
+        this.el.style.display = 'block';
+        if (event) this.position(event);
+    },
+
 
     /** 툴팁을 숨긴다. */
     hide() { if (this.el) this.el.style.display = 'none'; },

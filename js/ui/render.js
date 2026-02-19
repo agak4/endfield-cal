@@ -200,6 +200,17 @@ function renderCycleDamage(cycleRes) {
         const header = document.createElement('div');
         header.className = 'skill-card-header';
         header.innerHTML = `<span class="skill-name">${t}</span><span class="skill-dmg">${dmgVal.toLocaleString()}</span>`;
+
+        // 툴팁 이벤트
+        header.onmouseenter = (e) => {
+            const content = `
+                <div class="tooltip-title">${t} <span>(${data.dmgRate})</span></div>
+                <div class="tooltip-desc">${data.desc || '설명 없음'}</div>
+            `;
+            AppTooltip.showCustom(content, e);
+        };
+        header.onmouseleave = () => AppTooltip.hide();
+
         card.appendChild(header);
 
         // 상세 로그 (타일 속의 타일)

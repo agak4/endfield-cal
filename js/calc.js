@@ -733,7 +733,12 @@ function calculateCycleDamage(currentState, baseRes) {
             return false;
         });
 
-        perSkill[type] = { dmg: skillTotal, logs: myLogs };
+        perSkill[type] = {
+            dmg: skillTotal,
+            logs: myLogs,
+            dmgRate: Math.round(adjDmgMult * 100) + '%',
+            desc: skillDef.desc
+        };
     });
 
     return { perSkill, total };
