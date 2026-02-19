@@ -81,8 +81,10 @@
 
 .skill-count-grid {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    justify-content: space-around;
     gap: 10px;
+    flex-wrap: wrap;
 }
 
 .skill-count-item {
@@ -106,7 +108,8 @@
 
 .skill-count-btn {
     width: 26px;
-    height: 100%;
+    height: 32px;
+    /* 고정 높이 지정 */
     border: 1px solid rgba(0, 217, 255, 0.3);
     background: rgba(0, 0, 0, 0.4);
     color: white;
@@ -707,6 +710,14 @@
     padding: 0;
     margin: 0;
     font-size: 0.75rem;
+}
+
+.skill-dmg-share {
+    min-width: 45px;
+    text-align: right;
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: var(--text-muted);
 }
 
 /* 총합 행 스타일 조정 */

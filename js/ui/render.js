@@ -206,8 +206,34 @@ function renderCycleDamage(cycleRes) {
         const dmgVal = data ? data.dmg : 0;
         const logs = data ? data.logs : [];
 
+        // 통합 행 (Row)
+        const row = document.createElement('div');
+        row.className = 'cycle-dmg-row';
+        // flex 스타일은 dashboard.css에서 정의하거나 인라인으로 간단히 적용
+        row.style.display = 'flex';
+        row.style.alignItems = 'center';
+        row.style.gap = '8px';
+
+        // 1. 스킬 컨트롤 (왼쪽)
+        const controlDiv = document.createElement('div');
+        controlDiv.className = 'skill-count-item-mini';
+        const currentCount = state.skillCounts ? (state.skillCounts[t] || 0) : 0;
+
+        // HTML 문자열로 컨트롤 생성 (기존 skill-count-item 구조 축소)
+        controlDiv.innerHTML = `
+            <div class="skill-count-controls">
+                <button class="skill-count-btn" onclick="adjustSkillCount('${t}', -1)">−</button>
+                <input type="number" class="skill-count-input" min="0" max="99"
+                    value="${currentCount}" onchange="onSkillCountChange('${t}', this.value)"
+                    oninput="onSkillCountChange('${t}', this.value)">
+                <button class="skill-count-btn" onclick="adjustSkillCount('${t}', 1)">+</button>
+            </div>
+        `;
+
+        // 2. 스킬 카드 (가운데) -> flex: 1
         const card = document.createElement('div');
         card.className = 'skill-card';
+        card.style.flex = '1';
 
         // 카드 헤더
         const header = document.createElement('div');
@@ -230,14 +256,19 @@ function renderCycleDamage(cycleRes) {
 
         card.appendChild(header);
 
-        // 상세 로그 제거됨
-        /*
-        if (logs.length > 0) {
-            // ... (제거) ...
-        }
-        */
+        // 3. 지분율 표시 (오른쪽)
+        const shareDiv = document.createElement('div');
+        shareDiv.className = 'skill-dmg-share';
+        const total = cycleRes.total || 0;
+        const share = total > 0 ? (dmgVal / total * 100) : 0;
+        shareDiv.innerText = share.toFixed(1) + '%';
 
-        list.appendChild(card);
+        // Row에 추가
+        row.appendChild(controlDiv);
+        row.appendChild(card);
+        row.appendChild(shareDiv); // 지분율 추가
+
+        list.appendChild(row);
     });
 }
 
