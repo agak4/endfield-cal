@@ -66,7 +66,9 @@ let state = {
         artsAttach: { type: null, stacks: 0 }, // 한 종류만 가능
         artsAbnormal: { '연소': 0, '감전': 0, '동결': 0, '부식': 0 }
     },
-    skillSequence: [] // 일반공격, 배틀스킬, 연계스킬, 궁극기를 보관하는 문자열 배열
+    cycleMode: 'batch',    // 'batch' (일괄) | 'individual' (개별)
+    selectedSeqId: null,   // 개별 설정 모드에서 현재 선택된 사이클 아이템의 id를 보관
+    skillSequence: []      // { id: 'seq_...', type: '일반공격', customState: null | {...} } 객체 배열
 };
 
 // ============ 공통 상수 ============
@@ -129,7 +131,10 @@ function updateState() {
         if (content) state.subOpsCollapsed[i] = content.classList.contains('collapsed');
     }
 
-    state.enemyUnbalanced = document.getElementById('enemy-unbalanced')?.checked || false;
+    const unbalancedCb = document.getElementById('enemy-unbalanced');
+    if (unbalancedCb) {
+        getTargetState().setUnbalanced(unbalancedCb.checked);
+    }
 
     // 계산 → 렌더링
     const result = calculateDamage(state);
@@ -159,6 +164,44 @@ function updateState() {
             equipSet: state.subOps[i].equipSet
         });
     }
+}
+
+// ============ 상태 접점 헬퍼 (일괄 vs 개별) ============
+
+/**
+ * 개별/일괄 모드에 따라 현재 접근해야 할 상태(효과, 디버프, 적 상태)를 반환한다.
+ */
+function ensureCustomState() {
+    if (state.cycleMode === 'individual' && state.selectedSeqId) {
+        const item = state.skillSequence.find(s => s.id === state.selectedSeqId);
+        if (item && !item.customState) {
+            item.customState = {
+                disabledEffects: [...state.disabledEffects],
+                debuffState: JSON.parse(JSON.stringify(state.debuffState)),
+                enemyUnbalanced: state.enemyUnbalanced
+            };
+        }
+    }
+}
+
+function getTargetState() {
+    if (state.cycleMode === 'individual' && state.selectedSeqId) {
+        const item = state.skillSequence.find(s => s.id === state.selectedSeqId);
+        if (item && item.customState) {
+            return {
+                disabledEffects: item.customState.disabledEffects,
+                debuffState: item.customState.debuffState,
+                isUnbalanced: () => item.customState.enemyUnbalanced,
+                setUnbalanced: (val) => { item.customState.enemyUnbalanced = val; }
+            };
+        }
+    }
+    return {
+        disabledEffects: state.disabledEffects,
+        debuffState: state.debuffState,
+        isUnbalanced: () => state.enemyUnbalanced,
+        setUnbalanced: (val) => { state.enemyUnbalanced = val; }
+    };
 }
 
 // ============ 저장 / 로드 ============
@@ -270,13 +313,21 @@ function loadState() {
                 ['일반공격', '배틀스킬', '연계스킬', '궁극기'].forEach(type => {
                     const c = counts[type] || 0;
                     for (let n = 0; n < c; n++) {
-                        seq.push(type);
+                        seq.push({ id: 'seq_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5) + '_' + n, type, customState: null });
                     }
                 });
                 state.skillSequence = seq;
                 delete state.skillCounts;
             } else if (!state.skillSequence) {
                 state.skillSequence = [];
+            } else {
+                // 기존 문자열 배열 마이그레이션
+                state.skillSequence = state.skillSequence.map((item, idx) => {
+                    if (typeof item === 'string') {
+                        return { id: 'seq_mig_' + Date.now() + '_' + idx, type: item, customState: null };
+                    }
+                    return item;
+                });
             }
 
             return true;

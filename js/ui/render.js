@@ -36,24 +36,36 @@ function renderResult(res) {
         return;
     }
 
-    // 수치 → DOM 요소 ID 매핑
+    // 1. Calculate global cycle sums first
+    const cycleRes = typeof calculateCycleDamage === 'function' ? calculateCycleDamage(state, res) : null;
+
+    // 2. Identify if we are viewing an individual custom item and extract its calculation results
+    let displayRes = res;
+    if (state.cycleMode === 'individual' && state.selectedSeqId && cycleRes && cycleRes.sequence) {
+        const item = cycleRes.sequence.find(s => s.id === state.selectedSeqId);
+        if (item && item.cRes) {
+            displayRes = item.cRes;
+        }
+    }
+
+    // 3. Render all UI values using the displayRes (either global or isolated custom state)
     const mapping = {
-        'final-damage': Math.floor(res.finalDmg).toLocaleString(),
-        'stat-atk': Math.floor(res.stats.finalAtk).toLocaleString(),
-        'stat-atk-inc': res.stats.atkInc.toFixed(1) + '%',
-        'stat-main-val': Math.floor(res.stats.mainStatVal),
-        'stat-sub-val': Math.floor(res.stats.subStatVal),
-        'stat-crit': (res.stats.critExp * 100).toFixed(1) + '%',
-        'val-crit-rate': res.stats.finalCritRate + '%',
-        'val-crit-dmg': res.stats.critDmg + '%',
-        'stat-dmg-inc': res.stats.dmgInc.toFixed(1) + '%',
-        'stat-amp': res.stats.amp.toFixed(1) + '%',
-        'stat-vuln': res.stats.vuln.toFixed(1) + '%',
-        'stat-taken': res.stats.takenDmg.toFixed(1) + '%',
-        'stat-unbal': res.stats.unbalanceDmg.toFixed(1) + '%',
-        'stat-arts': res.stats.originiumArts.toFixed(1),
-        'stat-res': (res.stats.resistance ?? 0).toFixed(0),
-        'stat-res-mult': (((res.stats.resMult ?? 1) - 1) * 100).toFixed(1) + '%'
+        'final-damage': Math.floor(displayRes.finalDmg).toLocaleString(),
+        'stat-atk': Math.floor(displayRes.stats.finalAtk).toLocaleString(),
+        'stat-atk-inc': displayRes.stats.atkInc.toFixed(1) + '%',
+        'stat-main-val': Math.floor(displayRes.stats.mainStatVal),
+        'stat-sub-val': Math.floor(displayRes.stats.subStatVal),
+        'stat-crit': (displayRes.stats.critExp * 100).toFixed(1) + '%',
+        'val-crit-rate': displayRes.stats.finalCritRate + '%',
+        'val-crit-dmg': displayRes.stats.critDmg + '%',
+        'stat-dmg-inc': displayRes.stats.dmgInc.toFixed(1) + '%',
+        'stat-amp': displayRes.stats.amp.toFixed(1) + '%',
+        'stat-vuln': displayRes.stats.vuln.toFixed(1) + '%',
+        'stat-taken': displayRes.stats.takenDmg.toFixed(1) + '%',
+        'stat-unbal': displayRes.stats.unbalanceDmg.toFixed(1) + '%',
+        'stat-arts': displayRes.stats.originiumArts.toFixed(1),
+        'stat-res': (displayRes.stats.resistance ?? 0).toFixed(0),
+        'stat-res-mult': (((displayRes.stats.resMult ?? 1) - 1) * 100).toFixed(1) + '%'
     };
 
     for (const [id, val] of Object.entries(mapping)) {
@@ -63,25 +75,24 @@ function renderResult(res) {
 
     // 스탯 레이블 (오퍼레이터마다 주/부스탯 이름이 다름)
     const mainLabel = document.getElementById('label-main-stat');
-    if (mainLabel) mainLabel.innerText = res.stats.mainStatName;
+    if (mainLabel) mainLabel.innerText = displayRes.stats.mainStatName;
     const subLabel = document.getElementById('label-sub-stat');
-    if (subLabel) subLabel.innerText = res.stats.subStatName;
+    if (subLabel) subLabel.innerText = displayRes.stats.subStatName;
 
     const multihitSpan = document.getElementById('stat-multihit');
-    if (multihitSpan) multihitSpan.innerText = res.logs.multihit.length > 0 ? 'ON' : 'OFF';
+    if (multihitSpan) multihitSpan.innerText = displayRes.logs.multihit.length > 0 ? 'ON' : 'OFF';
 
-    // 로그 리스트 ID → 로그 배열 매핑
+    // 로그 목록 업데이트
     const logMapping = {
-        'list-atk': res.logs.atk,
-        'list-crit': res.logs.crit,
-        // 'list-dmg-inc': res.logs.dmgInc, // (제거: renderDmgInc 별도 처리)
-        'list-amp': res.logs.amp,
-        'list-vuln': res.logs.vuln,
-        'list-taken': res.logs.taken,
-        'list-unbal': res.logs.unbal,
-        'list-multihit': res.logs.multihit,
-        'list-arts': res.logs.arts,
-        'list-res': res.logs.res
+        'list-atk': displayRes.logs.atk,
+        'list-crit': displayRes.logs.crit,
+        'list-amp': displayRes.logs.amp,
+        'list-vuln': displayRes.logs.vuln,
+        'list-taken': displayRes.logs.taken,
+        'list-unbal': displayRes.logs.unbal,
+        'list-multihit': displayRes.logs.multihit,
+        'list-arts': displayRes.logs.arts,
+        'list-res': displayRes.logs.res
     };
 
     for (const [id, list] of Object.entries(logMapping)) {
@@ -90,14 +101,11 @@ function renderResult(res) {
 
     updateActiveSetUI();
 
-    // 사이클 계산 및 주는 피해 5분할 렌더링
-    // (calc.js가 아니라 여기서 state.js의 calculateCycleDamage를 부르는 구조라면 import 확인 필요)
-    // 원래 코드: renderCycleDamage(calculateCycleDamage(state, res));
-    // calculateCycleDamage는 전역(calc.js)에 있는 것으로 추정
-    const cycleRes = typeof calculateCycleDamage === 'function' ? calculateCycleDamage(state, res) : null;
-
+    // 사이클 카드들 렌더링은 전역 결과 cycleRes
     renderCycleDamage(cycleRes);
-    renderDmgInc(res, cycleRes);
+
+    // 이펙트 다이얼리스트는 개별 설정 결과
+    renderDmgInc(displayRes, cycleRes);
 }
 
 /**
@@ -166,13 +174,17 @@ function renderLog(id, list) {
             const isProtected = PROTECTED_UIDS.includes(uid);
             if (!isProtected) {
                 li.style.cursor = 'pointer';
+                const targetState = getTargetState();
+
                 // 이미 비활성화된 효과는 취소선 클래스 적용
-                if (state.disabledEffects?.includes(uid)) li.classList.add('disabled-effect');
+                if (targetState.disabledEffects?.includes(uid)) li.classList.add('disabled-effect');
                 li.onclick = () => {
-                    if (!state.disabledEffects) state.disabledEffects = [];
-                    const idx = state.disabledEffects.indexOf(uid);
-                    if (idx > -1) state.disabledEffects.splice(idx, 1);
-                    else state.disabledEffects.push(uid);
+                    ensureCustomState();
+                    const ts = getTargetState();
+                    if (!ts.disabledEffects) ts.disabledEffects = [];
+                    const idx = ts.disabledEffects.indexOf(uid);
+                    if (idx > -1) ts.disabledEffects.splice(idx, 1);
+                    else ts.disabledEffects.push(uid);
                     updateState();
                 };
             } else {
@@ -199,12 +211,24 @@ function renderCycleSequence(cycleRes) {
 
     const sequence = cycleRes.sequence || [];
     sequence.forEach((item, index) => {
-        const { type, desc } = item;
+        const { type, desc, customState, id, indivDmg, indivRate } = item;
 
         const cardContainer = document.createElement('div');
         cardContainer.className = 'cycle-sequence-item';
+        if (customState) cardContainer.classList.add('seq-is-custom');
+        if (state.selectedSeqId === id) cardContainer.classList.add('seq-selected');
+
         cardContainer.draggable = true;
         cardContainer.dataset.index = index;
+
+        // 클릭 시 개별 설정 모드라면 선택
+        cardContainer.onclick = (e) => {
+            if (state.cycleMode === 'individual') {
+                state.selectedSeqId = id;
+                updateUIStateVisuals();
+                updateState();
+            }
+        };
 
         const svgMap = {
             '일반공격': '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M14 2L20 8V20C20 21.1 19.1 22 18 22H6C4.9 22 4 21.1 4 20V4C4 2.9 4.9 2 6 2H14ZM13 9V3.5L18.5 9H13Z"/></svg>',
@@ -237,10 +261,21 @@ function renderCycleSequence(cycleRes) {
         cardContainer.appendChild(delBtn);
 
         cardContainer.onmouseenter = (e) => {
-            const content = `
-                <div class="tooltip-title">${type}</div> 
-                <div class="tooltip-desc">${desc ? desc : '설명 없음'}</div>
-            `;
+            let content;
+            if (customState && indivDmg !== undefined) {
+                content = `
+                    <div class="tooltip-title" style="color:var(--accent)">개별 설정 적용됨</div>
+                    <div class="tooltip-desc">
+                        1회 데미지: <strong style="color:var(--accent)">${Math.floor(indivDmg).toLocaleString()}</strong><br>
+                        데미지 배율: <strong>${Math.floor(indivRate * 100)}%</strong>
+                    </div>
+                `;
+            } else {
+                content = `
+                    <div class="tooltip-title">${type}</div> 
+                    <div class="tooltip-desc">${desc ? desc : '설명 없음'}</div>
+                `;
+            }
             AppTooltip.showCustom(content, e, { width: '220px' });
         };
         cardContainer.onmouseleave = () => AppTooltip.hide();
@@ -474,7 +509,8 @@ function renderDmgInc(res, cycleRes) {
         // 공백 제거 후 파싱
         const val = valMatch ? parseFloat(valMatch[1].replace(/\s/g, '')) : 0;
 
-        const isDisabled = state.disabledEffects && state.disabledEffects.includes(log.uid);
+        const targetState = getTargetState();
+        const isDisabled = targetState.disabledEffects && targetState.disabledEffects.includes(log.uid);
 
         // 태그 기반 분류
         if (log.tag === 'all') {
@@ -556,12 +592,16 @@ function renderDmgInc(res, cycleRes) {
                 const isProtected = PROTECTED_UIDS.includes(log.uid);
                 if (!isProtected) {
                     li.style.cursor = 'pointer';
-                    if (state.disabledEffects?.includes(log.uid)) li.classList.add('disabled-effect');
+                    const targetState = getTargetState();
+                    if (targetState.disabledEffects?.includes(log.uid)) li.classList.add('disabled-effect');
+
                     li.onclick = () => {
-                        if (!state.disabledEffects) state.disabledEffects = [];
-                        const idx = state.disabledEffects.indexOf(log.uid);
-                        if (idx > -1) state.disabledEffects.splice(idx, 1);
-                        else state.disabledEffects.push(log.uid);
+                        ensureCustomState();
+                        const ts = getTargetState();
+                        if (!ts.disabledEffects) ts.disabledEffects = [];
+                        const idx = ts.disabledEffects.indexOf(log.uid);
+                        if (idx > -1) ts.disabledEffects.splice(idx, 1);
+                        else ts.disabledEffects.push(log.uid);
                         updateState();
                     };
                 } else {

@@ -320,21 +320,57 @@ function applyDebuffIconState(wrap, stacks) {
 }
 
 /**
+ * 현재 활성화된 상태(일괄 or 개별)에 맞춰 UI 시각적 요소(디버프 아이콘, 토글 등)를 최신화한다.
+ */
+function updateUIStateVisuals() {
+    const ts = getTargetState();
+    const ds = ts.debuffState;
+    if (!ds) return;
+
+    document.querySelectorAll('.debuff-icon-wrap').forEach(el => {
+        let val = 0;
+        if (el.dataset.attachType) {
+            val = ds.artsAttach && ds.artsAttach[el.dataset.attachType] ? ds.artsAttach[el.dataset.attachType] : 0;
+        } else if (el.dataset.abnormalType) {
+            val = ds.artsAbnormal && ds.artsAbnormal[el.dataset.abnormalType] ? ds.artsAbnormal[el.dataset.abnormalType] : 0;
+        } else if (el.dataset.debuff) {
+            const type = el.dataset.debuff;
+            if (ds.physDebuff && ds.physDebuff[type] !== undefined) {
+                val = ds.physDebuff[type];
+            } else if (ds[type] !== undefined) {
+                val = ds[type];
+            }
+        }
+        el.dataset.stacks = val;
+        applyDebuffIconState(el, val);
+    });
+
+    const enemyCb = document.getElementById('enemy-unbalanced');
+    const enemyBtn = document.getElementById('enemy-unbalanced-toggle');
+    if (enemyCb && enemyBtn) {
+        const isUnbal = ts.isUnbalanced();
+        enemyCb.checked = !!isUnbal;
+        updateToggleButton(enemyBtn, enemyCb.checked, '불균형');
+    }
+}
+
+/**
  * 단일 디버프(방어불능, 갑옷파괴) 아이콘 클릭: 0→1→2→3→4→0 순환.
  * data-debuff 속성을 읽어 state.debuffState[type]을 갱신한다.
  *
  * @param {HTMLElement} el - 클릭된 .debuff-icon-wrap
  */
 function cycleDebuff(el) {
+    ensureCustomState();
     const type = el.dataset.debuff;
     const cur = parseInt(el.dataset.stacks, 10) || 0;
     const next = (cur + 1) % 5;
 
-    if (state.debuffState.physDebuff && state.debuffState.physDebuff[type] !== undefined) {
-        state.debuffState.physDebuff[type] = next;
-    } else if (state.debuffState && state.debuffState[type] !== undefined) {
-        // 구버전 호환
-        state.debuffState[type] = next;
+    const ds = getTargetState().debuffState;
+    if (ds.physDebuff && ds.physDebuff[type] !== undefined) {
+        ds.physDebuff[type] = next;
+    } else if (ds && ds[type] !== undefined) {
+        ds[type] = next;
     }
 
     applyDebuffIconState(el, next);
@@ -342,53 +378,42 @@ function cycleDebuff(el) {
     updateState();
 }
 
-/**
- * ON/OFF 토글 디버프(오리지늄 봉인 등) 아이콘 클릭: 0↔1 토글.
- * data-debuff 속성을 읽어 state.debuffState.physDebuff[type]을 0 또는 1로 갱신한다.
- * @param {HTMLElement} el
- */
 function cycleDebuffToggle(el) {
+    ensureCustomState();
     const type = el.dataset.debuff;
-    if (!state.debuffState.physDebuff) state.debuffState.physDebuff = {};
-    const cur = state.debuffState.physDebuff[type] || 0;
+    const ds = getTargetState().debuffState;
+    if (!ds.physDebuff) ds.physDebuff = {};
+    const cur = ds.physDebuff[type] || 0;
     const next = cur === 0 ? 1 : 0;
-    state.debuffState.physDebuff[type] = next;
+    ds.physDebuff[type] = next;
     el.dataset.stacks = next;
     applyDebuffIconState(el, next);
     saveState();
     updateState();
 }
 
-/**
- * 아츠 부착 아이콘 클릭: 한 종류만 활성 가능.
- * - 다른 종류가 활성화된 상태에서 클릭하면 해당 종류로 전환 (스택 1부터 시작).
- * - 같은 종류 클릭: 0→1→2→3→4→0 순환. 0이 되면 type도 null.
- *
- * @param {HTMLElement} el - 클릭된 .debuff-icon-wrap
- */
 function cycleDebuffAttach(el) {
+    ensureCustomState();
     const attachType = el.dataset.attachType;
-    const ds = state.debuffState.artsAttach;
+    const ds = getTargetState().debuffState.artsAttach;
 
     let nextStacks;
     if (ds.type !== null && ds.type !== attachType) {
-        // 다른 종류 선택 → 해당 종류 1단계로 전환
         nextStacks = 1;
     } else {
         const cur = parseInt(el.dataset.stacks, 10) || 0;
         nextStacks = (cur + 1) % 5;
     }
 
-    state.debuffState.artsAttach.type = nextStacks === 0 ? null : attachType;
-    state.debuffState.artsAttach.stacks = nextStacks;
+    ds.type = nextStacks === 0 ? null : attachType;
+    ds.stacks = nextStacks;
 
-    // 4개 아이콘 모두 갱신
     const ATTACH_TYPES = ['열기 부착', '전기 부착', '냉기 부착', '자연 부착'];
     ATTACH_TYPES.forEach(t => {
         const wrap = document.getElementById(`debuff-icon-${t}`);
         if (!wrap) return;
         const isSelected = (t === attachType && nextStacks > 0);
-        const isOther = (state.debuffState.artsAttach.type !== null && t !== state.debuffState.artsAttach.type);
+        const isOther = (ds.type !== null && t !== ds.type);
         applyDebuffIconState(wrap, isSelected ? nextStacks : 0);
         wrap.classList.toggle('attach-disabled', isOther);
     });
@@ -397,17 +422,12 @@ function cycleDebuffAttach(el) {
     updateState();
 }
 
-/**
- * 아츠 이상 아이콘 클릭: 각 종류 독립적으로 0→1→2→3→4→0 순환.
- * state.debuffState.artsAbnormal[type] 갱신 후 재계산.
- *
- * @param {HTMLElement} el - 클릭된 .debuff-icon-wrap
- */
 function cycleDebuffAbnormal(el) {
+    ensureCustomState();
     const abnType = el.dataset.abnormalType;
     const cur = parseInt(el.dataset.stacks, 10) || 0;
     const next = (cur + 1) % 5;
-    state.debuffState.artsAbnormal[abnType] = next;
+    getTargetState().debuffState.artsAbnormal[abnType] = next;
     applyDebuffIconState(el, next);
     saveState();
     updateState();
@@ -418,7 +438,7 @@ function cycleDebuffAbnormal(el) {
  * loadState() 후 applyStateToUI()에서 호출한다.
  */
 function applyDebuffStateToUI() {
-    const ds = state.debuffState;
+    const ds = getTargetState().debuffState;
     if (!ds) return;
 
     // 방어불능
@@ -464,7 +484,11 @@ function applyDebuffStateToUI() {
  */
 function addCycleItem(skillType) {
     if (!state.skillSequence) state.skillSequence = [];
-    state.skillSequence.push(skillType);
+    state.skillSequence.push({
+        id: 'seq_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        type: skillType,
+        customState: null
+    });
     saveState();
     updateState();
 }
@@ -474,7 +498,11 @@ function addCycleItem(skillType) {
  */
 function removeCycleItem(index) {
     if (!state.skillSequence) return;
+    const removedId = state.skillSequence[index]?.id;
     state.skillSequence.splice(index, 1);
+    if (state.selectedSeqId === removedId) {
+        state.selectedSeqId = null;
+    }
     saveState();
     updateState();
 }
@@ -484,6 +512,7 @@ function removeCycleItem(index) {
  */
 function clearCycleItems() {
     state.skillSequence = [];
+    state.selectedSeqId = null;
     saveState();
     updateState();
 }

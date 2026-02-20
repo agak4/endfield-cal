@@ -338,8 +338,18 @@
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                         <h3 style="margin: 0;">스킬 사이클 구성</h3>
-                        <button id="clear-cycle-btn" class="btn-select"
-                            style="padding: 4px 10px; font-size: 0.75rem;">전체 초기화</button>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span class="switch-label">일괄 설정</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="cycle-mode-toggle">
+                                    <span class="slider round"></span>
+                                </label>
+                                <span class="switch-label">개별 설정</span>
+                            </div>
+                            <button id="clear-cycle-btn" class="btn-select"
+                                style="padding: 4px 10px; font-size: 0.75rem;">전체 초기화</button>
+                        </div>
                     </div>
                     <!-- SVG 아이콘 버튼 그룹 -->
                     <div class="cycle-add-buttons">

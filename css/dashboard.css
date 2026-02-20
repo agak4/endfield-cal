@@ -180,6 +180,17 @@
     transform: translateX(-2px);
 }
 
+.cycle-sequence-item.seq-is-custom {
+    border-color: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+    background: rgba(88, 155, 255, 0.1);
+}
+
+.cycle-sequence-item.seq-selected {
+    outline: 2px solid #FFBA03;
+    outline-offset: 1px;
+}
+
 .seq-icon {
     display: flex;
     align-items: center;

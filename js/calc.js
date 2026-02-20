@@ -636,30 +636,84 @@ function evaluateTrigger(trigger, currentState) {
     return true;
 }
 
-/**
- * 사이클 데미지를 계산한다.
- * 각 스킬을 sequence 순서대로 순회하며, 스킬 타입별 dmg(배율%)로 데미지를 구한다.
- * 개별 시퀀스 항목과 4가지 스킬별 통계(perSkill)를 함께 반환한다.
- *
- * @param {object} currentState
- * @param {object} baseRes - calculateDamage 반환값 (null 허용)
- * @returns {{sequence: Array, perSkill: object, total: number}|null}
- */
-function calculateCycleDamage(currentState, baseRes) {
-    if (!baseRes || !baseRes.stats || !currentState.mainOp?.id) return null;
-    const opData = DATA_OPERATORS.find(o => o.id === currentState.mainOp.id);
-    if (!opData?.skill) return null;
-
-    const sequenceInput = currentState.skillSequence || [];
-    const { finalAtk, critExp, dmgInc, amp, takenDmg, vuln, unbalanceDmg, resMult, skillMults = { all: 0 }, dmgIncData = { all: 0, skill: 0, normal: 0, battle: 0, combo: 0, ult: 0 } } = baseRes.stats;
-
-    // 스킬 타입별 dmg 모음: 배열 스킬은 첫 번째 항목 기준
+function calcSingleSkillDamage(type, st, bRes) {
+    const opData = DATA_OPERATORS.find(o => o.id === st.mainOp.id);
     const skillMap = {};
     opData.skill.forEach(s => {
         const entry = Array.isArray(s) ? s[0] : s;
-        if (!entry?.skilltype) return;
-        skillMap[entry.skilltype] = entry;
+        if (entry?.skilltype) skillMap[entry.skilltype] = entry;
     });
+
+    const skillDef = skillMap[type];
+    if (!skillDef) return null;
+
+    const { finalAtk, critExp, amp, takenDmg, vuln, unbalanceDmg, resMult, skillMults = { all: 0 }, dmgIncData = { all: 0, skill: 0, normal: 0, battle: 0, combo: 0, ult: 0 } } = bRes.stats;
+
+    // dmg 파싱
+    const parseDmgPct = (v) => {
+        if (!v || v === 0) return 0;
+        const m = String(v).match(/([\d.]+)%/);
+        return m ? parseFloat(m[1]) / 100 : 0;
+    };
+    let dmgMult = parseDmgPct(skillDef.dmg);
+
+    if (skillDef.bonus) {
+        const bonus = skillDef.bonus;
+        const triggerMet = evaluateTrigger(bonus.trigger, st);
+        if (triggerMet && bonus) {
+            const parsePct = (v) => v ? parseFloat(String(v)) / 100 : 0;
+            if (bonus.base !== undefined || bonus.perStack !== undefined) {
+                const n = st.debuffState?.physDebuff?.defenseless || 0;
+                dmgMult += parsePct(bonus.base) + parsePct(bonus.perStack) * n;
+            } else if (bonus.val) {
+                dmgMult += parsePct(bonus.val);
+            }
+        }
+    }
+
+    const SKILL_MULT_TYPES = new Set(['배틀스킬', '연계스킬', '궁극기']);
+    let sMult = 0;
+    if (typeof skillMults === 'number') sMult = skillMults;
+    else sMult = (skillMults.all || 0) + (skillMults[type] || 0);
+    const adjDmgMult = SKILL_MULT_TYPES.has(type) ? dmgMult * (1 + sMult / 100) : dmgMult;
+
+    const typeMap = { '배틀스킬': 'battle', '연계스킬': 'combo', '궁극기': 'ult', '일반공격': 'normal' };
+    let typeInc = dmgIncData.all;
+    if (type === '일반공격') typeInc += dmgIncData.normal;
+    else typeInc += dmgIncData.skill + (dmgIncData[typeMap[type]] || 0);
+
+    const singleHitDmg = finalAtk * adjDmgMult * critExp
+        * (1 + typeInc / 100) * (1 + amp / 100)
+        * (1 + takenDmg / 100) * (1 + vuln / 100)
+        * (1 + unbalanceDmg / 100) * resMult;
+
+    const myLogs = (bRes.logs.dmgInc || []).filter(l => {
+        if (l.tag === 'all') return false;
+        if (l.tag === 'skillMult') {
+            if (!l.skillType) return SKILL_MULT_TYPES.has(type);
+            return l.skillType === type;
+        }
+        if (type === '일반공격' && l.tag === 'normal') return true;
+        if (type !== '일반공격' && (l.tag === 'skill' || l.tag === typeMap[type])) return true;
+        return false;
+    });
+
+    return {
+        unitDmg: Math.floor(singleHitDmg),
+        logs: myLogs,
+        dmgRate: Math.round(adjDmgMult * 100) + '%',
+        desc: skillDef.desc,
+        rawRate: adjDmgMult
+    };
+}
+
+/**
+ * 사이클 데미지를 계산한다.
+ * 각 스킬을 sequence 순서대로 순회하며, 스킬 타입별 dmg(배율%)로 데미지를 구한다.
+ */
+function calculateCycleDamage(currentState, baseRes) {
+    if (!baseRes || !baseRes.stats || !currentState.mainOp?.id) return null;
+    const sequenceInput = currentState.skillSequence || [];
 
     const perSkill = {
         '일반공격': { dmg: 0, count: 0, unitDmg: 0, logs: [], dmgRate: '0%', desc: '' },
@@ -668,95 +722,62 @@ function calculateCycleDamage(currentState, baseRes) {
         '궁극기': { dmg: 0, count: 0, unitDmg: 0, logs: [], dmgRate: '0%', desc: '' }
     };
 
-    // 1. 모든 스킬 타입(4종류)의 기본(1회) 데미지를 계산하여 perSkill에 저장
+    // 1. 모든 스킬 타입(4종류)의 기본 데미지
     ['일반공격', '배틀스킬', '연계스킬', '궁극기'].forEach(type => {
-        const skillDef = skillMap[type];
-        if (!skillDef) return;
-
-        // dmg 파싱
-        const parseDmgPct = (v) => {
-            if (!v || v === 0) return 0;
-            const str = String(v);
-            const m = str.match(/([\d.]+)%/);
-            return m ? parseFloat(m[1]) / 100 : 0;
-        };
-
-        let dmgMult = parseDmgPct(skillDef.dmg);
-
-        // bonus 트리거 검사
-        if (skillDef.bonus) {
-            const bonus = skillDef.bonus;
-            const triggerMet = evaluateTrigger(bonus.trigger, currentState);
-            if (triggerMet && bonus) {
-                const parsePct = (v) => v ? parseFloat(String(v)) / 100 : 0;
-                if (bonus.base !== undefined || bonus.perStack !== undefined) {
-                    const n = currentState.debuffState?.physDebuff?.defenseless || 0;
-                    dmgMult += parsePct(bonus.base) + parsePct(bonus.perStack) * n;
-                } else if (bonus.val) {
-                    dmgMult += parsePct(bonus.val);
-                }
-            }
+        const res = calcSingleSkillDamage(type, currentState, baseRes);
+        if (res) {
+            perSkill[type] = { ...perSkill[type], ...res, dmg: 0, count: 0 };
         }
-
-        // 스킬 배율 증가 적용
-        const SKILL_MULT_TYPES = new Set(['배틀스킬', '연계스킬', '궁극기']);
-        let sMult = 0;
-        if (typeof skillMults === 'number') sMult = skillMults;
-        else sMult = (skillMults.all || 0) + (skillMults[type] || 0);
-
-        const adjDmgMult = SKILL_MULT_TYPES.has(type) ? dmgMult * (1 + sMult / 100) : dmgMult;
-
-        // 스킬 타입별 피해 증가 적용 (일반공격 vs 스킬)
-        const typeMap = { '배틀스킬': 'battle', '연계스킬': 'combo', '궁극기': 'ult', '일반공격': 'normal' };
-        let typeInc = dmgIncData.all;
-        if (type === '일반공격') typeInc += dmgIncData.normal;
-        else typeInc += dmgIncData.skill + (dmgIncData[typeMap[type]] || 0);
-
-        const singleHitDmg = finalAtk * adjDmgMult * critExp
-            * (1 + typeInc / 100) * (1 + amp / 100)
-            * (1 + takenDmg / 100) * (1 + vuln / 100)
-            * (1 + unbalanceDmg / 100) * resMult;
-
-        const myLogs = (baseRes.logs.dmgInc || []).filter(l => {
-            if (l.tag === 'all') return false;
-            if (l.tag === 'skillMult') {
-                if (!l.skillType) return SKILL_MULT_TYPES.has(type);
-                return l.skillType === type;
-            }
-            if (type === '일반공격' && l.tag === 'normal') return true;
-            if (type !== '일반공격' && (l.tag === 'skill' || l.tag === typeMap[type])) return true;
-            return false;
-        });
-
-        perSkill[type].unitDmg = Math.floor(singleHitDmg);
-        perSkill[type].logs = myLogs;
-        perSkill[type].dmgRate = Math.round(adjDmgMult * 100) + '%';
-        perSkill[type].desc = skillDef.desc;
     });
 
     const sequenceResult = [];
     let total = 0;
 
-    // 2. sequence를 순회하며 개별 시퀀스 리스트 구성 및 perSkill 누적
-    sequenceInput.forEach((type) => {
+    // 2. sequence를 순회하며 개별 시퀀스 리스트 구성 및 누적
+    sequenceInput.forEach((itemObj) => {
+        const isObj = typeof itemObj === 'object';
+        const type = isObj ? itemObj.type : itemObj;
         const pSkill = perSkill[type];
-        if (!pSkill || pSkill.unitDmg === 0) {
+
+        if (!pSkill) {
             sequenceResult.push({ type, dmg: 0, dmgRate: '0%', logs: [], desc: '' });
             return;
         }
 
-        const skillTotal = pSkill.unitDmg;
+        let skillData = pSkill;
+        let cRes = null;
+        if (isObj && itemObj.customState) {
+            // 개별 설정이 있는 경우
+            const customStateMerged = {
+                ...currentState,
+                disabledEffects: itemObj.customState.disabledEffects,
+                debuffState: itemObj.customState.debuffState,
+                enemyUnbalanced: itemObj.customState.enemyUnbalanced
+            };
+            cRes = calculateDamage(customStateMerged);
+            if (cRes) {
+                const sRes = calcSingleSkillDamage(type, customStateMerged, cRes);
+                if (sRes) skillData = { ...sRes };
+            }
+        }
+
+        const skillTotal = skillData.unitDmg || 0;
         total += skillTotal;
 
-        pSkill.dmg += skillTotal;
+        pSkill.dmg += skillTotal; // 집계는 perSkill.dmg에 누적
         pSkill.count += 1;
 
         sequenceResult.push({
+            id: isObj ? itemObj.id : null,
             type,
             dmg: skillTotal,
-            logs: pSkill.logs,
-            dmgRate: pSkill.dmgRate,
-            desc: pSkill.desc
+            logs: skillData.logs,
+            dmgRate: skillData.dmgRate,
+            desc: skillData.desc,
+            customState: isObj ? itemObj.customState : null,
+            indivDmg: isObj && itemObj.customState ? skillTotal : undefined,
+            indivRate: isObj && itemObj.customState ? skillData.rawRate : undefined,
+            cRes: cRes
         });
     });
 

@@ -119,6 +119,7 @@ function initUI() {
     if (enemyCb && enemyBtn) {
         enemyCb.style.display = 'none';
         enemyBtn.onclick = () => {
+            ensureCustomState();
             enemyCb.checked = !enemyCb.checked;
             updateToggleButton(enemyBtn, enemyCb.checked, '불균형');
             updateState();
@@ -186,6 +187,18 @@ function initUI() {
     const clearCycleBtn = document.getElementById('clear-cycle-btn');
     if (clearCycleBtn) {
         clearCycleBtn.onclick = () => clearCycleItems();
+    }
+
+    const cycleModeToggle = document.getElementById('cycle-mode-toggle');
+    if (cycleModeToggle) {
+        cycleModeToggle.onchange = (e) => {
+            state.cycleMode = e.target.checked ? 'individual' : 'batch';
+            if (state.cycleMode === 'batch') {
+                state.selectedSeqId = null; // 선택 해제
+            }
+            updateUIStateVisuals();
+            updateState();
+        };
     }
 
     AppTooltip.init();
