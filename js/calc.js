@@ -35,9 +35,21 @@
 // ============ 데미지 계산 엔진 ============
 
 function calculateDamage(currentState) {
-    const opData = DATA_OPERATORS.find(o => o.id === currentState.mainOp.id);
+    const originalOpData = DATA_OPERATORS.find(o => o.id === currentState.mainOp.id);
     const wepData = DATA_WEAPONS.find(w => w.id === currentState.mainOp.wepId);
-    if (!opData || !wepData) return null;
+    if (!originalOpData || !wepData) return null;
+
+    const opData = { ...originalOpData };
+
+    if (currentState.overrideSkillElement) {
+        if (currentState.overrideSkillElement === 'phys') {
+            opData.type = 'phys';
+            opData.element = null;
+        } else {
+            opData.type = 'arts';
+            opData.element = currentState.overrideSkillElement;
+        }
+    }
 
     const stats = { ...opData.stats };
     const allEffects = [];
@@ -715,6 +727,15 @@ function calculateCycleDamage(currentState, baseRes) {
     if (!baseRes || !baseRes.stats || !currentState.mainOp?.id) return null;
     const sequenceInput = currentState.skillSequence || [];
 
+    const opData = DATA_OPERATORS.find(o => o.id === currentState.mainOp.id);
+    const skillMap = {};
+    if (opData && opData.skill) {
+        opData.skill.forEach(s => {
+            const entry = Array.isArray(s) ? s[0] : s;
+            if (entry?.skilltype) skillMap[entry.skilltype] = entry;
+        });
+    }
+
     const perSkill = {
         '기본공격': { dmg: 0, count: 0, unitDmg: 0, logs: [], dmgRate: '0%', desc: '' },
         '배틀스킬': { dmg: 0, count: 0, unitDmg: 0, logs: [], dmgRate: '0%', desc: '' },
@@ -724,7 +745,15 @@ function calculateCycleDamage(currentState, baseRes) {
 
     // 1. 모든 스킬 타입(4종류)의 기본 데미지
     ['기본공격', '배틀스킬', '연계스킬', '궁극기'].forEach(type => {
-        const res = calcSingleSkillDamage(type, currentState, baseRes);
+        const skillDef = skillMap[type];
+        if (!skillDef) return;
+
+        let specificRes = baseRes;
+        if (skillDef.element) {
+            specificRes = calculateDamage({ ...currentState, overrideSkillElement: skillDef.element });
+        }
+
+        const res = calcSingleSkillDamage(type, currentState, specificRes);
         if (res) {
             perSkill[type] = { ...perSkill[type], ...res, dmg: 0, count: 0 };
         }
@@ -744,21 +773,31 @@ function calculateCycleDamage(currentState, baseRes) {
             return;
         }
 
+        const skillDef = skillMap[type];
         let skillData = pSkill;
         let cRes = null;
+
+        const customStateMerged = { ...currentState };
+        let hasCustomState = false;
+
         if (isObj && itemObj.customState) {
-            // 개별 설정이 있는 경우
-            const customStateMerged = {
-                ...currentState,
-                disabledEffects: itemObj.customState.disabledEffects,
-                debuffState: itemObj.customState.debuffState,
-                enemyUnbalanced: itemObj.customState.enemyUnbalanced
-            };
-            cRes = calculateDamage(customStateMerged);
-            if (cRes) {
-                const sRes = calcSingleSkillDamage(type, customStateMerged, cRes);
-                if (sRes) skillData = { ...sRes };
-            }
+            hasCustomState = true;
+            customStateMerged.disabledEffects = itemObj.customState.disabledEffects;
+            customStateMerged.debuffState = itemObj.customState.debuffState;
+            customStateMerged.enemyUnbalanced = itemObj.customState.enemyUnbalanced;
+        }
+
+        // 스킬에 지정된 속성이 있다면 덮어쓰기를 설정합니다.
+        if (skillDef && skillDef.element) {
+            customStateMerged.overrideSkillElement = skillDef.element;
+        }
+
+        // 개별 설정을 선택했을 때, 대시보드가 해당 옵션과 스킬 속성 기준으로 표시될 수 있도록 cRes를 항상 구합니다.
+        cRes = calculateDamage(customStateMerged);
+
+        if (hasCustomState && cRes) {
+            const sRes = calcSingleSkillDamage(type, customStateMerged, cRes);
+            if (sRes) skillData = { ...sRes };
         }
 
         const skillTotal = skillData.unitDmg || 0;
@@ -774,9 +813,9 @@ function calculateCycleDamage(currentState, baseRes) {
             logs: skillData.logs,
             dmgRate: skillData.dmgRate,
             desc: skillData.desc,
-            customState: isObj ? itemObj.customState : null,
-            indivDmg: isObj && itemObj.customState ? skillTotal : undefined,
-            indivRate: isObj && itemObj.customState ? skillData.rawRate : undefined,
+            customState: hasCustomState ? itemObj.customState : null,
+            indivDmg: hasCustomState ? skillTotal : undefined,
+            indivRate: hasCustomState ? skillData.rawRate : undefined,
             cRes: cRes
         });
     });

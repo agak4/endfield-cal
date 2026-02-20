@@ -216,7 +216,7 @@ const AppTooltip = {
                     const color = isSynergy ? '#FFFA00' : 'var(--accent)';
                     // 비활성(OFF 잠재/불균형 OFF): color:inherit 로 표시
                     const style = t.active === false
-                        ? 'color:inherit;font-weight:normal;'
+                        ? 'color:var(--text-secondary);font-weight:normal;'
                         : `color:${color};font-weight:bold;`;
                     return `<div style="margin-bottom:2px;${style}"><span style="color:inherit">•</span> [${t.sourceLabel}] ${t._typeStr ?? t.type}${valStr}</div>`;
                 }).join('');
