@@ -238,13 +238,52 @@ function renderCycleSequence(cycleRes) {
             '궁극기': '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>'
         };
 
-        const iconHtml = svgMap[type] || '';
+        // 기본 타입을 추출 (예: '강화 일반 공격' -> '일반 공격')
+        let baseType = '일반 공격';
+        if (type.includes('궁극기')) baseType = '궁극기';
+        else if (type.includes('연계')) baseType = '연계 스킬';
+        else if (type.includes('배틀')) baseType = '배틀 스킬';
+        else if (type.includes('일반')) baseType = '일반 공격';
+
+        const iconHtml = svgMap[baseType] || svgMap['일반 공격'];
         const iconWrapper = document.createElement('div');
-        iconWrapper.className = `seq-icon seq-icon-${type === '궁극기' ? 'ult' : type === '연계 스킬' ? 'combo' : type === '배틀 스킬' ? 'battle' : 'normal'}`;
-        iconWrapper.innerHTML = iconHtml;        // 삭제 버튼
+        iconWrapper.style.position = 'relative';
+        iconWrapper.style.zIndex = '1';
+
+        // 강화 스킬인 경우 오퍼레이터 이미지를 백그라운드로 사용
+        if (type.startsWith('강화')) {
+            const opData = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
+            if (opData && opData.name) {
+                cardContainer.style.position = 'relative';
+                cardContainer.style.overflow = 'hidden';
+
+                const bgLayer = document.createElement('div');
+                bgLayer.style.position = 'absolute';
+                bgLayer.style.top = '0';
+                bgLayer.style.left = '0';
+                bgLayer.style.width = '100%';
+                bgLayer.style.height = '100%';
+                bgLayer.style.backgroundImage = `url('images/operators/${opData.name}.webp')`;
+                bgLayer.style.backgroundSize = 'cover';
+                bgLayer.style.backgroundPosition = 'center';
+                bgLayer.style.maskImage = 'linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)';
+                bgLayer.style.WebkitMaskImage = 'linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)';
+                bgLayer.style.pointerEvents = 'none';
+                bgLayer.style.zIndex = '0';
+
+                cardContainer.appendChild(bgLayer);
+            }
+        }
+
+        iconWrapper.className = `seq-icon seq-icon-${baseType === '궁극기' ? 'ult' : baseType === '연계 스킬' ? 'combo' : baseType === '배틀 스킬' ? 'battle' : 'normal'}`;
+        iconWrapper.innerHTML = iconHtml;
+
+        // 삭제 버튼
         const delBtn = document.createElement('button');
         delBtn.className = 'seq-delete-btn';
         delBtn.innerHTML = '&times;';
+        delBtn.style.position = 'relative';
+        delBtn.style.zIndex = '1';
         delBtn.onclick = (e) => {
             e.stopPropagation();
             removeCycleItem(index);
@@ -309,7 +348,8 @@ function renderCyclePerSkill(cycleRes) {
 
     if (!cycleRes || !list) return;
 
-    const SKILL_TYPES = ['일반 공격', '배틀 스킬', '연계 스킬', '궁극기'];
+    // cycleRes.perSkill에 존재하는 모든 스킬 타입을 가져와서 렌더링 (강화 스킬 포함)
+    const SKILL_TYPES = Object.keys(cycleRes.perSkill);
     SKILL_TYPES.forEach(t => {
         const data = cycleRes.perSkill[t];
         if (!data) return;
@@ -615,4 +655,58 @@ function renderDmgInc(res, cycleRes) {
         col.appendChild(ul);
         listContainer.appendChild(col);
     });
+}
+
+/**
+ * 메인 오퍼레이터 변경 시, 해당 오퍼레이터의 '강화' 스킬들에 대한 동기식 버튼을 추가합니다.
+ * @param {string} opId - 오퍼레이터 ID
+ */
+function updateEnhancedSkillButtons(opId) {
+    const btnContainer = document.querySelector('.cycle-add-buttons');
+    if (!btnContainer) return;
+
+    // 기존 동적 추가 버튼(강화 스킬) 모두 제거
+    btnContainer.querySelectorAll('.cycle-btn-enhanced').forEach(btn => btn.remove());
+
+    if (!opId) return;
+
+    const opData = DATA_OPERATORS.find(o => o.id === opId);
+    if (!opData || !opData.skill) return;
+
+    // '강화'가 들어간 스킬을 찾음
+    const enhancedSkills = opData.skill.flatMap(s => Array.isArray(s) ? s : [s])
+        .filter(s => s && s.skilltype && s.skilltype.trim().startsWith('강화'));
+
+    enhancedSkills.forEach(es => {
+        const type = es.skilltype;
+        const btn = document.createElement('div');
+        btn.className = 'cycle-btn cycle-btn-enhanced';
+        btn.dataset.type = type;
+        btn.title = type;
+
+        // 버튼 디자인: 오퍼이미지 + 타이틀
+        btn.innerHTML = `
+            <div style="width:28px; height:28px; border-radius:50%; overflow:hidden; border:1px solid var(--accent); display:flex; justify-content:center; align-items:center; margin-bottom: 2px;">
+                <img src="images/operators/${opData.name}.webp" style="width:100%; height:100%; object-fit:cover;" alt="${type}">
+            </div>
+            <span>${type}</span>
+        `;
+
+        btn.onclick = () => {
+            if (typeof addCycleItem === 'function') addCycleItem(type);
+        };
+
+        btn.onmouseenter = (e) => {
+            const desc = es.desc || '설명 없음';
+            const content = `
+                <div class="tooltip-title" style="color:var(--accent);">${type}</div> 
+                <div class="tooltip-desc">${desc}</div>
+            `;
+            AppTooltip.showCustom(content, e, { width: '220px' });
+        };
+        btn.onmouseleave = () => AppTooltip.hide();
+
+        btnContainer.appendChild(btn);
+    });
+    console.log(`[DEBUG] updateEnhancedSkillButtons(${opId}) created ${enhancedSkills.length} buttons.`);
 }

@@ -709,19 +709,26 @@ function calcSingleSkillDamage(type, st, bRes) {
         }
     }
 
+    // '강화 일반 공격' -> '일반 공격' 처럼 베이스 스킬 타입 추출
+    const baseType = type.startsWith('강화 ') ? type.substring(3) : type;
+
     const SKILL_MULT_TYPES = new Set(['배틀 스킬', '연계 스킬', '궁극기']);
     let sMult = 0;
     if (typeof skillMults === 'number') sMult = skillMults;
-    else sMult = (skillMults.all || 0) + (skillMults[type] || 0);
-    const adjDmgMult = SKILL_MULT_TYPES.has(type) ? dmgMult * (1 + sMult / 100) : dmgMult;
+    else sMult = (skillMults.all || 0) + (skillMults[baseType] || 0) + (type !== baseType ? (skillMults[type] || 0) : 0);
+    const adjDmgMult = SKILL_MULT_TYPES.has(baseType) ? dmgMult * (1 + sMult / 100) : dmgMult;
 
     const typeMap = { '배틀 스킬': 'battle', '연계 스킬': 'combo', '궁극기': 'ult', '일반 공격': 'normal' };
     let typeInc = dmgIncData.all;
-    if (type === '일반 공격') typeInc += dmgIncData.normal;
-    else typeInc += dmgIncData.skill + (dmgIncData[typeMap[type]] || 0);
+    if (baseType === '일반 공격') typeInc += dmgIncData.normal;
+    else typeInc += dmgIncData.skill + (dmgIncData[typeMap[baseType]] || 0);
+
+    // 강화 스킬 전용 피해 증가 옵션이 있다면 그것도 더해줌 (현재 구조상 skill, normal, battle등에 합산됨)
+    // baseType으로 이미 합산되었음.
+
     // 스킬 전용 치명타 확률/피해 합산 및 기댓값 재계산
-    let sCritRateBoost = (skillCritData.rate.all || 0) + (skillCritData.rate[type] || 0);
-    let sCritDmgBoost = (skillCritData.dmg.all || 0) + (skillCritData.dmg[type] || 0);
+    let sCritRateBoost = (skillCritData.rate.all || 0) + (skillCritData.rate[baseType] || 0) + (type !== baseType ? (skillCritData.rate[type] || 0) : 0);
+    let sCritDmgBoost = (skillCritData.dmg.all || 0) + (skillCritData.dmg[baseType] || 0) + (type !== baseType ? (skillCritData.dmg[type] || 0) : 0);
     let adjCritRate = Math.min(Math.max(finalCritRate + sCritRateBoost, 0), 100);
     let adjCritDmg = critDmg + sCritDmgBoost;
     let adjCritExp = ((adjCritRate / 100) * (adjCritDmg / 100)) + 1;
@@ -735,11 +742,11 @@ function calcSingleSkillDamage(type, st, bRes) {
         if (l.tag === 'all') return false;
         if (l.tag === 'skillMult') {
             const arr = Array.isArray(l.skillType) ? l.skillType : (l.skillType ? [l.skillType] : []);
-            if (arr.length === 0) return SKILL_MULT_TYPES.has(type);
-            return arr.includes(type);
+            if (arr.length === 0) return SKILL_MULT_TYPES.has(baseType);
+            return arr.includes(baseType) || arr.includes(type);
         }
-        if (type === '일반 공격' && l.tag === 'normal') return true;
-        if (type !== '일반 공격' && (l.tag === 'skill' || l.tag === typeMap[type])) return true;
+        if (baseType === '일반 공격' && l.tag === 'normal') return true;
+        if (baseType !== '일반 공격' && (l.tag === 'skill' || l.tag === typeMap[baseType])) return true;
         return false;
     });
 
@@ -747,7 +754,7 @@ function calcSingleSkillDamage(type, st, bRes) {
         if (l.tag === 'skillCrit') {
             const arr = Array.isArray(l.skillType) ? l.skillType : (l.skillType ? [l.skillType] : []);
             if (arr.length === 0) return true; // all
-            return arr.includes(type);
+            return arr.includes(baseType) || arr.includes(type);
         }
         return false;
     });
@@ -779,15 +786,11 @@ function calculateCycleDamage(currentState, baseRes) {
         });
     }
 
-    const perSkill = {
-        '일반 공격': { dmg: 0, count: 0, unitDmg: 0, logs: [], dmgRate: '0%', desc: '' },
-        '배틀 스킬': { dmg: 0, count: 0, unitDmg: 0, logs: [], dmgRate: '0%', desc: '' },
-        '연계 스킬': { dmg: 0, count: 0, unitDmg: 0, logs: [], dmgRate: '0%', desc: '' },
-        '궁극기': { dmg: 0, count: 0, unitDmg: 0, logs: [], dmgRate: '0%', desc: '' }
-    };
+    const perSkill = {};
 
-    // 1. 모든 스킬 타입(4종류)의 기본 데미지
-    ['일반 공격', '배틀 스킬', '연계 스킬', '궁극기'].forEach(type => {
+    // 1. 모든 스킬 타입(강화 스킬 포함)의 기본 데미지
+    Object.keys(skillMap).forEach(type => {
+        perSkill[type] = { dmg: 0, count: 0, unitDmg: 0, logs: [], dmgRate: '0%', desc: '' };
         const skillDef = skillMap[type];
         if (!skillDef) return;
 

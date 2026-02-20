@@ -1,3 +1,10 @@
+@font-face {
+    font-family: 'NexonLv1Gothic';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@2.1/NEXON Lv1 Gothic OTF.woff') format('woff');
+    font-weight: normal;
+    font-display: swap;
+}
+
 /* ============ 테마 변수 ============ */
 :root {
     --bg-color: #121212;
@@ -38,7 +45,7 @@ body {
     background-image: radial-gradient(circle at center, #2a2a2a 0%, #121212 100%);
     background-attachment: fixed;
     color: var(--text-primary);
-    font-family: 'Suit', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'NexonLv1Gothic', -apple-system, BlinkMacSystemFont, sans-serif;
     height: 100vh;
     overflow: hidden;
     display: flex;
@@ -99,6 +106,7 @@ h2 {
     color: var(--text-gold);
     padding-bottom: 10px;
     border-bottom: 2px solid var(--accent);
+    margin-bottom: 10px;
 }
 
 h3 {

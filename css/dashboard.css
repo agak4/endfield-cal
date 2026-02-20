@@ -3,10 +3,6 @@
 .result-area-row {
     display: flex;
     gap: 12px;
-    align-items: stretch;
-    position: sticky;
-    top: 5px;
-    z-index: 100;
 }
 
 .result-box {

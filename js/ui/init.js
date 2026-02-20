@@ -46,6 +46,9 @@ window.onload = function () {
             updateMainWeaponList(DEFAULT_OP_ID);
             applyOpSettingsToUI(DEFAULT_OP_ID, 'main');
             updateEntityImage(DEFAULT_OP_ID, 'main-op-image', 'operators');
+            if (typeof updateEnhancedSkillButtons === 'function') {
+                updateEnhancedSkillButtons(DEFAULT_OP_ID);
+            }
         }
     }
 
@@ -394,6 +397,9 @@ function restoreMainOperator() {
         document.getElementById('main-op-select-btn').innerText = opData.name;
         updateMainWeaponList(state.mainOp.id);
         updateEntityImage(state.mainOp.id, 'main-op-image', 'operators');
+        if (typeof updateEnhancedSkillButtons === 'function') {
+            updateEnhancedSkillButtons(state.mainOp.id);
+        }
     }
 }
 
@@ -575,9 +581,21 @@ function applyOpSettingsToUI(opId, type, subIdx) {
 
         // 스킬 시퀀스 복원
         if (settings && Array.isArray(settings.skillSequence)) {
-            state.skillSequence = settings.skillSequence;
+            state.skillSequence = settings.skillSequence.map((item, idx) => {
+                if (typeof item === 'string') {
+                    return { id: 'seq_mig_op_' + Date.now() + '_' + idx, type: item, customState: null };
+                }
+                return item;
+            });
         } else {
-            state.skillSequence = ["일반 공격", "배틀 스킬", "연계 스킬", "궁극기"];
+            state.skillSequence = ['일반 공격', '배틀 스킬', '연계 스킬', '궁극기'].map((type, idx) => ({
+                id: 'seq_def_' + Date.now() + '_' + idx, type, customState: null
+            }));
+        }
+
+        // 메인 오퍼레이터 변경 시 강화 스킬 버튼 업데이트
+        if (typeof updateEnhancedSkillButtons === 'function') {
+            updateEnhancedSkillButtons(opId);
         }
 
     } else {
