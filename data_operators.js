@@ -542,6 +542,7 @@ const DATA_OPERATORS = [
     {
         id: 'Yvonne',
         name: '이본',
+        class: 'striker',
         rarity: 6,
         baseAtk: 321,
         mainStat: 'int',
@@ -551,26 +552,28 @@ const DATA_OPERATORS = [
         stats: { str: 82, agi: 128, int: 236, wil: 105 },
         usableWeapons: ['handcannon'],
         skill: [
-            { skilltype: '일반 공격', element: '', dmg: '%' },
-            { skilltype: '배틀 스킬', element: '', dmg: '%', type: '동결 부여', target: '적' },
-            { skilltype: '연계 스킬', element: '', dmg: '%', type: '동결 부여', target: '적' },
-            [{ skilltype: '궁극기', element: '', cost: 0, dmg: '%', type: '치명타 확률', val: 30 }, { skilltype: '궁극기', element: '', cost: 0, dmg: '%', type: '치명타 피해', val: 60 }]
+            { skilltype: '일반 공격', element: 'cryo', dmg: '398%', desc: '적에게 최대 5단 공격을 하여 냉기 피해를 줍니다.' },
+            { skilltype: '강화 일반 공격', element: 'cryo', dmg: '1600%', bonus: { trigger: '동결', base: '600%', perStack: '0%' }, desc: '7초 동안, 이본의 일반 공격이 강화되며 일반 공격을 할 때마다 자신의 치명타 확률이 3% 증가합니다(최대 10스택). 스택 수치가 최대로 쌓였을 경우, 자신의 치명타 피해가 60% 증가합니다. 지속 시간이 끝나기 전의 마지막 일반 공격은 강력한 일격으로 바뀌어 대량의 냉기 피해를 줍니다. 적이 동결 상태라면, 추가로 냉기 피해를 1회 준 후, 동결 상태를 소모합니다.' }, //65타 가정
+            { skilltype: '배틀 스킬', element: 'cryo', dmg: '400%', type: '동결 부여', target: '적', bonus: { trigger: ['냉기 부착', '자연 부착'], base: '0%', perStack: '200%' }, desc: '전방을 향해 냉각탄을 발사합니다. 냉각탄은 적에게 명중된 다음 폭발하며 냉기 피해를 줍니다. 냉기 부착 혹은 자연 부착 상태의 적에게 명중했을 때, 목표가 보유한 모든 아츠 부착을 소모하고, 대상에게 강제로 동결을 부여하며 소모한 스택 수치에 따라 냉기 피해를 줍니다. 배틀 스킬로 적에게 동결 상태를 부여한 후, 소모한 스택 수치에 따라 추가로 궁극기 에너지를 획득하며 여러 목표를 명중했을 경우 1회만 획득합니다.' },
+            { skilltype: '연계 스킬', element: 'cryo', dmg: '600%', type: '동결 부여', target: '적', desc: '메인 컨트롤 오퍼레이터가 동결 상태의 적에게 강력한 일격을 사용했을 때 사용할 수 있습니다. 즉시 목표의 곁에 꽁꽁이를 배치하고 3초간 끊임없이 충격파를 4번 발사합니다. 주변의 적에게 냉기 피해를 주고, 지속적으로 모든 적을 중심으로 끌어당깁니다. 지속 시간이 끝나면, 꽁꽁이가 자폭하여 주위의 적에게 강제로 동결 상태를 부여하고 냉기 피해를 줍니다. 연계 스킬이 적을 명중한 후, 추가로 궁극기 에너지를 10포인트 획득합니다. 여러 목표를 명중하더라도 1회만 획득합니다.' },
+            { skilltype: '궁극기', element: 'cryo', cost: 220, dmg: '0%', type: [{ type: '치명타 확률', val: '30%' }, { type: '치명타 피해', val: '60%' }], desc: '삐삐를 배치하여 지원을 요청하고 메인 컨트롤 오퍼레이터로 전환합니다. 7초 동안, 이본의 일반 공격이 강화되며 일반 공격을 할 때마다 자신의 치명타 확률이 3% 증가합니다(최대 10스택). 스택 수치가 최대로 쌓였을 경우, 자신의 치명타 피해가 60% 증가합니다. 지속 시간이 끝나기 전의 마지막 일반 공격은 강력한 일격으로 바뀌어 대량의 냉기 피해를 줍니다. 적이 동결 상태라면, 추가로 냉기 피해를 1회 준 후, 동결 상태를 소모합니다.' }
         ],
         talents: [
             {},
-            { type: '치명타 피해', val: 40 }
+            { type: '치명타 피해', val: '40%' }
         ],
         potential: [
+            { type: '스킬 배율 증가', dmg: '200%', skilltype: '배틀 스킬' },
+            [{ type: '스탯', stats: '지능', val: 20 }, { type: '치명타 확률', val: '7%' }],
+            { type: '치명타 피해', val: '20%' },
             {},
-            [{ type: '스탯', stats: '지능', val: 20 }, { type: '치명타 확률', val: 7 }],
-            { type: '치명타 피해', val: 20 },
-            {},
-            [{ type: '공격력 증가', val: 10 }, { type: '치명타 피해', val: 30 }]
+            [{ type: '공격력 증가', val: '10%' }, { type: '치명타 피해', val: '30%' }]
         ]
     },
     {
         id: 'Avywenna',
         name: '아비웨나',
+        class: 'striker',
         rarity: 5,
         baseAtk: 312,
         mainStat: 'wil',
@@ -580,26 +583,27 @@ const DATA_OPERATORS = [
         stats: { str: 107, agi: 106, int: 110, wil: 228 },
         usableWeapons: ['polearm'],
         skill: [
-            { skilltype: '일반 공격', element: '', dmg: '%' },
-            { skilltype: '배틀 스킬', element: '', dmg: '%', type: '전기 부착', target: '적' },
-            { skilltype: '연계 스킬', element: '', dmg: '%' },
-            { skilltype: '궁극기', element: '', cost: 0, dmg: '%' }
+            { skilltype: '일반 공격', element: 'phys', dmg: '312%', desc: '적에게 최대 5단 공격을 하여 물리 피해를 줍니다.' },
+            { skilltype: '배틀 스킬', element: 'elec', dmg: '150%', type: '전기 부착', target: '적', bonus: [{ trigger: '썬더랜스', base: '0%', perStack: '168%' }, { trigger: '강력한 썬더랜스', base: '0%', perStack: '432%' }], desc: '점프하여 창을 휘둘러 회오리바람을 일으킵니다. 주변의 적에게 소량의 전기 피해를 주며, 모든 썬더랜스와 강력한 썬더랜스를 회수합니다. 썬더랜스가 회수되는 과정에서 적을 공격할 경우, 대상에게 전기 피해를 줍니다. 강력한 썬더랜스는 더욱 큰 전기 피해를 주고 전기 부착 상태를 부여합니다.' },
+            { skilltype: '연계 스킬', element: 'elec', dmg: '380%', desc: '메인 컨트롤 오퍼레이터가 전기 부착 혹은 감전 상태의 목표에 강력한 일격을 준 후 사용할 수 있습니다. 점프하여 목표에 30초간 존재하는 썬더랜스 3개를 던져, 전방 범위 내의 적에게 전기 피해를 줍니다.' },
+            { skilltype: '궁극기', element: 'elec', cost: 100, dmg: '950%', desc: '목표 구역에 30초간 존재하는 강력한 썬더랜스 하나를 투척하여 주변의 적에게 대량의 전기 피해를 줍니다.' }
         ],
         talents: [
             {},
-            { type: '전기 취약', val: 10, target: '적' }
+            { type: '전기 취약', val: '10%', target: '적' }
         ],
         potential: [
             {},
             {},
-            [{ type: '스탯', stats: '의지', val: 15 }, { type: '전기 피해', val: 8 }],
-            {},
-            {}
+            [{ type: '스탯', stats: '의지', val: 15 }, { type: '전기 피해', val: '8%' }],
+            { type: '궁극기 에너지 감소', val: '-15%' },
+            { type: '스킬 배율 증가', dmg: '15%', skilltype: '배틀 스킬', trigger: '전기 취약' }
         ]
     },
     {
         id: 'Da Pan',
         name: '판',
+        class: 'striker',
         rarity: 5,
         baseAtk: 303,
         mainStat: 'str',
@@ -609,26 +613,27 @@ const DATA_OPERATORS = [
         stats: { str: 235, agi: 96, int: 94, wil: 102 },
         usableWeapons: ['great_sword'],
         skill: [
-            { skilltype: '일반 공격', element: '', dmg: '%' },
-            { skilltype: '배틀 스킬', element: '', dmg: '%', type: '방어 불능 부여', target: '적' },
-            { skilltype: '연계 스킬', element: '', dmg: '%', type: '방어 불능 부여', target: '적' },
-            { skilltype: '궁극기', element: '', cost: 0, dmg: '%', type: '방어 불능 부여', target: '적' }
+            { skilltype: '일반 공격', element: 'phys', dmg: '387%', desc: '적에게 최대 4단 공격을 하여 물리 피해를 줍니다.' },
+            { skilltype: '배틀 스킬', element: 'phys', dmg: '300%', type: '띄우기', target: '적', desc: '웍을 꺼내 짧게 차지한 다음 힘껏 위로 던집니다. 적에게 물리 피해를 주고 띄우기 상태로 만듭니다.' },
+            { skilltype: '연계 스킬', element: 'phys', dmg: '650%', type: '강타', target: '적', desc: '방어 불능 4스택 중첩 상태인 적이 있을 때 사용할 수 있습니다. 웍을 휘둘러 적에게 대량의 물리 피해를 주고 강타합니다. 이번 강타로 주는 피해는 조금 더 강합니다.' },
+            { skilltype: '궁극기', element: 'phys', cost: 0, dmg: '700%', type: [{ type: '강제 띄우기', target: '적' }, { type: '강제 넘어뜨리기', target: '적' }], desc: '도마를 강하게 내리쳐, 전방 범위 내의 적을 강제 띄우기 상태로 만듭니다. 이어서 연속 6단 베기 공격을 사용하여 물리 피해를 주며, 마지막에 모든 적을 추락시켜 강제 넘어뜨리기 상태로 만들고, 대량의 물리 피해를 줍니다.' }
         ],
         talents: [
-            { type: '물리 피해', val: 24 },
+            { type: '물리 피해', val: '24%' },
             {}
         ],
         potential: [
-            { type: '물리 피해', val: 30 },
+            { type: '물리 피해', val: '30%' },
             {},
-            [{ type: '스탯', stats: '힘', val: 15 }, { type: '물리 피해', val: 8 }],
-            {},
+            [{ type: '스탯', stats: '힘', val: 15 }, { type: '물리 피해', val: '8%' }],
+            { type: '궁극기 에너지 감소', val: '-15%' },
             {}
         ]
     },
     {
         id: 'Pogranichnik',
         name: '포그라니치니크',
+        class: 'vanguard',
         rarity: 6,
         baseAtk: 321,
         mainStat: 'wil',
@@ -638,26 +643,27 @@ const DATA_OPERATORS = [
         stats: { str: 101, agi: 110, int: 97, wil: 233 },
         usableWeapons: ['sword'],
         skill: [
-            { skilltype: '일반 공격', element: '', dmg: '%' },
-            [{ skilltype: '배틀 스킬', element: '', dmg: '%', type: '방어 불능 부여' }, { skilltype: '배틀 스킬', element: '', dmg: '%', type: '스킬 게이지 회복', target: '적' }],
-            { skilltype: '연계 스킬', element: '', dmg: '%', type: '스킬 게이지 회복' },
-            { skilltype: '궁극기', element: '', cost: 0, dmg: '%', type: '스킬 게이지 회복' }
+            { skilltype: '일반 공격', element: 'phys', dmg: '372%', desc: '적에게 최대 5단 공격을 하여 물리 피해를 줍니다.' },
+            { skilltype: '배틀 스킬', element: 'phys', dmg: '430%', type: [{ type: '갑옷 파괴', target: '적' }, { type: '스킬 게이지 회복' }], desc: '전방 범위 내의 적에게 두 번 베기 공격을 진행합니다. 물리 피해를 주고, 갑옷 파괴 상태를 부여하며, 소모한 방어 불능 상태의 스택 수치에 따라 스킬 게이지를 회복합니다. 여러 목표를 명중했을 경우, 1회만 회복합니다.' },
+            { skilltype: '연계 스킬', element: 'phys', dmg: '514%', type: '스킬 게이지 회복', desc: '적이 강타 혹은 갑옷 파괴로 인해 방어 불능의 스택 수치가 소모되었을 때 사용할 수 있습니다. 소모한 최대 방어 불능 스택 수치에 따라, 적에게 동일 횟수의 베기 공격(최대 3회)을 하여 물리 피해를 주고, 일정량의 스킬 게이지를 회복하며 베기 공격마다 주는 피해와 스킬 게이지 회복 효과가 증가합니다. 만약 방어 불능 4스택을 소모할 경우, 세 번째 베기 공격이 강화됩니다.' },
+            { skilltype: '궁극기', element: 'phys', cost: 90, dmg: '1150%', type: '스킬 게이지 회복', desc: '목표를 중심으로 방패병 네 명을 소환해 목표를 향해 진군시킵니다. 진군 경로의 적들을 목표 방향으로 밀쳐내며 물리 피해를 주고 30초간 철의 서약 5포인트를 생성합니다. 적이 물리 디버프 효과를 받거나, 포그라니치니크의 연계 스킬이 주는 피해를 받을 경우, 철의 서약 1포인트를 소모해 방패병 한 명을 추가 소환하여 대상을 교란하며 물리 피해를 주고, 일정량의 스킬 게이지를 회복합니다. 소모한 철의 서약이 마지막 1포인트일 경우, 방패병 네 명이 최후의 승부를 사용하며, 대상에게 대량의 물리 피해를 주고 대량의 스킬 게이지를 회복합니다.' }
         ],
         talents: [
-            [{ type: '공격력 증가', val: 24 }, { type: '오리지늄 아츠 강도', val: 24 }],
+            [{ type: '공격력 증가', val: '24%' }, { type: '오리지늄 아츠 강도', val: 24 }],
             {}
         ],
         potential: [
             {},
-            [{ type: '스탯', stats: '의지', val: 20 }, { type: '물리 피해', val: 10 }],
+            [{ type: '스탯', stats: '의지', val: '20%' }, { type: '물리 피해', val: '10%' }],
             {},
-            {},
+            { type: '궁극기 에너지 감소', val: '-15%' },
             {}
         ]
     },
     {
         id: 'Arclight',
         name: '아크라이트',
+        class: 'vanguard',
         rarity: 5,
         baseAtk: 306,
         mainStat: 'agi',
@@ -667,26 +673,27 @@ const DATA_OPERATORS = [
         stats: { str: 107, agi: 205, int: 123, wil: 100 },
         usableWeapons: ['sword'],
         skill: [
-            { skilltype: '일반 공격', element: '', dmg: '%' },
-            { skilltype: '배틀 스킬', element: '', dmg: '%', type: '스킬 게이지 회복' },
-            { skilltype: '연계 스킬', element: '', dmg: '%', type: '스킬 게이지 회복' },
-            [{ skilltype: '궁극기', element: '', cost: 0, dmg: '%', type: '전기 부착' }, { skilltype: '궁극기', element: '', cost: 0, dmg: '%', type: '감전 부여', target: '적' }]
+            { skilltype: '일반 공격', element: 'phys', dmg: '298%', desc: '적에게 최대 5단 공격을 하여 물리 피해를 줍니다.' },
+            { skilltype: '배틀 스킬', element: 'elec', dmg: '202%', type: '스킬 게이지 회복', bonus: { trigger: '감전', val: '405%' }, desc: '적의 옆으로 순간 이동해 2회의 베기 공격을 하며 소량의 물리 피해를 줍니다. 적이 감전 상태일 경우, 감전 상태를 소모하여 추가로 1회 공격하고 전기 피해를 주며 일정량의 스킬 게이지를 회복합니다.' },
+            { skilltype: '연계 스킬', element: 'phys', dmg: '350%', type: '스킬 게이지 회복', desc: '적이 감전 상태거나, 감전 상태가 소모됐을 때 사용할 수 있습니다. 적의 옆으로 순간 이동해 연속으로 베기 공격을 하여 물리 피해를 주고 일정량의 스킬 게이지를 회복합니다.' },
+            { skilltype: '궁극기', element: 'elec', cost: 90, dmg: '900%', type: [{ type: '전기 부착', target: '적' }, { type: '감전 부여', target: '적' }], desc: '전기 아크로 자신을 둘러싼 다음, 전방 일정 거리를 돌진하며 경로 상의 적에게 전기 피해를 주고 전기 부착 상태를 부여합니다. 일정 시간이 지나면, 남겨 둔 전기 아크를 폭파시켜 다시 전기 피해를 줍니다. 적이 전기 부착 상태일 경우, 전기 부착 상태를 소모하여 감전 상태를 부여합니다.' }
         ],
         talents: [
-            { type: '전기 피해', val: 25, target: '팀' }, // 지능 500기준
+            { type: '전기 피해', val: '40%', target: '팀' }, // 지능 500기준
             {}
         ],
         potential: [
             {},
             [{ type: '스탯', stats: '민첩', val: 15 }, { type: '스탯', stats: '지능', val: 15 }],
-            {},
-            {},
+            { type: '전기 피해', val: '12%', target: '팀' },
+            { type: '궁극기 에너지 감소', val: '-15%' },
             {}
         ]
     },
     {
         id: 'Alesh',
         name: '알레쉬',
+        class: 'vanguard',
         rarity: 5,
         baseAtk: 309,
         mainStat: 'str',
@@ -696,10 +703,10 @@ const DATA_OPERATORS = [
         stats: { str: 218, agi: 95, int: 125, wil: 89 },
         usableWeapons: ['sword'],
         skill: [
-            { skilltype: '일반 공격', element: '', dmg: '%' },
-            [{ skilltype: '배틀 스킬', element: '', dmg: '%', type: '스킬 게이지 회복' }, { skilltype: '배틀 스킬', element: '', dmg: '%', type: '동결 부여', target: '적' }],
-            { skilltype: '연계 스킬', element: '', dmg: '%', type: '스킬 게이지 회복' },
-            [{ skilltype: '궁극기', element: '', cost: 0, dmg: '%', type: '스킬 게이지 회복' }, { skilltype: '궁극기', element: '', cost: 0, dmg: '%', type: '냉기 부착', target: '적' }]
+            { skilltype: '일반 공격', element: 'phys', dmg: '310%', desc: '적에게 최대 5단 공격을 하여 물리 피해를 줍니다.' },
+            { skilltype: '배틀 스킬', element: 'phys', dmg: '450%', type: [{ type: '스킬 게이지 회복' }, { type: '동결 부여', target: '적' }], desc: '얼음 조각을 낚아올려 전방의 적을 내리치며, 물리 피해를 줍니다. 엔드필드/냉기 부착냉기 부착 상태의 적을 명중하면, 목표의 엔드필드/냉기 부착냉기 부착을 전부 소모하고, 대상에게 강제 엔드필드/동결동결 상태를 부여합니다. 소모한 스택 수치에 따라 스킬 게이지를 회복하며, 여러 목표를 명중했을 경우, 1회만 회복합니다.' },
+            { skilltype: '연계 스킬', element: 'phys', dmg: '480%', type: '스킬 게이지 회복', desc: '근처 목표의 아츠 이상 혹은 오리지늄 결정이 소모되었을 때 사용할 수 있습니다. 적의 발밑에 구멍을 내 낚시를 시도하여, 물리 피해를 주고 일정 스킬 게이지를 회복합니다. 또한 10% 확률로 진귀한 린수를 낚을 수 있으며, 피해가 대폭 증가하고 추가로 스킬 게이지를 10포인트 회복합니다.' },
+            { skilltype: '궁극기', element: 'cryo', cost: 100, dmg: '980%', type: [{ type: '스킬 게이지 회복' }, { type: '냉기 부착', target: '적' }], desc: '상상을 초월하는 거대한 린수를 낚아 올린 다음, 전방 모든 적을 향해 내리칩니다. 넓은 범위의 냉기 피해를 주고 엔드필드/냉기 부착냉기 부착 상태를 부여하며 일정 스킬 게이지를 회복합니다. 목표를 처치할 때마다 일정량의 스킬 게이지가 추가로 회복됩니다(최대 100포인트).' }
         ],
         talents: [
             {},
@@ -708,14 +715,15 @@ const DATA_OPERATORS = [
         potential: [
             {},
             [{ type: '스탯', stats: '힘', val: 15 }, { type: '스탯', stats: '지능', val: 15 }],
-            { type: '공격력 증가', val: 15, target: '팀' },
-            {},
-            {}
+            { type: '공격력 증가', val: '15%', target: '팀' },
+            { type: '궁극기 에너지 감소', val: '-15%' },
+            { type: '스킬 배율 증가', val: '50%', skilltype: '궁극기' }
         ]
     },
     {
         id: 'Akekuri',
         name: '아케쿠리',
+        class: 'vanguard',
         rarity: 4,
         baseAtk: 319,
         mainStat: 'agi',
@@ -725,20 +733,20 @@ const DATA_OPERATORS = [
         stats: { str: 110, agi: 200, int: 106, wil: 108 },
         usableWeapons: ['sword'],
         skill: [
-            { skilltype: '일반 공격', element: '', dmg: '%' },
-            { skilltype: '배틀 스킬', element: '', dmg: '%', type: '열기 부착', target: '적' },
-            { skilltype: '연계 스킬', element: '', dmg: '%', type: '스킬 게이지 회복' },
-            { skilltype: '궁극기', element: '', cost: 0, dmg: '%', type: '스킬 게이지 회복' }
+            { skilltype: '일반 공격', element: 'phys', dmg: '291%', desc: '적에게 최대 4단 공격을 하여 물리 피해를 줍니다.' },
+            { skilltype: '배틀 스킬', element: 'heat', dmg: '320%', type: '열기 부착', target: '적', desc: '전방으로 검을 휘둘러 열기 피해를 주고 열기 부착 상태를 부여합니다.' },
+            { skilltype: '연계 스킬', element: 'phys', dmg: '180%', type: '스킬 게이지 회복', desc: '불균형 상태 혹은 불균형 지점에 도달한 적이 있을 때 사용할 수 있습니다. 2번 연속 찌르기를 사용하여 각 공격마다 물리 피해를 주고 스킬 게이지를 7.5포인트 회복합니다.' },
+            { skilltype: '궁극기', element: 'heat', cost: 120, dmg: '0%', type: '스킬 게이지 회복', desc: '지속 시전 상태에 들어가며, 신호탄 3발을 발사합니다. 발사할 때마다 일정량의 스킬 게이지를 회복합니다.' }
         ],
         talents: [
             {},
             { type: '연타', target: '팀' }
         ],
         potential: [
-            { type: '공격력 증가', val: 50 },
+            { type: '공격력 증가', val: '50%' },
             [{ type: '스탯', stats: '민첩', val: 10 }, { type: '스탯', stats: '지능', val: 10 }],
-            { type: '공격력 증가', val: 10, target: '팀' },
-            {},
+            { type: '공격력 증가', val: '10%', target: '팀' },
+            { type: '궁극기 에너지 감소', val: '-10%' },
             {}
         ]
     }
