@@ -314,9 +314,47 @@ function applyDebuffIconState(wrap, stacks) {
     wrap.dataset.stacks = stacks;
     const label = wrap.querySelector('.debuff-stack-label');
     if (label) label.textContent = stacks;
-    wrap.querySelectorAll('.ring-seg').forEach((seg, i) => {
-        seg.classList.toggle('active', i < stacks);
-    });
+
+    // 버블 업데이트
+    const bubble = wrap.querySelector('.debuff-stack-bubble');
+    if (bubble) {
+        bubble.textContent = stacks;
+        bubble.classList.toggle('active', stacks > 0);
+        bubble.classList.toggle('zero', stacks === 0);
+    }
+
+    const ringSvg = wrap.querySelector('.debuff-ring-svg');
+    if (ringSvg && ringSvg.classList.contains('single-ring-svg')) {
+        // 단일 원형 처리
+        ringSvg.classList.toggle('active', stacks > 0);
+    } else {
+        // 4분할 호 처리
+        wrap.querySelectorAll('.ring-seg').forEach((seg, i) => {
+            seg.classList.toggle('active', i < Math.min(stacks, 4));
+        });
+    }
+}
+
+/**
+ * 디버프 아이콘 우클릭 시 호출 (스택 감소)
+ */
+function handleDebuffRightClick(el, e) {
+    e.preventDefault();
+    const debuffType = el.dataset.debuff;
+    const attachType = el.dataset.attachType;
+    const abnormalType = el.dataset.abnormalType;
+
+    if (debuffType === 'originiumSeal') {
+        cycleDebuffToggle(el);
+    } else if (debuffType === 'specialStack') {
+        cycleSpecialStack(el, -1);
+    } else if (attachType) {
+        cycleDebuffAttach(el, -1);
+    } else if (abnormalType) {
+        cycleDebuffAbnormal(el, -1);
+    } else if (debuffType) {
+        cycleDebuff(el, -1);
+    }
 }
 
 /**
@@ -328,9 +366,15 @@ function updateUIStateVisuals() {
     if (!ds) return;
 
     document.querySelectorAll('.debuff-icon-wrap').forEach(el => {
+        if (el.dataset.debuff === 'specialStack') return; // 전용 스택은 따로 처리
+
         let val = 0;
         if (el.dataset.attachType) {
-            val = ds.artsAttach && ds.artsAttach[el.dataset.attachType] ? ds.artsAttach[el.dataset.attachType] : 0;
+            if (ds.artsAttach && ds.artsAttach.type === el.dataset.attachType) {
+                val = ds.artsAttach.stacks || 0;
+            } else {
+                val = 0;
+            }
         } else if (el.dataset.abnormalType) {
             val = ds.artsAbnormal && ds.artsAbnormal[el.dataset.abnormalType] ? ds.artsAbnormal[el.dataset.abnormalType] : 0;
         } else if (el.dataset.debuff) {
@@ -356,21 +400,67 @@ function updateUIStateVisuals() {
     // 전용 스택 UI 동기화
     const mainOp = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
     const specGroup = document.getElementById('special-stack-group');
-    const specIcon = document.getElementById('debuff-icon-specialStack');
+    if (!specGroup) return;
 
-    if (mainOp && mainOp.specialStack && specGroup && specIcon) {
+    if (mainOp && mainOp.specialStack) {
         specGroup.style.display = 'block';
-        const nameEl = document.getElementById('special-stack-name');
-        if (nameEl) nameEl.innerText = mainOp.specialStack.name;
+        specGroup.innerHTML = ''; // 기존 내용 삭제 후 동적 생성
 
-        const bgWrap = specIcon.querySelector('.special-stack-bg');
-        if (bgWrap) {
-            bgWrap.style.backgroundImage = `url('images/operators/${mainOp.name}.webp')`;
-        }
+        const stacks = Array.isArray(mainOp.specialStack) ? mainOp.specialStack : [mainOp.specialStack];
+        const row = document.createElement('div');
+        row.className = 'debuff-attach-row';
 
-        const val = ts.getSpecialStack ? ts.getSpecialStack() : (state.mainOp.specialStack || 0);
-        applyDebuffIconState(specIcon, val);
-    } else if (specGroup) {
+        stacks.forEach(s => {
+            const stackId = s.id || 'default';
+            const wrap = document.createElement('div');
+            wrap.className = 'debuff-icon-wrap';
+            wrap.id = `debuff-icon-special-${stackId}`;
+            wrap.dataset.debuff = 'specialStack';
+            wrap.dataset.stackId = stackId;
+
+            // Laevatain (max=1) or Avywenna (max=null) both use single circle SVG per request
+            const useSingleCircle = (s.max === 1 || s.max === null);
+
+            if (useSingleCircle) {
+                wrap.innerHTML = `
+                    <svg class="debuff-ring-svg single-ring-svg" viewBox="0 0 100 100">
+                        <circle class="ring-bg" cx="50" cy="50" r="42" />
+                        <circle class="ring-fill" cx="50" cy="50" r="42" transform="rotate(-90 50 50)" />
+                    </svg>
+                    <div class="debuff-icon-img-wrap special-stack-bg" style="background-image: url('images/operators/${mainOp.name}.webp')">
+                        <img src="" alt="${s.name}" style="display:none">
+                    </div>
+                    <span class="debuff-stack-label">0</span>
+                    <div class="debuff-stack-bubble">0</div>
+                    <span class="special-stack-name">${s.name}</span>
+                `;
+            } else {
+                wrap.innerHTML = `
+                    <svg class="debuff-ring-svg" viewBox="0 0 100 100">
+                        <path class="ring-seg seg-0" d="M74.1,15.6 A42,42 0 0,0 25.9,15.6" />
+                        <path class="ring-seg seg-1" d="M84.4,74.1 A42,42 0 0,0 84.4,25.9" />
+                        <path class="ring-seg seg-2" d="M25.9,84.4 A42,42 0 0,0 74.1,84.4" />
+                        <path class="ring-seg seg-3" d="M15.6,25.9 A42,42 0 0,0 15.6,74.1" />
+                    </svg>
+                    <div class="debuff-icon-img-wrap special-stack-bg" style="background-image: url('images/operators/${mainOp.name}.webp')">
+                        <img src="" alt="${s.name}" style="display:none">
+                    </div>
+                    <span class="debuff-stack-label">0</span>
+                    <span class="special-stack-name">${s.name}</span>
+                `;
+            }
+
+            wrap.onclick = () => cycleSpecialStack(wrap, 1);
+            wrap.oncontextmenu = (e) => handleDebuffRightClick(wrap, e);
+
+            const specStacks = ts.getSpecialStack ? ts.getSpecialStack() : (state.mainOp.specialStack || {});
+            const val = specStacks[stackId] || 0;
+            applyDebuffIconState(wrap, val);
+            row.appendChild(wrap);
+        });
+        specGroup.appendChild(row);
+
+    } else {
         specGroup.style.display = 'none';
     }
 }
@@ -381,11 +471,11 @@ function updateUIStateVisuals() {
  *
  * @param {HTMLElement} el - 클릭된 .debuff-icon-wrap
  */
-function cycleDebuff(el) {
+function cycleDebuff(el, dir = 1) {
     ensureCustomState();
     const type = el.dataset.debuff;
     const cur = parseInt(el.dataset.stacks, 10) || 0;
-    const next = (cur + 1) % 5;
+    const next = (cur + dir + 5) % 5;
 
     const ds = getTargetState().debuffState;
     if (ds.physDebuff && ds.physDebuff[type] !== undefined) {
@@ -413,17 +503,17 @@ function cycleDebuffToggle(el) {
     updateState();
 }
 
-function cycleDebuffAttach(el) {
+function cycleDebuffAttach(el, dir = 1) {
     ensureCustomState();
     const attachType = el.dataset.attachType;
     const ds = getTargetState().debuffState.artsAttach;
 
     let nextStacks;
     if (ds.type !== null && ds.type !== attachType) {
-        nextStacks = 1;
+        nextStacks = dir === 1 ? 1 : 4;
     } else {
         const cur = parseInt(el.dataset.stacks, 10) || 0;
-        nextStacks = (cur + 1) % 5;
+        nextStacks = (cur + dir + 5) % 5;
     }
 
     ds.type = nextStacks === 0 ? null : attachType;
@@ -443,11 +533,11 @@ function cycleDebuffAttach(el) {
     updateState();
 }
 
-function cycleDebuffAbnormal(el) {
+function cycleDebuffAbnormal(el, dir = 1) {
     ensureCustomState();
     const abnType = el.dataset.abnormalType;
     const cur = parseInt(el.dataset.stacks, 10) || 0;
-    const next = (cur + 1) % 5;
+    const next = (cur + dir + 5) % 5;
     getTargetState().debuffState.artsAbnormal[abnType] = next;
     applyDebuffIconState(el, next);
     saveState();
@@ -457,20 +547,35 @@ function cycleDebuffAbnormal(el) {
 /**
  * 전용 스택 클릭: 0 -> 1 -> ... -> max -> 0 순환.
  */
-function cycleSpecialStack(el) {
+function cycleSpecialStack(el, dir = 1) {
     ensureCustomState();
     const op = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
     if (!op || !op.specialStack) return;
 
+    const stackId = el.dataset.stackId || 'default';
     const ts = getTargetState();
-    const cur = ts.getSpecialStack ? ts.getSpecialStack() : (state.mainOp.specialStack || 0);
-    const max = op.specialStack.max || 1;
-    const next = (cur + 1) > max ? 0 : (cur + 1);
+    const specStacks = ts.getSpecialStack ? ts.getSpecialStack() : (state.mainOp.specialStack || {});
+    const cur = specStacks[stackId] || 0;
+
+    let next;
+    const stacksData = Array.isArray(op.specialStack) ? op.specialStack : [op.specialStack];
+    const sData = stacksData.find(s => (s.id || 'default') === stackId);
+    const max = sData ? sData.max : 1;
+
+    if (max === null) {
+        // 최대 제한 없음
+        next = Math.max(0, cur + dir);
+    } else {
+        next = (cur + dir);
+        if (next > max) next = 0;
+        else if (next < 0) next = max;
+    }
 
     if (ts.setSpecialStack) {
-        ts.setSpecialStack(next);
+        const newStacks = { ...specStacks, [stackId]: next };
+        ts.setSpecialStack(newStacks);
     } else {
-        state.mainOp.specialStack = next;
+        state.mainOp.specialStack[stackId] = next;
     }
 
     applyDebuffIconState(el, next);
@@ -522,11 +627,19 @@ function applyDebuffStateToUI() {
     });
 
     // 전용 스택
-    const specIcon = document.getElementById('debuff-icon-specialStack');
-    if (specIcon) {
+    const mainOp = DATA_OPERATORS.find(o => o.id === (state.mainOp.id || ''));
+    if (mainOp && mainOp.specialStack) {
         const ts = getTargetState();
-        const val = ts.getSpecialStack ? ts.getSpecialStack() : (state.mainOp.specialStack || 0);
-        applyDebuffIconState(specIcon, val);
+        const specStacks = ts.getSpecialStack ? ts.getSpecialStack() : (state.mainOp.specialStack || {});
+        const stacks = Array.isArray(mainOp.specialStack) ? mainOp.specialStack : [mainOp.specialStack];
+
+        stacks.forEach(s => {
+            const stackId = s.id || 'default';
+            const specIcon = document.getElementById(`debuff-icon-special-${stackId}`);
+            if (specIcon) {
+                applyDebuffIconState(specIcon, specStacks[stackId] || 0);
+            }
+        });
     }
 
     updateUIStateVisuals();

@@ -38,7 +38,7 @@ let state = {
         gearForge: false,
         gears: [null, null, null, null],
         gearForged: [false, false, false, false],
-        specialStack: 0
+        specialStack: {}
     },
     subOps: [
         { id: null, pot: 0, wepId: null, wepPot: 0, wepState: false, equipSet: null },
@@ -316,8 +316,8 @@ function loadState() {
             }
 
             // mainOp.specialStack 초기화
-            if (state.mainOp.specialStack === undefined) {
-                state.mainOp.specialStack = 0;
+            if (state.mainOp.specialStack === undefined || typeof state.mainOp.specialStack !== 'object') {
+                state.mainOp.specialStack = {};
             }
 
             // 구버전 호환: skillCounts -> skillSequence로 마이그레이션

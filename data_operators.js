@@ -457,7 +457,7 @@ const DATA_OPERATORS = [
         element: 'heat',
         stats: { str: 121, agi: 99, int: 237, wil: 89 },
         usableWeapons: ['sword'],
-        specialStack: { name: '녹아내린 불꽃', max: 4, triggers: ['녹아내린 불꽃'] },
+        specialStack: { name: '녹아내린 불꽃', max: 1, triggers: ['녹아내린 불꽃'] },
         skill: [
             { skilltype: ['일반 공격'], element: 'heat', dmg: '353%', desc: '적에게 최대 5단 공격을 하여 열기 피해를 줍니다.' },
             { skilltype: ['강화 일반 공격'], element: 'heat', dmg: '1044%', desc: '15초 동안, 일반 공격이 강화되며 열화의 마검이 레바테인과 함께 적을 공격합니다. 모든 공격이 열기 피해를 주며, 3단계 일반 공격은 열기 부착 상태를 부여합니다.' },
@@ -551,7 +551,10 @@ const DATA_OPERATORS = [
         element: 'elec',
         stats: { str: 107, agi: 106, int: 110, wil: 228 },
         usableWeapons: ['polearm'],
-        specialStack: { name: '썬더랜스', max: 3, triggers: ['썬더랜스'] },
+        specialStack: [
+            { name: '썬더랜스', id: 'thunderlance', max: null, triggers: ['썬더랜스'] },
+            { name: '강력한 썬더랜스', id: 'powerfulThunderlance', max: null, triggers: ['강력한 썬더랜스'] }
+        ],
         skill: [
             { skilltype: ['일반 공격'], element: 'phys', dmg: '312%', desc: '적에게 최대 5단 공격을 하여 물리 피해를 줍니다.' },
             { skilltype: ['배틀 스킬'], element: 'elec', dmg: '150%', type: ['전기 부착'], target: '적', bonus: [{ trigger: ['썬더랜스'], base: '0%', perStack: '168%' }, { trigger: ['강력한 썬더랜스'], base: '0%', perStack: '432%' }], desc: '점프하여 창을 휘둘러 회오리바람을 일으킵니다. 주변의 적에게 소량의 전기 피해를 주며, 모든 썬더랜스와 강력한 썬더랜스를 회수합니다. 썬더랜스가 회수되는 과정에서 적을 공격할 경우, 대상에게 전기 피해를 줍니다. 강력한 썬더랜스는 더욱 큰 전기 피해를 주고 전기 부착 상태를 부여합니다.' },

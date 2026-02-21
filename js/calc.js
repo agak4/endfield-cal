@@ -117,6 +117,28 @@ function collectAllEffects(state, opData, wepData, stats, allEffects) {
                             if (b.val !== undefined) {
                                 currentVal = combineValues(currentVal, b.val);
                             }
+                            // perStack 처리
+                            if (b.perStack && b.trigger) {
+                                const op = DATA_OPERATORS.find(o => o.id === (state.mainOp?.id));
+                                const specialStackVal = state.getSpecialStack ? state.getSpecialStack() : (state.mainOp?.specialStack || {});
+
+                                b.trigger.forEach(t => {
+                                    if (op && op.specialStack) {
+                                        const stacks = Array.isArray(op.specialStack) ? op.specialStack : [op.specialStack];
+                                        const matchingStack = stacks.find(s => s.triggers && s.triggers.includes(t));
+                                        if (matchingStack) {
+                                            const stackId = matchingStack.id || 'default';
+                                            const count = typeof specialStackVal === 'object' ? (specialStackVal[stackId] || 0) : specialStackVal;
+                                            if (count > 0) {
+                                                const totalPerStack = (parseFloat(b.perStack) * count) + (parseFloat(b.base) || 0);
+                                                const isPct = b.perStack.includes('%') || (b.base && b.base.includes('%'));
+                                                const valStr = isPct ? totalPerStack + '%' : totalPerStack;
+                                                currentVal = combineValues(currentVal, valStr);
+                                            }
+                                        }
+                                    }
+                                });
+                            }
                             b._applied = true;
                         }
                     });
@@ -777,8 +799,14 @@ function evaluateTrigger(trigger, state) {
 
         if (state.triggerActive && state.triggerActive[t]) return true;
 
-        if (op && op.specialStack && op.specialStack.triggers && op.specialStack.triggers.includes(t)) {
-            return specialStackVal > 0;
+        if (op && op.specialStack) {
+            const stacks = Array.isArray(op.specialStack) ? op.specialStack : [op.specialStack];
+            const matchingStack = stacks.find(s => s.triggers && s.triggers.includes(t));
+            if (matchingStack) {
+                const stackId = matchingStack.id || 'default';
+                const val = typeof specialStackVal === 'object' ? (specialStackVal[stackId] || 0) : specialStackVal;
+                return val > 0;
+            }
         }
 
         return false;

@@ -130,6 +130,15 @@ function initUI() {
         updateToggleButton(enemyBtn, enemyCb.checked, '불균형');
     }
 
+    // 디버프 아이콘 우클릭 바인딩
+    document.querySelectorAll('.debuff-icon-wrap').forEach(el => {
+        el.oncontextmenu = (e) => {
+            if (typeof handleDebuffRightClick === 'function') {
+                handleDebuffRightClick(el, e);
+            }
+        };
+    });
+
     // 메인 무기 선택
     setupWeaponSelect('main-wep-select', 'main-wep-select-btn', () => state.mainOp.id);
     const mainWepSelect = document.getElementById('main-wep-select');

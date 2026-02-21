@@ -765,6 +765,58 @@
     display: none;
 }
 
+/* 전용 스택 숫자 버블 (우하단) */
+.debuff-stack-bubble {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    background: var(--accent);
+    color: #000;
+    font-size: 0.75rem;
+    font-weight: 800;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    z-index: 5;
+    transform: scale(0);
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.debuff-stack-bubble.active {
+    transform: scale(1);
+}
+
+.debuff-stack-bubble.zero {
+    display: none;
+}
+
+/* 단일 원형 SVG */
+.single-ring-svg .ring-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.1);
+    stroke-width: 4;
+}
+
+.single-ring-svg .ring-fill {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 4;
+    stroke-dasharray: 263.89;
+    /* 2 * PI * 42 */
+    stroke-dashoffset: 263.89;
+    transition: stroke-dashoffset 0.3s ease;
+    stroke-linecap: round;
+}
+
+.single-ring-svg.active .ring-fill {
+    stroke-dashoffset: 0;
+}
+
 /* ============ 사이클 데미지 UI 개편 (Flex Layout) ============ */
 .cycle-dmg-list {
     display: flex;
