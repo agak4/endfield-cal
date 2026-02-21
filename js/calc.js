@@ -360,17 +360,20 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
         });
     }
     if (opData.talents) {
-        const merged = mergeEffects(opData.talents.flat());
-        if (merged.length > 0) addEffect(merged, `${opData.name} 재능`, 1.0, false, false, forceMaxStack, opData, `${opData.id}_talent`);
+        opData.talents.forEach((t, i) => {
+            if (!t || t.length === 0) return;
+            const merged = mergeEffects(t);
+            addEffect(merged, `${opData.name} 재능${i + 1}`, 1.0, false, false, forceMaxStack, opData, `${opData.id}_talent${i}`);
+        });
     }
 
     const mainPot = Number(state.mainOp.pot) || 0;
-    const potEffs = [];
     for (let p = 0; p < mainPot; p++) {
-        if (opData.potential?.[p]) potEffs.push(...opData.potential[p]);
+        const pot = opData.potential?.[p];
+        if (!pot || pot.length === 0) continue;
+        const merged = mergeEffects(pot);
+        addEffect(merged, `${opData.name} 잠재${p + 1}`, 1.0, false, false, forceMaxStack, opData, `${opData.id}_pot${p}`);
     }
-    const mergedPots = mergeEffects(potEffs);
-    if (mergedPots.length > 0) addEffect(mergedPots, `${opData.name} 잠재`, 1.0, false, false, forceMaxStack, opData, `${opData.id}_pot`);
 
     // 4. 서브 오퍼레이터 시너지
     state.subOps.forEach((sub, idx) => {
@@ -386,17 +389,20 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
             });
         }
         if (subOpData.talents) {
-            const merged = mergeEffects(subOpData.talents.flat());
-            if (merged.length > 0) addEffect(merged, `${prefix} 재능`, 1.0, true, false, forceMaxStack, subOpData, `${subOpData.id}_talent`);
+            subOpData.talents.forEach((t, ti) => {
+                if (!t || t.length === 0) return;
+                const merged = mergeEffects(t);
+                addEffect(merged, `${prefix} 재능${ti + 1}`, 1.0, true, false, forceMaxStack, subOpData, `${subOpData.id}_talent${ti}`);
+            });
         }
 
         const subPot = Number(sub.pot) || 0;
-        const subPotEffs = [];
         for (let sp = 0; sp < subPot; sp++) {
-            if (subOpData.potential?.[sp]) subPotEffs.push(...subOpData.potential[sp]);
+            const pot = subOpData.potential?.[sp];
+            if (!pot || pot.length === 0) continue;
+            const merged = mergeEffects(pot);
+            addEffect(merged, `${prefix} 잠재${sp + 1}`, 1.0, true, false, forceMaxStack, subOpData, `${subOpData.id}_pot${sp}`);
         }
-        const mergedSubPots = mergeEffects(subPotEffs);
-        if (mergedSubPots.length > 0) addEffect(mergedSubPots, `${prefix} 잠재`, 1.0, true, false, forceMaxStack, subOpData, `${subOpData.id}_pot`);
     });
 
     // 5. 세트 효과

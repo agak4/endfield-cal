@@ -18,7 +18,7 @@
  *   talents: [                // 특성 (배열 내 배열 구조)
  *     [{ type: string[], val, target?, trigger? }, ...], ...
  *   ],
- *   potential: [              // 잠재력 (1~5단계, 총 5개 슬롯)
+ *   potential: [              // 잠재 (1~5단계, 총 5개 슬롯)
  *     [{ type: string[], val, ... }, ...], ...
  *   ]
  * }
@@ -529,12 +529,12 @@ const DATA_OPERATORS = [
         ],
         talents: [
             [],
-            [{ type: ['치명타 피해'], val: '20%', trigger: ['냉기 부착'], bonus: [{ type: ['치명타 피해'], val: '20%', trigger: ['동결'] }] }]
+            [{ type: ['치명타 피해'], val: '20%', trigger: ['냉기 부착', '동결'], bonus: [{ type: ['치명타 피해'], val: '20%', trigger: ['동결'] }] }]
         ],
         potential: [
             [{ type: ['스킬 배율 증가'], dmg: '200%', skillType: ['배틀 스킬'] }],
             [{ type: ['스탯'], stats: '지능', val: 20 }, { type: ['치명타 확률'], val: '7%' }],
-            [{ type: ['치명타 피해'], val: '10%', trigger: ['냉기 부착'], bonus: [{ type: ['치명타 피해'], val: '10%', trigger: ['동결'] }] }],
+            [{ type: ['치명타 피해'], val: '10%', trigger: ['냉기 부착', '동결'], bonus: [{ type: ['치명타 피해'], val: '10%', trigger: ['동결'] }] }],
             [],
             [{ type: ['공격력 증가'], val: '10%', skillType: ['강화 일반 공격'] }, { type: ['치명타 피해'], val: '30%', skillType: ['강화 일반 공격'] }]
         ]
@@ -589,7 +589,7 @@ const DATA_OPERATORS = [
             { skillType: ['일반 공격'], element: 'phys', dmg: '387%', desc: '적에게 최대 4단 공격을 하여 물리 피해를 줍니다.' },
             { skillType: ['배틀 스킬'], element: 'phys', dmg: '300%', type: ['띄우기'], target: '적', desc: '웍을 꺼내 짧게 차지한 다음 힘껏 위로 던집니다. 적에게 물리 피해를 주고 띄우기 상태로 만듭니다.' },
             { skillType: ['연계 스킬'], element: 'phys', dmg: '650%', type: ['강타'], target: '적', desc: '방어 불능 4스택 중첩 상태인 적이 있을 때 사용할 수 있습니다. 웍을 휘둘러 적에게 대량의 물리 피해를 주고 강타합니다. 이번 강타로 주는 피해는 조금 더 강합니다.' },
-            { skillType: ['궁극기'], element: 'phys', cost: 0, dmg: '700%', type: [{ type: '강제 띄우기', target: '적' }, { type: '강제 넘어뜨리기', target: '적' }], desc: '도마를 강하게 내리쳐, 전방 범위 내의 적을 강제 띄우기 상태로 만듭니다. 이어서 연속 6단 베기 공격을 사용하여 물리 피해를 주며, 마지막에 모든 적을 추락시켜 강제 넘어뜨리기 상태로 만들고, 대량의 물리 피해를 줍니다.' }
+            { skillType: ['궁극기'], element: 'phys', cost: 90, dmg: '700%', type: [{ type: '강제 띄우기', target: '적' }, { type: '강제 넘어뜨리기', target: '적' }], desc: '도마를 강하게 내리쳐, 전방 범위 내의 적을 강제 띄우기 상태로 만듭니다. 이어서 연속 6단 베기 공격을 사용하여 물리 피해를 주며, 마지막에 모든 적을 추락시켜 강제 넘어뜨리기 상태로 만들고, 대량의 물리 피해를 줍니다.' }
         ],
         talents: [
             [{ type: ['물리 피해'], val: '24%' }],

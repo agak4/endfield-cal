@@ -530,7 +530,7 @@ function applyOpSettingsToUI(opId, type, subIdx) {
     const wepStateVal = settings?.wepState || false;
 
     if (type === 'main') {
-        // 잠재력
+        // 잠재
         document.getElementById('main-op-pot').value = potVal;
         setupPotencyButtons('main-op-pot', 'main-op-pot-group');
 

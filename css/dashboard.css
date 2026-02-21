@@ -99,14 +99,17 @@
     transform: translateY(-2px);
 }
 
-.cycle-btn svg { display: none; }
+.cycle-btn svg {
+    display: none;
+}
+
 .cycle-btn img {
     transition: all 0.2s;
 }
 
 .skill-icon-frame {
-    width: 28px;
-    height: 28px;
+    width: 35px;
+    height: 35px;
     border-radius: 50%;
     overflow: hidden;
     border: 1px solid var(--accent);
@@ -133,8 +136,7 @@
 }
 
 .cycle-btn span {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
+    font-size: 0.85rem;
 }
 
 .cycle-sequence-display {
@@ -219,10 +221,21 @@
     border-color: rgba(255, 255, 255, 0.3);
 }
 
-.seq-icon-normal .skill-icon-frame { border-color: #a0a0a0; }
-.seq-icon-battle .skill-icon-frame { border-color: #4db8ff; }
-.seq-icon-combo .skill-icon-frame { border-color: #ff8c00; }
-.seq-icon-ult .skill-icon-frame { border-color: #ffca28; }
+.seq-icon-normal .skill-icon-frame {
+    border-color: #a0a0a0;
+}
+
+.seq-icon-battle .skill-icon-frame {
+    border-color: #4db8ff;
+}
+
+.seq-icon-combo .skill-icon-frame {
+    border-color: #ff8c00;
+}
+
+.seq-icon-ult .skill-icon-frame {
+    border-color: #ffca28;
+}
 
 .seq-info {
     flex: 1;
@@ -364,8 +377,8 @@
 
 .tile {
     background: rgba(0, 0, 0, 0.3);
-    padding: 18px;
-    border-radius: 12px;
+    padding: 12px;
+    border-radius: 7px;
     border: 1px solid rgba(0, 217, 255, 0.2);
     transition: all var(--transition-speed) ease;
     position: relative;
@@ -438,17 +451,15 @@
     list-style: none;
     padding: 0;
     margin-top: 10px;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
 }
 
 .detail-list li {
     color: var(--text-muted);
-    margin: 5px 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-    border-left: 2px solid transparent;
     transition: all var(--transition-speed) ease;
-    line-height: 1.5;
-    border-radius: 4px;
+    line-height: 2;
+    border-radius: 3px;
     cursor: pointer;
 }
 
@@ -475,7 +486,7 @@
 }
 
 .detail-list li::before {
-    content: '▸ ';
+    content: '▸';
     color: var(--accent);
     opacity: 0.8;
     font-size: 0.7rem;
@@ -902,7 +913,7 @@
     display: flex;
     flex-direction: column;
     background: rgba(0, 0, 0, 0.3);
-    padding: 18px;
+    padding: 12px;
     border-radius: 12px;
     border: 1px solid rgba(0, 217, 255, 0.2);
     transition: all var(--transition-speed) ease;
