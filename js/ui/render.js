@@ -66,7 +66,9 @@ function renderResult(res) {
         'stat-vuln': displayRes.stats.vuln.toFixed(1) + '%',
         'stat-taken': displayRes.stats.takenDmg.toFixed(1) + '%',
         'stat-unbal': displayRes.stats.unbalanceDmg.toFixed(1) + '%',
-        'stat-arts': displayRes.stats.originiumArts.toFixed(1),
+        'stat-ult-recharge': (displayRes.stats.ultRecharge || 0).toFixed(1) + '%',
+        'stat-arts': displayRes.stats.originiumArts.toFixed(0),
+        'stat-arts-bonus': '+' + displayRes.stats.originiumArts.toFixed(1) + '%',
         'stat-res': (displayRes.stats.resistance ?? 0).toFixed(0),
         'stat-res-mult': (((displayRes.stats.resMult ?? 1) - 1) * 100).toFixed(1) + '%'
     };
@@ -82,9 +84,6 @@ function renderResult(res) {
     const subLabel = document.getElementById('label-sub-stat');
     if (subLabel) subLabel.innerText = displayRes.stats.subStatName;
 
-    const multihitSpan = document.getElementById('stat-multihit');
-    if (multihitSpan) multihitSpan.innerText = displayRes.logs.multihit.length > 0 ? 'ON' : 'OFF';
-
     // 로그 목록 업데이트
     const logMapping = {
         'list-atk': displayRes.logs.atk,
@@ -93,7 +92,7 @@ function renderResult(res) {
         'list-vuln': displayRes.logs.vuln,
         'list-taken': displayRes.logs.taken,
         'list-unbal': displayRes.logs.unbal,
-        'list-multihit': displayRes.logs.multihit,
+        'list-ult-recharge': displayRes.logs.ultRecharge,
         'list-arts': displayRes.logs.arts,
         'list-res': displayRes.logs.res
     };
@@ -419,7 +418,7 @@ function renderCyclePerSkill(cycleRes) {
             const opData = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
             const skillDef = opData?.skill?.find(s => {
                 const entry = s;
-                return entry?.skilltype?.includes(t);
+                return entry?.skillType?.includes(t);
             });
 
             let content;
@@ -796,11 +795,11 @@ function updateEnhancedSkillButtons(opId) {
 
     // '강화'가 들어간 스킬을 찾음
     const enhancedSkills = opData.skill.filter(s => {
-        return s.skilltype && s.skilltype.some(st => st.startsWith('강화 '));
+        return s.skillType && s.skillType.some(st => st.startsWith('강화 '));
     });
 
     enhancedSkills.forEach(es => {
-        const skillName = es.skilltype[0]; // 0번 인덱스가 기본 스킬명
+        const skillName = es.skillType[0]; // 0번 인덱스가 기본 스킬명
         const btn = document.createElement('div');
         btn.className = 'cycle-btn cycle-btn-enhanced';
         btn.dataset.type = skillName;

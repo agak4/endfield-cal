@@ -45,7 +45,7 @@ const AppTooltip = {
         '열기 부착', '냉기 부착', '전기 부착', '자연 부착', '아츠 부착'
     ],
     /** 툴팁에 표시하지 않을 효과 타입 목록 (전투 외 효과) */
-    EXCLUDE_TYPES: ['최대 체력', '궁극기 충전', '치유 효율', '모든 능력치', '치유', '비호', '보호'],
+    EXCLUDE_TYPES: ['최대 생명력', '궁극기 충전', '치유 효율', '모든 능력치', '치유', '비호', '보호'],
 
     /** 무기 타입 코드 → 한글 이름 */
     WEP_TYPE_MAP: { sword: '한손검', great_sword: '양손검', polearm: '장병기', handcannon: '권총', arts_unit: '아츠 유닛' },
@@ -186,11 +186,11 @@ const AppTooltip = {
             // e.skilltype이 있거나, t.skilltype이 있는데 그것이 현재 스킬 자체 정의가 아닌 경우
             const sLabel = Array.isArray(source) ? source.join('/') : source;
             const filteredTypeArr = typeArr.filter(e => {
-                if (e.skilltype) return false;
-                if (t.skilltype) {
+                if (e.skillType) return false;
+                if (t.skillType) {
                     // t.skilltype이 source(스킬 종류)와 다르다면 특정 스킬을 타겟팅한 보너스임
                     const sourceArr = Array.isArray(source) ? source : [source];
-                    const isSelfSkill = t.skilltype.some(st => sourceArr.includes(st));
+                    const isSelfSkill = t.skillType.some(st => sourceArr.includes(st));
                     if (!isSelfSkill) return false;
                 }
                 return true;
@@ -202,7 +202,7 @@ const AppTooltip = {
             // 표시 문자열: '물리 취약 +12% / 방어 불능 부여'
             const typeStr = filteredTypeArr.map(e => {
                 let suffix = '';
-                const st = e.skilltype || t.skilltype;
+                const st = e.skillType || t.skillType;
                 if ((e.type === '스킬 치명타 확률' || e.type === '스킬 치명타 피해' || e.type === '스킬 배율 증가') && st) {
                     const stStr = Array.isArray(st) ? st.join(', ') : st;
                     suffix = ` (${stStr})`;
@@ -232,7 +232,7 @@ const AppTooltip = {
             processData([t], `재능${i + 1}`);
         });
         if (op.skill) op.skill.forEach(s => {
-            processData([[s]], s?.skilltype || '스킬');
+            processData([[s]], s?.skillType || '스킬');
         });
         if (op.potential) op.potential.forEach((p, i) => processData([p], '잠재', i + 1));
 
@@ -282,8 +282,8 @@ const AppTooltip = {
 
         wep.traits.forEach((t, i) => {
             let label = t.type === '스탯' ? getStatName(t.stat) : t.type;
-            if (t.skilltype && t.skilltype.length > 0) {
-                label += ` (${t.skilltype.join(', ')})`;
+            if (t.skillType && t.skillType.length > 0) {
+                label += ` (${t.skillType.join(', ')})`;
             }
 
             let rangeStr;
@@ -394,14 +394,14 @@ const AppTooltip = {
 
     /**
      * 스킬 툴팁 HTML을 렌더링한다.
-     * @param {string} skilltype - 스킬의 종류 이름 (예: '강화 일반 공격', '궁극기')
+     * @param {string} skillType - 스킬의 종류 이름 (예: '강화 일반 공격', '궁극기')
      * @param {object} skillData - 스킬 데이터 객체
      * @param {object} opData - 해당 오퍼레이터의 기본 데이터 (속성 등 참조용)
      * @param {string} [extraHtml=''] - 타이틀 아래에 추가할 커스텀 HTML
      * @param {Array} [activeEffects=[]] - 현재 활성화된 효과 리스트
      * @returns {string} HTML 문자열
      */
-    renderSkillTooltip(skilltype, skillData, opData, extraHtml = '', activeEffects = [], st = null) {
+    renderSkillTooltip(skillType, skillData, opData, extraHtml = '', activeEffects = [], st = null) {
         if (!skillData) return '';
         const entry = skillData;
         const attrLines = [];
@@ -411,7 +411,7 @@ const AppTooltip = {
             attrLines.push(`<div class="tooltip-bullet-point"><span class="tooltip-bullet-marker accent">•</span> 공격 속성: ${element}</div>`);
         }
 
-        if (skilltype === '궁극기' && entry.cost !== undefined) {
+        if (skillType === '궁극기' && entry.cost !== undefined) {
             attrLines.push(`<div class="tooltip-bullet-point"><span class="tooltip-bullet-marker">•</span> 궁극기 게이지: ${entry.cost}</div>`);
         }
 
@@ -421,7 +421,7 @@ const AppTooltip = {
                 if (typeof t === 'string') return t;
                 if (typeof t === 'object' && t !== null && t.type) {
                     // type 각 항목에 skilltype이 명시되어 있다면, 메인 속성이 아닌 것으로 간주하여 제외
-                    if (t.skilltype) return null;
+                    if (t.skillType) return null;
                     const tName = Array.isArray(t.type) ? t.type[0] : t.type;
                     return t.val ? `${tName} +${t.val}` : tName;
                 }
@@ -459,16 +459,16 @@ const AppTooltip = {
 
         // 적용 중인 효과 필터링
         const filteredEffects = activeEffects.filter(eff => {
-            const st = eff.skilltype || [];
+            const st = eff.skillType || [];
             // 해당 스킬 전용으로 지정된 '외부/추가' 효과인 경우 표시
-            if (eff._isExternal && st.includes(skilltype)) return true;
+            if (eff._isExternal && st.includes(skillType)) return true;
 
             // 카테고리별 피해 증가 및 배율 증가 필터링
             const t = Array.isArray(eff.type) ? eff.type[0] : eff.type;
-            const isNormal = skilltype === '일반 공격' || skilltype.includes('강화 일반 공격');
-            const isBattle = skilltype === '배틀 스킬' || skilltype.includes('강화 배틀 스킬');
-            const isCombo = skilltype === '연계 스킬';
-            const isUlt = skilltype === '궁극기';
+            const isNormal = skillType === '일반 공격' || skillType.includes('강화 일반 공격');
+            const isBattle = skillType === '배틀 스킬' || skillType.includes('강화 배틀 스킬');
+            const isCombo = skillType === '연계 스킬';
+            const isUlt = skillType === '궁극기';
 
             if (isNormal && t === '일반 공격 피해') return true;
             if (isBattle && t === '배틀 스킬 피해') return true;
@@ -477,7 +477,7 @@ const AppTooltip = {
 
             if ((isBattle || isCombo || isUlt) && (t === '모든 스킬 피해' || t === '스킬 배율 증가')) {
                 // 효과에 특정 스킬 타입이 지정된 경우, 현재 스킬 타입과 일치해야만 함
-                if (st.length > 0) return st.includes(skilltype);
+                if (st.length > 0) return st.includes(skillType);
                 return true;
             }
 
@@ -493,7 +493,7 @@ const AppTooltip = {
                 if (ds.physDebuff) {
                     if (ds.physDebuff.defenseless > 0) extraEffects.push(`방어 불능 ${ds.physDebuff.defenseless}스택`);
                     if (ds.physDebuff.armorBreak > 0) extraEffects.push(`갑옷 파괴 ${ds.physDebuff.armorBreak}스택`);
-                    if (ds.physDebuff.originiumSeal > 0) extraEffects.push('오리지늄 봉인');
+                    if (ds.physDebuff.originiumSeal > 0) extraEffects.push('오리지늄 결정');
                 }
                 if (ds.artsAttach && ds.artsAttach.type && ds.artsAttach.stacks > 0) {
                     extraEffects.push(`${ds.artsAttach.type} ${ds.artsAttach.stacks}스택`);
@@ -549,7 +549,7 @@ const AppTooltip = {
             : '';
 
         return `
-            <div class="tooltip-title">${skilltype}</div> 
+            <div class="tooltip-title">${skillType}</div> 
             ${extraHtml ? `<div class="tooltip-group">${extraHtml}</div>` : ''}
             ${attrHtml}
             <div class="tooltip-desc">${entry.desc || '설명 없음'}</div>

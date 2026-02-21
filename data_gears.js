@@ -89,7 +89,7 @@ const DATA_GEAR = [
   { id: 'gear_57', name: '경량 초자연 보호판', part: 'armor', set: 'set_light_super', stat1: 'str', val1: 87, val1_f: 113, stat2: 'wil', val2: 58, val2_f: 75, trait: [{ type: ['불균형 목표에 주는 피해'], val: '20.7%', val_f: '26.9%' }] },
   { id: 'gear_58', name: '생체 보조 보호 주사기', part: 'kit', set: 'set_bio_support', stat1: 'wil', val1: 41, val1_f: 53, stat2: null, val2: 0, trait: [{ type: ['치유 효율'], val: '20.7%', val_f: '26.9%' }] },
   { id: 'gear_59', name: '생체 보조 보호판', part: 'kit', set: 'set_bio_support', stat1: 'wil', val1: 32, val1_f: 41, stat2: 'int', val2: 21, val2_f: 27, trait: [{ type: ['스탯'], stat: '주스탯', val: '20.7%', val_f: '26.9%' }] },
-  { id: 'gear_60', name: '생체 보조 접속기 · I', part: 'kit', set: 'set_bio_support', stat1: 'str', val1: 32, val1_f: 41, stat2: 'wil', val2: 21, val2_f: 27, trait: [{ type: ['최대 체력'], val: '41.4%', val_f: '53.8%' }] },
+  { id: 'gear_60', name: '생체 보조 접속기 · I', part: 'kit', set: 'set_bio_support', stat1: 'str', val1: 32, val1_f: 41, stat2: 'wil', val2: 21, val2_f: 27, trait: [{ type: ['최대 생명력'], val: '41.4%', val_f: '53.8%' }] },
   { id: 'gear_61', name: '생체 보조 접속기', part: 'kit', set: 'set_bio_support', stat1: 'str', val1: 32, val1_f: 41, stat2: 'wil', val2: 21, val2_f: 27, trait: [{ type: ['모든 피해 감소'], val: '17.2%', val_f: '21.2%' }] },
   { id: 'gear_62', name: '생체 보조 건틀릿', part: 'gloves', set: 'set_bio_support', stat1: 'wil', val1: 65, val1_f: 84, stat2: 'str', val2: 43, val2_f: 55, trait: [{ type: ['치유 효율'], val: '17.3%', val_f: '22.3%' }] },
   { id: 'gear_63', name: '생체 보조 견갑', part: 'gloves', set: 'set_bio_support', stat1: 'str', val1: 65, val1_f: 84, stat2: 'wil', val2: 43, val2_f: 55, trait: [{ type: ['궁극기 충전 효율'], val: '20.5%', val_f: '26.7%' }] },
@@ -110,7 +110,7 @@ const DATA_SETS = [
     id: 'set_shikyang',
     name: '식양의 숨결',
     effects: [
-      { type: ['스탯'], stat: '최대 체력', val: '1000' },
+      { type: ['스탯'], stat: '최대 생명력', val: '1000' },
       { type: ['주는 피해'], val: '16%', target: '팀_외', nonStack: true, triggers: ['증폭', '비호', '취약', '허약'] }
     ]
   },

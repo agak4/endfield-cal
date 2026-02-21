@@ -181,7 +181,7 @@ function initUI() {
 
             const skillDef = opData.skill.find(s => {
                 const entry = s;
-                return entry?.skilltype?.includes(type);
+                return entry?.skillType?.includes(type);
             });
 
             if (skillDef) {

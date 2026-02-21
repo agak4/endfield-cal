@@ -599,7 +599,7 @@ function applyDebuffStateToUI() {
     const abEl = document.getElementById('debuff-icon-armorBreak');
     if (abEl) applyDebuffIconState(abEl, ds.physDebuff?.armorBreak || 0);
 
-    // 오리지늘 봉인 (ON/OFF)
+    // 오리지늘 결정 (ON/OFF)
     const osEl = document.getElementById('debuff-icon-originiumSeal');
     if (osEl) {
         const v = ds.physDebuff?.originiumSeal || 0;

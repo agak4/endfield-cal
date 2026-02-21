@@ -409,14 +409,14 @@
                             <span class="debuff-stack-label">0</span>
                         </div>
 
-                        <!-- 오리지늄 봉인: ON/OFF 토글 -->
+                        <!-- 오리지늄 결정: ON/OFF 토글 -->
                         <div class="debuff-icon-wrap debuff-icon-toggle" id="debuff-icon-originiumSeal"
                             data-debuff="originiumSeal" data-stacks="0" onclick="cycleDebuffToggle(this)">
                             <svg class="debuff-ring-svg" viewBox="0 0 100 100">
                                 <circle class="ring-seg seg-0" cx="50" cy="50" r="42" fill="none" />
                             </svg>
                             <div class="debuff-icon-img-wrap">
-                                <img src="images/debuff/오리지늄 봉인.png" alt="오리지늄 봉인">
+                                <img src="images/debuff/오리지늄 결정.png" alt="오리지늄 결정">
                             </div>
                             <span class="debuff-stack-label">0</span>
                         </div>
@@ -642,8 +642,21 @@
                     <ul id="list-unbal" class="detail-list"></ul>
                 </div>
                 <div class="tile">
+                    <h4>궁극기 충전 효율</h4>
+                    <span id="stat-ult-recharge">0%</span>
+                    <ul id="list-ult-recharge" class="detail-list"></ul>
+                </div>
+                <div class="tile">
                     <h4>오리지늄 아츠 강도</h4>
-                    <span id="stat-arts">0</span>
+                    <div class="tile-main-stat-row">
+                        <span id="stat-arts">0</span>
+                        <div class="tile-sub-stats">
+                            <div class="sub-stat-item">
+                                <label>이상/폭발 피해</label>
+                                <span id="stat-arts-bonus">+0%</span>
+                            </div>
+                        </div>
+                    </div>
                     <ul id="list-arts" class="detail-list"></ul>
                 </div>
                 <div class="tile">

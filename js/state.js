@@ -63,7 +63,7 @@ let state = {
      * defenseless: 방어불능, 0~4단계
      */
     debuffState: {
-        physDebuff: { defenseless: 0, armorBreak: 0, originiumSeal: 0, combo: 0 }, // 방어불능, 갑옷파괴, 오리지늘 봉인, 연타
+        physDebuff: { defenseless: 0, armorBreak: 0, originiumSeal: 0, combo: 0 }, // 방어불능, 갑옷파괴, 오리지늘 결정, 연타
         artsAttach: { type: null, stacks: 0 }, // 한 종류만 가능
         artsAbnormal: { '연소': 0, '감전': 0, '동결': 0, '부식': 0 }
     },
