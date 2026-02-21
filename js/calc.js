@@ -356,7 +356,7 @@ function applyPercentStats(effects, stats) {
 // ---- 최종 데미지 산출 ----
 function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, activeEffects) {
     const baseAtk = opData.baseAtk + wepData.baseAtk;
-    let atkInc = 0, critRate = 5, critDmg = 50, dmgInc = 0, amp = 0, vuln = 0, takenDmg = 0, multiHit = 1.0, unbalanceDmg = 0, originiumArts = 0, ultRecharge = 0, skillMults = { all: { mult: 0, add: 0 } }, dmgIncMap = { all: 0, skill: 0, normal: 0, battle: 0, combo: 0, ult: 0 };
+    let atkInc = 0, critRate = 5, critDmg = 50, dmgInc = 0, amp = 0, vuln = 0, takenDmg = 0, multiHit = 1.0, unbalanceDmg = 0, originiumArts = 0, ultRecharge = 0, ultCostReduction = 0, skillMults = { all: { mult: 0, add: 0 } }, dmgIncMap = { all: 0, skill: 0, normal: 0, battle: 0, combo: 0, ult: 0 };
     const skillCritData = { rate: { all: 0 }, dmg: { all: 0 } };
     const skillAtkIncData = { all: 0 };
     const logs = {
@@ -473,7 +473,10 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
             logs.arts.push({ txt: `[${displayName}] ${valDisplay} (${t})`, uid });
         } else if (t === '궁극기 충전 효율') {
             if (!isDisabled) ultRecharge += val;
-            logs.ultRecharge.push({ txt: `[${displayName}] ${valDisplay} (${t})`, uid });
+            logs.ultRecharge.push({ txt: `[${displayName}] ${valDisplay} (${t})`, uid, tag: 'recharge' });
+        } else if (t === '궁극기 에너지 감소') {
+            if (!isDisabled) ultCostReduction += val;
+            logs.ultRecharge.push({ txt: `[${displayName}] ${valDisplay} (${t})`, uid, tag: 'reduction' });
         } else if (t === '치명타 확률') {
             if (eff.skillType) {
                 const skTypes = eff.skillType || [];
@@ -641,6 +644,13 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
         logs.dmgInc.push({ txt: `[검술사 추가피해] +${Math.floor(extraDmg).toLocaleString()}`, uid: 'swordsman_extra' });
     }
 
+    let baseUltCost = 0;
+    if (opData.skill) {
+        const ultSkill = opData.skill.find(s => s.skillType && s.skillType.includes('궁극기'));
+        if (ultSkill) baseUltCost = ultSkill.cost || 0;
+    }
+    const finalUltCost = Math.max(0, baseUltCost * (1 + ultCostReduction / 100));
+
     return {
         finalDmg,
         activeEffects,
@@ -649,7 +659,7 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
             mainStatName: STAT_NAME_MAP[opData.mainStat], mainStatVal: stats[opData.mainStat],
             subStatName: STAT_NAME_MAP[opData.subStat], subStatVal: stats[opData.subStat],
             critExp, finalCritRate, critDmg, dmgInc, amp, vuln, takenDmg, unbalanceDmg: finalUnbal, originiumArts, skillMults, dmgIncData: dmgIncMap,
-            skillCritData, resistance: activeResVal, resMult, ultRecharge
+            skillCritData, resistance: activeResVal, resMult, ultRecharge, finalUltCost
         },
         logs
     };

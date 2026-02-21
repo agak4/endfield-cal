@@ -67,6 +67,7 @@ function renderResult(res) {
         'stat-taken': displayRes.stats.takenDmg.toFixed(1) + '%',
         'stat-unbal': displayRes.stats.unbalanceDmg.toFixed(1) + '%',
         'stat-ult-recharge': (displayRes.stats.ultRecharge || 0).toFixed(1) + '%',
+        'stat-ult-cost': Math.floor(displayRes.stats.finalUltCost || 0),
         'stat-arts': displayRes.stats.originiumArts.toFixed(0),
         'stat-arts-bonus': '+' + displayRes.stats.originiumArts.toFixed(1) + '%',
         'stat-res': (displayRes.stats.resistance ?? 0).toFixed(0),
@@ -85,6 +86,7 @@ function renderResult(res) {
     if (subLabel) subLabel.innerText = displayRes.stats.subStatName;
 
     // 로그 목록 업데이트
+    const ultRechargeList = (displayRes.logs.ultRecharge || []).filter(log => log.tag === 'reduction');
     const logMapping = {
         'list-atk': displayRes.logs.atk,
         'list-crit': displayRes.logs.crit,
@@ -92,7 +94,7 @@ function renderResult(res) {
         'list-vuln': displayRes.logs.vuln,
         'list-taken': displayRes.logs.taken,
         'list-unbal': displayRes.logs.unbal,
-        'list-ult-recharge': displayRes.logs.ultRecharge,
+        'list-ult-recharge': ultRechargeList,
         'list-arts': displayRes.logs.arts,
         'list-res': displayRes.logs.res
     };
