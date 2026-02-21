@@ -385,11 +385,11 @@ const AppTooltip = {
 
         const element = this.getElementName(opData);
         if (element) {
-            attrLines.push(`<div style="margin-bottom:2px;"><span style="color:var(--accent)">•</span> 공격 속성: ${element}</div>`);
+            attrLines.push(`<div class="tooltip-bullet-point"><span class="tooltip-bullet-marker accent">•</span> 공격 속성: ${element}</div>`);
         }
 
         if (skilltype === '궁극기' && entry.cost !== undefined) {
-            attrLines.push(`<div style="margin-bottom:2px;"><span style="color:inherit">•</span> 궁극기 게이지: ${entry.cost}</div>`);
+            attrLines.push(`<div class="tooltip-bullet-point"><span class="tooltip-bullet-marker">•</span> 궁극기 게이지: ${entry.cost}</div>`);
         }
 
         if (entry.type) {
@@ -402,14 +402,14 @@ const AppTooltip = {
                 return '';
             }).filter(Boolean);
             if (typeStrs.length > 0) {
-                attrLines.push(`<div style="margin-bottom:2px;"><span style="color:inherit">•</span> ${typeStrs.join(' / ')}</div>`);
+                attrLines.push(`<div class="tooltip-bullet-point"><span class="tooltip-bullet-marker">•</span> ${typeStrs.join(' / ')}</div>`);
             }
         }
 
         if (entry.dmg) {
             const rawDmgNum = parseInt(entry.dmg, 10);
             if (rawDmgNum > 0) {
-                let dmgStr = `기본 데미지: <strong style="color:var(--accent);">${entry.dmg}</strong>`;
+                let dmgStr = `기본 데미지: <strong class="tooltip-highlight">${entry.dmg}</strong>`;
                 if (entry.bonus) {
                     const bonusList = Array.isArray(entry.bonus) ? entry.bonus : [entry.bonus];
                     const bonusStr = bonusList.map(b => {
@@ -423,24 +423,23 @@ const AppTooltip = {
                         } else if (b.base !== undefined) {
                             bValStr = '+' + b.base;
                         }
-                        return `<span style="color:var(--text-muted);">(${triggerStr} <strong style="color:var(--accent);">${bValStr}</strong>)</span>`;
+                        return `<span class="tooltip-muted">(${triggerStr} <strong class="tooltip-highlight">${bValStr}</strong>)</span>`;
                     }).join(' ');
                     dmgStr += ` ${bonusStr}`;
                 }
-                attrLines.push(`<div style="margin-bottom:2px;"><span style="color:inherit">•</span> ${dmgStr}</div>`);
+                attrLines.push(`<div class="tooltip-bullet-point"><span class="tooltip-bullet-marker">•</span> ${dmgStr}</div>`);
             }
         }
 
         const attrHtml = attrLines.length > 0
-            ? `<div class="tooltip-section" style="margin-bottom:8px;">${attrLines.join('')}</div>`
+            ? `<div class="tooltip-section tooltip-group">${attrLines.join('')}</div>`
             : '';
 
         return `
-            <div class="tooltip-title" style="color:var(--accent); margin-bottom:6px; font-size:1.05rem; font-weight:bold;">${skilltype}</div> 
-            ${extraHtml ? `<div style="margin-bottom:8px;">${extraHtml}</div>` : ''}
+            <div class="tooltip-title">${skilltype}</div> 
+            ${extraHtml ? `<div class="tooltip-group">${extraHtml}</div>` : ''}
             ${attrHtml}
-            <div class="tooltip-desc" style="color:var(--text-secondary); line-height:1.4;">${entry.desc || '설명 없음'}</div>
+            <div class="tooltip-desc">${entry.desc || '설명 없음'}</div>
         `;
     }
 };
-

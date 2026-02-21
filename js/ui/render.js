@@ -304,9 +304,9 @@ function renderCycleSequence(cycleRes) {
             let content;
             if (customState && indivDmg !== undefined) {
                 content = `
-                    <div class="tooltip-title" style="color:var(--accent)">개별 설정 적용됨</div>
+                    <div class="tooltip-title tooltip-highlight">개별 설정 적용됨</div>
                     <div class="tooltip-desc">
-                        1회 데미지: <strong style="color:var(--accent)">${Math.floor(indivDmg).toLocaleString()}</strong><br>
+                        1회 데미지: <strong class="tooltip-highlight">${Math.floor(indivDmg).toLocaleString()}</strong><br>
                         데미지 배율: <strong>${Math.floor(indivRate * 100)}%</strong>
                     </div>
                 `;
@@ -405,12 +405,12 @@ function renderCyclePerSkill(cycleRes) {
 
             let content;
             if (skillDef) {
-                const extraHtml = unitDmgStr ? `<div class="tooltip-desc" style="color: var(--accent);">1회 데미지: ${unitDmgStr}</div>` : '';
+                const extraHtml = unitDmgStr ? `<div class="tooltip-desc tooltip-highlight">1회 데미지: ${unitDmgStr}</div>` : '';
                 content = AppTooltip.renderSkillTooltip(t, skillDef, opData, extraHtml);
             } else {
                 content = `
                     <div class="tooltip-title">${t}</div> 
-                    <div class="tooltip-desc" style="color: var(--accent); margin-bottom: 5px;">${unitDmgStr}</div>
+                    <div class="tooltip-desc tooltip-highlight tooltip-group">${unitDmgStr}</div>
                     <div class="tooltip-desc">${data.desc ? data.desc : '설명 없음'}</div>
                 `;
             }

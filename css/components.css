@@ -659,3 +659,36 @@
     padding-top: 8px;
     border-top: 1px dashed rgba(255, 255, 255, 0.1);
 }
+
+/* 스킬 툴팁 전용 스타일 */
+.tooltip-title {
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-size: 1.05rem;
+    font-weight: bold;
+}
+
+.tooltip-bullet-point {
+    margin-bottom: 2px;
+}
+
+.tooltip-bullet-marker {
+    color: inherit;
+}
+
+.tooltip-bullet-marker.accent {
+    color: var(--accent);
+}
+
+.tooltip-highlight {
+    color: var(--accent);
+    font-weight: bold;
+}
+
+.tooltip-muted {
+    color: var(--text-muted);
+}
+
+.tooltip-group {
+    margin-bottom: 8px;
+}
