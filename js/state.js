@@ -63,7 +63,7 @@ let state = {
      * defenseless: 방어불능, 0~4단계
      */
     debuffState: {
-        physDebuff: { defenseless: 0, armorBreak: 0, originiumSeal: 0 }, // 방어불능, 갑옷파괴, 오리지늘 봉인
+        physDebuff: { defenseless: 0, armorBreak: 0, originiumSeal: 0, combo: 0 }, // 방어불능, 갑옷파괴, 오리지늘 봉인, 연타
         artsAttach: { type: null, stacks: 0 }, // 한 종류만 가능
         artsAbnormal: { '연소': 0, '감전': 0, '동결': 0, '부식': 0 }
     },
@@ -139,7 +139,6 @@ function updateState() {
     // 계산 → 렌더링
     const result = calculateDamage(state);
     if (typeof renderResult === 'function') renderResult(result);
-    if (typeof renderWeaponComparison === 'function') renderWeaponComparison(result ? result.finalDmg : 0);
 
     saveState();
 
@@ -308,11 +307,15 @@ function loadState() {
 
             // [안전장치] physDebuff 객체가 없으면 생성
             if (!state.debuffState.physDebuff) {
-                state.debuffState.physDebuff = { defenseless: 0, armorBreak: 0, originiumSeal: 0 };
+                state.debuffState.physDebuff = { defenseless: 0, armorBreak: 0, originiumSeal: 0, combo: 0 };
             }
             // originiumSeal 필드 누락 마이그레이션
             if (state.debuffState.physDebuff.originiumSeal === undefined) {
                 state.debuffState.physDebuff.originiumSeal = 0;
+            }
+            // combo 필드 누락 및 기존 stat-multihit 연동 마이그레이션
+            if (state.debuffState.physDebuff.combo === undefined) {
+                state.debuffState.physDebuff.combo = 0;
             }
 
             // mainOp.specialStack 초기화

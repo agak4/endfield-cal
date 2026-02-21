@@ -607,6 +607,14 @@ function applyDebuffStateToUI() {
         applyDebuffIconState(osEl, v);
     }
 
+    // 연타
+    const comboEl = document.getElementById('debuff-icon-combo');
+    if (comboEl) {
+        const v = ds.physDebuff?.combo || 0;
+        comboEl.dataset.stacks = v;
+        applyDebuffIconState(comboEl, v);
+    }
+
     // 아츠 부착
     const ATTACH_TYPES = ['열기 부착', '전기 부착', '냉기 부착', '자연 부착'];
     ATTACH_TYPES.forEach(t => {

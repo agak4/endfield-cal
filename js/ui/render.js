@@ -114,6 +114,9 @@ function renderResult(res) {
     if (typeof updateUIStateVisuals === 'function') {
         updateUIStateVisuals();
     }
+
+    // 무기 비교 렌더링 (사이클 데미지 우선)
+    renderWeaponComparison(res, cycleRes);
 }
 
 /**
@@ -311,31 +314,32 @@ function renderCycleSequence(cycleRes) {
         cardContainer.appendChild(delBtn);
 
         cardContainer.onmouseenter = (e) => {
-            let content;
-            if (customState && indivDmg !== undefined) {
-                content = `
-                    <div class="tooltip-title tooltip-highlight">개별 설정 적용됨</div>
-                    <div class="tooltip-desc">
-                        1회 데미지: <strong class="tooltip-highlight">${Math.floor(indivDmg).toLocaleString()}</strong><br>
-                        데미지 배율: <strong>${Math.floor(indivRate * 100)}%</strong>
-                    </div>
-                `;
-            } else {
-                const opData = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
-                const skillDef = opData?.skill?.find(s => {
-                    const entry = s;
-                    return entry?.skilltype?.includes(type);
+            const displayDmg = indivDmg !== undefined ? indivDmg : (item.dmg || 0);
+
+            // 배율 표시 로직: 기본 배율 + 물리 이상 형식
+            const rawRate = item.rawRate;
+            const abnormalInfo = item.abnormalInfo || [];
+            let rateHtml = '';
+
+            if (rawRate !== undefined) {
+                const abnormalMultTotal = abnormalInfo.reduce((acc, a) => acc + (a.mult || 0), 0);
+                const baseMult = rawRate - abnormalMultTotal;
+                rateHtml = `${(baseMult * 100).toFixed(0)}%`;
+
+                abnormalInfo.forEach(a => {
+                    rateHtml += ` + ${a.name} ${(a.mult * 100).toFixed(0)}%`;
                 });
-                if (skillDef) {
-                    const activeEffects = window.lastCalcResult ? window.lastCalcResult.activeEffects : [];
-                    content = AppTooltip.renderSkillTooltip(type, skillDef, opData, '', activeEffects);
-                } else {
-                    content = `
-                        <div class="tooltip-title">${type}</div> 
-                        <div class="tooltip-desc">${desc ? desc : '설명 없음'}</div>
-                    `;
-                }
+            } else {
+                rateHtml = item.dmgRate || '0%';
             }
+
+            const content = `
+                <div class="tooltip-title tooltip-highlight">${type}</div>
+                <div class="tooltip-desc">
+                    피해량: <strong class="tooltip-highlight">${Math.floor(displayDmg).toLocaleString()}</strong><br>
+                    데미지 배율: <strong>${rateHtml}</strong>
+                </div>
+            `;
             AppTooltip.showCustom(content, e, { width: '260px' });
         };
         cardContainer.onmouseleave = () => AppTooltip.hide();
@@ -402,8 +406,8 @@ function renderCyclePerSkill(cycleRes) {
 
         const header = document.createElement('div');
         header.className = 'skill-card-header';
-        const rateText = dmgRate ? `<span class="skill-rate" style="color:var(--text-muted); margin-left:4px;">(${dmgRate})</span>` : '';
-        header.innerHTML = `<span class="skill-name">${t}${rateText}</span><span class="skill-dmg">${dmgVal.toLocaleString()}</span>`;
+        // 배율(%) 표시 제거
+        header.innerHTML = `<span class="skill-name">${t}</span><span class="skill-dmg">${dmgVal.toLocaleString()}</span>`;
 
         // 툴팁에는 1회 데미지를 추가로 표시
         header.onmouseenter = (e) => {
@@ -417,12 +421,23 @@ function renderCyclePerSkill(cycleRes) {
             let content;
             if (skillDef) {
                 const activeEffects = window.lastCalcResult ? window.lastCalcResult.activeEffects : [];
-                const extraHtml = unitDmgStr ? `<div class="tooltip-desc tooltip-highlight">1회 데미지: ${unitDmgStr}</div>` : '';
-                content = AppTooltip.renderSkillTooltip(t, skillDef, opData, extraHtml, activeEffects);
+                const extraHtml = ''; // 1회 데미지 항목 제거
+
+                let targetSt = state;
+                if (data.customState) {
+                    targetSt = {
+                        ...state,
+                        disabledEffects: data.customState.disabledEffects,
+                        debuffState: data.customState.debuffState,
+                        enemyUnbalanced: data.customState.enemyUnbalanced,
+                        mainOp: { ...state.mainOp, specialStack: data.customState.specialStack }
+                    };
+                }
+
+                content = AppTooltip.renderSkillTooltip(t, skillDef, opData, extraHtml, activeEffects, targetSt);
             } else {
                 content = `
                     <div class="tooltip-title">${t}</div> 
-                    <div class="tooltip-desc tooltip-highlight tooltip-group">${unitDmgStr}</div>
                     <div class="tooltip-desc">${data.desc ? data.desc : '설명 없음'}</div>
                 `;
             }
@@ -435,8 +450,8 @@ function renderCyclePerSkill(cycleRes) {
         // 3. 지분율 표시
         const shareDiv = document.createElement('div');
         shareDiv.className = 'skill-dmg-share';
-        const total = cycleRes.total || 0;
-        const share = total > 0 ? (dmgVal / total * 100) : 0;
+        const totalValue = cycleRes.total || 0;
+        const share = totalValue > 0 ? (dmgVal / totalValue * 100) : 0;
         shareDiv.innerText = share.toFixed(1) + '%';
 
         row.appendChild(countDiv);
@@ -445,23 +460,83 @@ function renderCyclePerSkill(cycleRes) {
 
         list.appendChild(row);
     });
+
+    // 물리 이상 및 재능/잠재 항목 추가 렌더링
+    if (cycleRes.perAbnormal && Object.keys(cycleRes.perAbnormal).length > 0) {
+        // 물리 이상은 위로, 재능/잠재는 아래로 정렬
+        const abnormalEntries = Object.entries(cycleRes.perAbnormal).sort((a, b) => {
+            const isAProc = a[0].startsWith('재능') || a[0].startsWith('잠재');
+            const isBProc = b[0].startsWith('재능') || b[0].startsWith('잠재');
+            if (isAProc && !isBProc) return 1;
+            if (!isAProc && isBProc) return -1;
+            return 0;
+        });
+
+        abnormalEntries.forEach(([aName, aData]) => {
+            const dmgVal = aData.dmg || 0;
+            const count = aData.count || 0;
+
+            const row = document.createElement('div');
+            row.className = 'cycle-dmg-row abnormal-row';
+            row.style.display = 'flex';
+            row.style.alignItems = 'center';
+            row.style.gap = '8px';
+            row.style.opacity = '0.9';
+
+            const isProc = aName.startsWith('재능') || aName.startsWith('잠재');
+            const labelText = isProc ? aName : `${aName}`;
+
+            const countDiv = document.createElement('div');
+            countDiv.className = 'skill-count-badge';
+            countDiv.innerText = `${count}회`;
+            countDiv.style.minWidth = '40px';
+            countDiv.style.textAlign = 'center';
+            countDiv.style.fontSize = '0.8rem';
+            countDiv.style.background = 'rgba(255, 255, 255, 0.05)';
+            countDiv.style.padding = '4px';
+            countDiv.style.borderRadius = '4px';
+
+            const card = document.createElement('div');
+            card.className = 'skill-card';
+            card.style.flex = '1';
+
+            const header = document.createElement('div');
+            header.className = 'skill-card-header';
+            header.innerHTML = `<span class="skill-name"">${labelText}</span><span class="skill-dmg"">${dmgVal.toLocaleString()}</span>`;
+
+            card.appendChild(header);
+
+            const shareDiv = document.createElement('div');
+            shareDiv.className = 'skill-dmg-share';
+            const totalValue = cycleRes.total || 0;
+            const share = totalValue > 0 ? (dmgVal / totalValue * 100) : 0;
+            shareDiv.innerText = share.toFixed(1) + '%';
+
+            row.appendChild(countDiv);
+            row.appendChild(card);
+            row.appendChild(shareDiv);
+
+            list.appendChild(row);
+        });
+    }
 }
 
 /**
  * 현재 오퍼레이터가 사용할 수 있는 모든 무기의 데미지를 비교 렌더링한다.
+ * 사이클 데미지 합계를 우선으로 비교하며, 합계가 0이면 최종 1회 데미지를 기준으로 한다.
  *
- * 현재 장착 무기는 제외하고 나머지를 순회하며 각 무기로 calculateDamage를 호출한다.
- * 비교 완료 후 state.mainOp의 무기 정보를 반드시 원복한다.
- * 순서가 바뀌면 FLIP 애니메이션을 적용한다.
- *
- * @param {number} currentDmg - 현재 무기로 계산된 최종 데미지 (기준값)
+ * @param {object} currentRes - 현재 무기로 계산된 calculateDamage 결과
+ * @param {object|null} currentCycle - 현재 무기로 계산된 calculateCycleDamage 결과
  */
-function renderWeaponComparison(currentDmg) {
+function renderWeaponComparison(currentRes, currentCycle) {
     const box = document.getElementById('weapon-comparison');
-    if (!box || !state.mainOp.id) return;
+    if (!box || !state.mainOp.id || !currentRes) return;
 
     const currentOp = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
     if (!currentOp) return;
+
+    // 기준값 결정 (사이클 합산 > 0 이면 사이클 데미지, 아니면 최종 데미지)
+    const currentTotal = (currentCycle && currentCycle.total > 0) ? currentCycle.total : currentRes.finalDmg;
 
     // FLIP 애니메이션: 현재 각 항목의 위치(First) 저장
     const firstPositions = new Map();
@@ -483,11 +558,16 @@ function renderWeaponComparison(currentDmg) {
             state.mainOp.wepId = w.id;
             state.mainOp.wepPot = compPot;
             state.mainOp.wepState = compState;
+
             const res = calculateDamage(state);
             if (!res) return null;
-            const diff = res.finalDmg - currentDmg;
-            const pct = currentDmg > 0 ? ((diff / currentDmg) * 100).toFixed(1) : 0;
-            return { name: w.name, finalDmg: res.finalDmg, pct: Number(pct) };
+
+            const cRes = typeof calculateCycleDamage === 'function' ? calculateCycleDamage(state, res) : null;
+            const compTotal = (cRes && cRes.total > 0) ? cRes.total : res.finalDmg;
+
+            const diff = compTotal - currentTotal;
+            const pct = currentTotal > 0 ? ((diff / currentTotal) * 100).toFixed(1) : 0;
+            return { name: w.name, finalDmg: compTotal, pct: Number(pct) };
         })
         .filter(Boolean)
         .sort((a, b) => b.finalDmg - a.finalDmg);
@@ -497,7 +577,7 @@ function renderWeaponComparison(currentDmg) {
     state.mainOp.wepPot = savedWepPot;
     state.mainOp.wepState = savedWepState;
 
-    const maxDmg = comparisons.length > 0 ? Math.max(comparisons[0].finalDmg, currentDmg) : currentDmg;
+    const maxDmg = comparisons.length > 0 ? Math.max(comparisons[0].finalDmg, currentTotal) : currentTotal;
     box.innerHTML = '';
 
     comparisons.forEach(item => {

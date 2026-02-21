@@ -398,7 +398,7 @@ const AppTooltip = {
      * @param {Array} [activeEffects=[]] - 현재 활성화된 효과 리스트
      * @returns {string} HTML 문자열
      */
-    renderSkillTooltip(skilltype, skillData, opData, extraHtml = '', activeEffects = []) {
+    renderSkillTooltip(skilltype, skillData, opData, extraHtml = '', activeEffects = [], st = null) {
         if (!skillData) return '';
         const entry = skillData;
         const attrLines = [];
@@ -413,7 +413,7 @@ const AppTooltip = {
         }
 
         if (entry.type) {
-            const typeArray = entry.type || [];
+            const typeArray = Array.isArray(entry.type) ? entry.type : [entry.type];
             const typeStrs = typeArray.map(t => {
                 if (typeof t === 'string') return t;
                 if (typeof t === 'object' && t !== null && t.type) {
@@ -471,19 +471,74 @@ const AppTooltip = {
             if (isBattle && t === '배틀 스킬 피해') return true;
             if (isCombo && t === '연계 스킬 피해') return true;
             if (isUlt && t === '궁극기 피해') return true;
-            if ((isBattle || isCombo || isUlt) && (t === '모든 스킬 피해' || t === '스킬 배율 증가')) return true;
+
+            if ((isBattle || isCombo || isUlt) && (t === '모든 스킬 피해' || t === '스킬 배율 증가')) {
+                // 효과에 특정 스킬 타입이 지정된 경우, 현재 스킬 타입과 일치해야만 함
+                if (st.length > 0) return st.includes(skilltype);
+                return true;
+            }
 
             return false;
         });
 
-        if (filteredEffects.length > 0) {
-            attrLines.push('<div style="margin-top:8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top:8px;"></div>');
-            attrLines.push('<div class="tooltip-label" style="font-size:11px; color:var(--accent); margin-bottom:4px;">적용 중인 추가 효과</div>');
-            filteredEffects.forEach(eff => {
-                const tName = Array.isArray(eff.type) ? eff.type[0] : eff.type;
-                const valStr = eff.val !== undefined ? ` +${eff.val}` : '';
-                attrLines.push(`<div class="tooltip-bullet-point" style="color:var(--accent); font-size:12px;"><span class="tooltip-bullet-marker">•</span> ${tName}${valStr}</div>`);
-            });
+        if (filteredEffects.length > 0 || st) {
+            const extraEffects = [];
+
+            // 1. 디버프 상태 추가 (스택 정보 포함)
+            if (st && st.debuffState) {
+                const ds = st.debuffState;
+                if (ds.physDebuff) {
+                    if (ds.physDebuff.defenseless > 0) extraEffects.push(`방어 불능 ${ds.physDebuff.defenseless}스택`);
+                    if (ds.physDebuff.armorBreak > 0) extraEffects.push(`갑옷 파괴 ${ds.physDebuff.armorBreak}스택`);
+                    if (ds.physDebuff.originiumSeal > 0) extraEffects.push('오리지늄 봉인');
+                }
+                if (ds.artsAttach && ds.artsAttach.type && ds.artsAttach.stacks > 0) {
+                    extraEffects.push(`${ds.artsAttach.type} ${ds.artsAttach.stacks}스택`);
+                }
+                if (ds.artsAbnormal) {
+                    Object.entries(ds.artsAbnormal).forEach(([name, stacks]) => {
+                        if (stacks > 0) extraEffects.push(`${name} ${stacks}스택`);
+                    });
+                }
+            }
+
+            // 2. 전용 스택 추가
+            if (st && st.mainOp && st.mainOp.specialStack && opData && opData.specialStack) {
+                const specData = Array.isArray(opData.specialStack) ? opData.specialStack : [opData.specialStack];
+                specData.forEach(s => {
+                    const sid = s.id || 'default';
+                    const count = st.mainOp.specialStack[sid] || 0;
+                    if (count > 0) extraEffects.push(`${s.name} ${count}스택`);
+                });
+            }
+
+            // 3. 스킬 자체 보너스 트리거 확인
+            if (st && entry.bonus) {
+                const bonuses = Array.isArray(entry.bonus) ? entry.bonus : [entry.bonus];
+                bonuses.forEach(b => {
+                    if (b.trigger && evaluateTrigger(b.trigger, st)) {
+                        const tName = Array.isArray(b.trigger) ? b.trigger.join(', ') : b.trigger;
+                        extraEffects.push(`${tName} (보너스 발동)`);
+                    }
+                });
+            }
+
+            if (filteredEffects.length > 0 || extraEffects.length > 0) {
+                attrLines.push('<div style="margin-top:8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top:8px;"></div>');
+                attrLines.push('<div class="tooltip-label" style="font-size:11px; color:var(--accent); margin-bottom:4px;">적용 중인 추가 효과</div>');
+
+                // 기존 외부 효과 표시
+                filteredEffects.forEach(eff => {
+                    const tName = Array.isArray(eff.type) ? eff.type[0] : eff.type;
+                    const valStr = eff.val !== undefined ? ` +${eff.val}` : '';
+                    attrLines.push(`<div class="tooltip-bullet-point" style="color:var(--accent); font-size:12px;"><span class="tooltip-bullet-marker">•</span> ${tName}${valStr}</div>`);
+                });
+
+                // 디버프/트리거 효과 표시
+                extraEffects.forEach(txt => {
+                    attrLines.push(`<div class="tooltip-bullet-point" style="color:#FFFA00; font-size:12px;"><span class="tooltip-bullet-marker">•</span> ${txt}</div>`);
+                });
+            }
         }
 
         const attrHtml = attrLines.length > 0
