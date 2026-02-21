@@ -573,11 +573,24 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
             else if (t === '궁극기 피해') tag = 'ult';
             else if (t === '모든 스킬 피해') tag = 'skill';
 
+            const skillTypes = eff.skilltype || [];
+            const typeMapLocal = { '일반 공격': 'normal', '배틀 스킬': 'battle', '연계 스킬': 'combo', '궁극기': 'ult', '모든 스킬': 'skill' };
+
             if (!isDisabled) {
-                dmgInc += val;
-                dmgIncMap[tag] += val;
+                if (skillTypes.length > 0) {
+                    skillTypes.forEach(stName => {
+                        const targetTag = typeMapLocal[stName];
+                        if (targetTag) dmgIncMap[targetTag] += val;
+                    });
+                } else {
+                    if (tag === 'all') dmgInc += val;
+                    dmgIncMap[tag] += val;
+                }
             }
-            logs.dmgInc.push({ txt: `[${displayName}] ${valDisplay} (${t})`, uid, tag });
+
+            let label = t;
+            if (skillTypes.length > 0) label += ` (${skillTypes.join(', ')})`;
+            logs.dmgInc.push({ txt: `[${displayName}] ${valDisplay} (${label})`, uid, tag: skillTypes.length > 0 ? 'skillMult' : tag, skillType: skillTypes.length > 0 ? skillTypes : undefined });
         } else if (t.endsWith('저항 무시')) {
             // 이미 isApplicableEffect 통과했으므로 오퍼레이터 속성과 일치함
             if (!isDisabled) resIgnore += val;
@@ -974,7 +987,13 @@ function calcSingleSkillDamage(type, st, bRes) {
 
     const abnormalDmgMap = {};
     abnormalList.forEach(a => {
-        const aDmg = adjFinalAtk * a.mult * abnormalCommonMults;
+        let aDmg = adjFinalAtk * a.mult * abnormalCommonMults;
+
+        // 판(Da Pan) 전용 강타 보너스 (1.2배 곱연산)
+        if (st.mainOp.id === 'Da Pan' && a.name === '강타') {
+            aDmg *= 1.2;
+        }
+
         abnormalDmgMap[a.name] = Math.floor(aDmg);
     });
 
@@ -1003,6 +1022,11 @@ function calcSingleSkillDamage(type, st, bRes) {
         finalBaseUnitDmg = Math.floor(finalBaseUnitDmg * comboMult);
         const tag = baseType === '배틀 스킬' ? 'battle' : 'ult';
         myLogs.push({ txt: `[연타 ${comboStacks}단계] x${comboMult.toFixed(2)} (곱연산)`, uid: 'combo_buff', tag: tag });
+    }
+
+    // 판 전용 강타 로그 추가
+    if (st.mainOp.id === 'Da Pan' && abnormalDmgMap['강타'] !== undefined) {
+        myLogs.push({ txt: `[판 고유 특성] 강타 피해 x1.20 (곱연산)`, uid: 'fan_smash_bonus', tag: typeMap[baseType] });
     }
 
     const finalSingleHitDmg = finalBaseUnitDmg + Object.values(abnormalDmgMap).reduce((acc, v) => acc + v, 0);
@@ -1083,6 +1107,30 @@ function calculateCycleDamage(currentState, baseRes) {
         }
     }
 
+    // 무기 특성 Proc 효과 수집
+    if (currentState.mainOp?.wepId) {
+        const wepData = DATA_WEAPONS.find(w => w.id === currentState.mainOp.wepId);
+        const wepRefine = Math.max(0, (Number(currentState.mainOp.wepRefine) || 1) - 1);
+        if (wepData && wepData.traits) {
+            wepData.traits.forEach(trait => {
+                const isProcType = trait.dmg || (Array.isArray(trait.type) && trait.type.includes('물리 데미지'));
+                if (isProcType && trait.trigger) {
+                    let dmgValue = trait.dmg;
+                    if (!dmgValue && trait.valByLevel) {
+                        dmgValue = trait.valByLevel[wepRefine];
+                    }
+                    if (dmgValue) {
+                        procEffects.push({
+                            ...trait,
+                            dmg: dmgValue,
+                            label: `무기:${wepData.name}`
+                        });
+                    }
+                }
+            });
+        }
+    }
+
     // 1. 모든 스킬 타입(강화 스킬 포함)의 기본 데미지
     Object.keys(skillMap).forEach(type => {
         perSkill[type] = { dmg: 0, count: 0, unitDmg: 0, logs: [], dmgRate: '0%', desc: '' };
@@ -1149,40 +1197,42 @@ function calculateCycleDamage(currentState, baseRes) {
 
         // 발동형 추가 피해(Proc) 처리
         if (skillData.abnormalInfo && procEffects.length > 0) {
-            const hasKnockdown = skillData.abnormalInfo.some(a => a.name === '넘어뜨리기' || a.name === '강제 넘어뜨리기');
-            if (hasKnockdown) {
-                procEffects.forEach(pe => {
-                    if (pe.trigger.includes('넘어뜨리기')) {
-                        // Proc 데미지 계산 (해당 스킬 시점의 스탯/버프 반영)
-                        const targetStats = (hasCustomState && cRes) ? cRes.stats : skillData.stats || (cRes ? cRes.stats : baseRes.stats);
+            procEffects.forEach(pe => {
+                // 발동 조건(trigger) 중 하나라도 스킬의 상태 이상(abnormalInfo)에 포함되어 있는지 확인
+                const isTriggerMet = pe.trigger.some(t =>
+                    skillData.abnormalInfo.some(a => a.name === t || (t === '넘어뜨리기' && a.name === '강제 넘어뜨리기') || (t === '띄우기' && a.name === '강제 띄우기'))
+                );
 
-                        // 계수 파싱
-                        const parsePct = (v) => {
-                            const m = String(v).match(/([\d.]+)%/);
-                            return m ? parseFloat(m[1]) / 100 : 0;
-                        };
-                        const dmgMult = parsePct(pe.dmg);
+                if (isTriggerMet) {
+                    // Proc 데미지 계산 (해당 스킬 시점의 스탯/버프 반영)
+                    const targetStats = (hasCustomState && cRes) ? cRes.stats : skillData.stats || (cRes ? cRes.stats : baseRes.stats);
 
-                        // 공통 승수 (스킬 전용 버프 제외한 전역 버프들)
-                        const commonMults = targetStats.critExp *
-                            (1 + targetStats.dmgIncData.all / 100) *
-                            (1 + targetStats.amp / 100) *
-                            (1 + targetStats.takenDmg / 100) *
-                            (1 + targetStats.vuln / 100) *
-                            (1 + targetStats.unbalanceDmg / 100) *
-                            targetStats.resMult;
+                    // 계수 파싱
+                    const parsePct = (v) => {
+                        const m = String(v).match(/([\d.]+)%/);
+                        return m ? parseFloat(m[1]) / 100 : 0;
+                    };
+                    const dmgMult = parsePct(pe.dmg);
 
-                        const procDmg = Math.floor(targetStats.finalAtk * dmgMult * commonMults);
-                        if (procDmg > 0) {
-                            skillTotal += procDmg;
+                    // 공통 승수 (스킬 전용 버프 제외한 전역 버프들)
+                    const commonMults = targetStats.critExp *
+                        (1 + (targetStats.dmgIncData?.all || targetStats.dmgInc || 0) / 100) *
+                        (1 + (targetStats.amp || 0) / 100) *
+                        (1 + (targetStats.takenDmg || 0) / 100) *
+                        (1 + (targetStats.vuln || 0) / 100) *
+                        (1 + (targetStats.unbalanceDmg || 0) / 100) *
+                        (targetStats.resMult || 1);
 
-                            if (!perAbnormal[pe.label]) perAbnormal[pe.label] = { dmg: 0, count: 0 };
-                            perAbnormal[pe.label].dmg += procDmg;
-                            perAbnormal[pe.label].count += 1;
-                        }
+                    const procDmg = Math.floor(targetStats.finalAtk * dmgMult * commonMults);
+                    if (procDmg > 0) {
+                        skillTotal += procDmg;
+
+                        if (!perAbnormal[pe.label]) perAbnormal[pe.label] = { dmg: 0, count: 0 };
+                        perAbnormal[pe.label].dmg += procDmg;
+                        perAbnormal[pe.label].count += 1;
                     }
-                });
-            }
+                }
+            });
         }
 
         total += skillTotal;

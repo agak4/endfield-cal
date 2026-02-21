@@ -327,7 +327,11 @@ function renderCycleSequence(cycleRes) {
                 rateHtml = `${(baseMult * 100).toFixed(0)}%`;
 
                 abnormalInfo.forEach(a => {
-                    rateHtml += ` + ${a.name} ${(a.mult * 100).toFixed(0)}%`;
+                    let suffix = '';
+                    if (state.mainOp.id === 'Da Pan' && a.name === '강타') {
+                        suffix = ' <span style="color:var(--accent); font-size: 0.9em;">[판 특성] * 120%</span>';
+                    }
+                    rateHtml += ` + ${a.name} ${(a.mult * 100).toFixed(0)}%${suffix}`;
                 });
             } else {
                 rateHtml = item.dmgRate || '0%';
@@ -683,12 +687,16 @@ function renderDmgInc(res, cycleRes) {
             catLogs.normal.push(log);
             if (!isDisabled) catSums.normal += val;
         } else if (log.tag === 'skill' || log.tag === 'skillMult') {
-            if (log.skillType) {
-                const key = categories.find(c => c.type === log.skillType)?.id;
-                if (key) {
-                    catLogs[key].push(log);
-                    if (!isDisabled) catSums[key] += val;
-                }
+            const skillTypes = Array.isArray(log.skillType) ? log.skillType : (log.skillType ? [log.skillType] : []);
+
+            if (skillTypes.length > 0) {
+                skillTypes.forEach(stName => {
+                    const key = categories.find(c => c.type === stName)?.id;
+                    if (key) {
+                        catLogs[key].push(log);
+                        if (!isDisabled) catSums[key] += val;
+                    }
+                });
             } else {
                 ['battle', 'combo', 'ult'].forEach(k => {
                     catLogs[k].push(log);

@@ -281,7 +281,10 @@ const AppTooltip = {
         const traitItems = [], synergyItems = [];
 
         wep.traits.forEach((t, i) => {
-            const label = t.type === '스탯' ? getStatName(t.stat) : t.type;
+            let label = t.type === '스탯' ? getStatName(t.stat) : t.type;
+            if (t.skilltype && t.skilltype.length > 0) {
+                label += ` (${t.skilltype.join(', ')})`;
+            }
 
             let rangeStr;
             const fmt = (v) => {
