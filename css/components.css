@@ -558,9 +558,16 @@
     animation: tooltip-fade 0.15s ease-out;
     transform-origin: top left;
 
-    display: flex;
+    display: none; /* Changed from flex to none to match JS show/hide logic which toggles display: block/none */
     flex-direction: column;
     gap: 10px;
+    max-height: 90vh;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+.app-tooltip::-webkit-scrollbar {
+    display: none;
 }
 
 .tooltip-header {

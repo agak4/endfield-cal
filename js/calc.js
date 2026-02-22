@@ -1346,6 +1346,12 @@ function calcSingleSkillDamage(type, st, bRes) {
     if (baseType === '일반 공격') typeInc += dmgIncData.normal;
     else typeInc += dmgIncData.skill + (dmgIncData[typeMap[baseType]] || 0);
 
+    // [Fix] 속성별 주는 피해(물리/열기 등)가 스킬 계산에서 누락되던 문제 수정
+    const skillElement = skillDef.element || (opData.type === 'phys' ? 'phys' : opData.element);
+    if (skillElement && dmgIncData[skillElement]) {
+        typeInc += dmgIncData[skillElement];
+    }
+
     // 강화 스킬 전용 피해 증가 옵션이 있다면 그것도 더해줌 (현재 구조상 skill, normal, battle등에 합산됨)
     // baseType으로 이미 합산되었음.
 
@@ -1606,6 +1612,29 @@ function calculateCycleDamage(currentState, baseRes, forceMaxStack = false) {
                     }
                 }
             });
+        }
+    }
+
+    // 세트 효과 Proc 수집
+    if (currentState.activeSetId) {
+        const setData = DATA_SETS.find(s => s.id === currentState.activeSetId);
+        if (setData && setData.effects) {
+             setData.effects.forEach(eff => {
+                const isProcType = eff.dmg || (Array.isArray(eff.type) && eff.type.includes('물리 데미지'));
+                if (isProcType && eff.trigger) {
+                    let dmgValue = eff.dmg;
+                    // dmg가 배열인 경우 첫 번째 값 사용 (예: ['250%'])
+                    if (Array.isArray(dmgValue)) dmgValue = dmgValue[0];
+                    
+                    if (dmgValue) {
+                        procEffects.push({
+                            ...eff,
+                            dmg: dmgValue,
+                            label: `세트:${setData.name}`
+                        });
+                    }
+                }
+             });
         }
     }
 

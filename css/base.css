@@ -69,6 +69,11 @@
     font-weight: bold;
 }
 
+.kw-desc {
+    color: #FFFA00;
+    font-weight: bold;
+}
+
 /* ============ 리셋 ============ */
 * {
     margin: 0;

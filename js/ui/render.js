@@ -190,6 +190,7 @@ function updateActiveSetUI() {
     badge.innerHTML = `
         <span class="set-name">${set.name} <span class="viability ${statusClass}">${statusText}</span></span>
         <span class="set-status">ACTIVE (3피스)</span>
+        ${set.desc ? `<div class="set-desc">${set.desc}</div>` : ''}
     `;
     container.appendChild(badge);
 }

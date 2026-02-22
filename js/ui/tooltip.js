@@ -33,6 +33,7 @@ const AppTooltip = {
         '불균형': 'kw-special', '치유': 'kw-nature', '보호': 'kw-nature', '비호': 'kw-nature', '연타': 'kw-special', '스킬 게이지': 'kw-special', '소모': 'kw-special', '궁극기 에너지': 'kw-special', '치명타 확률': 'kw-special', '치명타 피해': 'kw-special',
         '녹아내린 불꽃': 'kw-heat', '썬더랜스': 'kw-elec', '강력한 썬더랜스': 'kw-elec',
         '아츠 폭발': 'kw-special', '연소': 'kw-heat', '감전': 'kw-elec', '동결': 'kw-cryo', '부식': 'kw-nature',
+        '재능': 'kw-desc', '잠재': 'kw-desc'
     },
 
     /** 속성별 대표 색상 (CSS 변수 기반) */
@@ -342,11 +343,12 @@ const AppTooltip = {
                     <div class="tooltip-stat-item"><span class="tooltip-stat-key">공격력</span><span class="tooltip-stat-val">${wep.baseAtk}</span></div>
                 </div>
             </div>
-                        ${traitItems.length > 0 ? `<div class="tooltip-section"><div class="tooltip-label">무기 특성</div><div class="tooltip-traits">${traitItems.join('')}</div></div>` : ''}
-                        ${synergyItems.length > 0 ? `<div class="tooltip-section"><div class="tooltip-label" style="color:#FFFA00">시너지</div><div class="tooltip-traits">${synergyItems.join('')}</div></div>` : ''}
-                        ${traitDesc ? `<div class="tooltip-section"><div class="tooltip-label">설명</div><div class="tooltip-desc">${traitDesc}</div></div>` : ''}
-                    `;
-                },
+            ${traitItems.length > 0 ? `<div class="tooltip-section"><div class="tooltip-label">무기 특성</div><div class="tooltip-traits">${traitItems.join('')}</div>${traitDesc ? `<div class="tooltip-desc" style="margin-top:8px;">${traitDesc}</div>` : ''}</div>` : ''}
+            ${synergyItems.length > 0 ? `<div class="tooltip-section"><div class="tooltip-label" style="color:#FFFA00">시너지</div><div class="tooltip-traits">${synergyItems.join('')}</div></div>` : ''}
+        `;
+
+
+    },
 
     renderGear(gear, forged = false) {
         const setName = DATA_SETS?.find(s => s.id === gear.set)?.name || '일반';
