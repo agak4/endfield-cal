@@ -883,6 +883,7 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
             finalAtk, atkInc, baseAtk, statBonusPct, skillAtkIncData,
             mainStatName: STAT_NAME_MAP[opData.mainStat], mainStatVal: stats[opData.mainStat],
             subStatName: STAT_NAME_MAP[opData.subStat], subStatVal: stats[opData.subStat],
+            str: stats.str, agi: stats.agi, int: stats.int, wil: stats.wil,
             critExp, finalCritRate, critDmg, dmgInc, amp, vuln, takenDmg, unbalanceDmg: finalUnbal, originiumArts, skillMults, dmgIncData: dmgIncMap,
             skillCritData, resistance: activeResVal, resMult, defMult, enemyDefense: defVal, ultRecharge, finalUltCost, vulnMap, vulnAmpEffects,
             allRes: resistance, armorBreakVal: abVal, gamsunVal: gamsunVal, baseTakenDmg: (takenDmg - (opData.type === 'phys' ? abVal : (opData.type === 'arts' ? gamsunVal : 0))),
@@ -897,8 +898,27 @@ function resolveVal(val, stats) {
     if (typeof val === 'number') return val;
     if (typeof val === 'string') {
         let statSum = 0;
-        ['str', 'agi', 'int', 'wil'].forEach(k => { if (val.includes(STAT_NAME_MAP[k])) statSum += stats[k]; });
+        let foundStat = false;
+        
+        // [Fix] 스탯 비례 수치 처리 (예: "지능, 의지 1포인트당 0.15% 증가")
+        ['str', 'agi', 'int', 'wil'].forEach(k => { 
+            if (val.includes(STAT_NAME_MAP[k])) {
+                statSum += (stats[k] || 0);
+                foundStat = true;
+            }
+        });
+        
         const num = parseFloat(val);
+        
+        if (foundStat) {
+            // "1포인트당 X%" 또는 "X%" 패턴 추출 -> 스탯 총합에 곱함
+            const match = val.match(/([\d.]+)%/);
+            if (match) {
+                const perPoint = parseFloat(match[1]);
+                return statSum * perPoint;
+            }
+        }
+
         return isNaN(num) ? 0 : num;
     }
     return 0;

@@ -81,8 +81,10 @@ function renderResult(res) {
         'final-damage': Math.floor(res.finalDmg).toLocaleString(),
         'stat-atk': Math.floor(displayRes.stats.finalAtk).toLocaleString(),
         'stat-atk-inc': displayRes.stats.atkInc.toFixed(1) + '%',
-        'stat-main-val': Math.floor(displayRes.stats.mainStatVal),
-        'stat-sub-val': Math.floor(displayRes.stats.subStatVal),
+        'stat-str-val': Math.floor(displayRes.stats.str || 0),
+        'stat-agi-val': Math.floor(displayRes.stats.agi || 0),
+        'stat-int-val': Math.floor(displayRes.stats.int || 0),
+        'stat-wil-val': Math.floor(displayRes.stats.wil || 0),
         'stat-crit': (displayRes.stats.critExp * 100).toFixed(1) + '%',
         'val-crit-rate': displayRes.stats.finalCritRate + '%',
         'val-crit-dmg': displayRes.stats.critDmg + '%',
@@ -115,11 +117,7 @@ function renderResult(res) {
         if (el) el.innerText = val;
     }
 
-    // 스탯 레이블 (오퍼레이터마다 주/부스탯 이름이 다름)
-    const mainLabel = document.getElementById('label-main-stat');
-    if (mainLabel) mainLabel.innerText = displayRes.stats.mainStatName;
-    const subLabel = document.getElementById('label-sub-stat');
-    if (subLabel) subLabel.innerText = displayRes.stats.subStatName;
+
 
     // 로그 목록 업데이트
     const logMapping = {
