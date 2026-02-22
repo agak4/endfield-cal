@@ -1010,7 +1010,7 @@ function evaluateTrigger(trigger, state, opData, triggerType, isTargetOnly = fal
 
         const TRIGGER_MAP = {
             '방어 불능': () => getAdjustedStackCount('방어 불능', state, opData, triggerType) > 0,
-            '오리지늄 결정': () => getAdjustedStackCount('오리지늄 결정', state, opData, triggerType) > 0,
+            // '오리지늄 결정' removed to use generic specialStack logic (like Levatain)
             '갑옷 파괴': () => getAdjustedStackCount('갑옷 파괴', state, opData, triggerType) > 0,
             '열기 부착': () => state.debuffState?.artsAttach?.type === '열기 부착',
             '냉기 부착': () => state.debuffState?.artsAttach?.type === '냉기 부착',
