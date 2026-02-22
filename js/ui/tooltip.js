@@ -138,9 +138,7 @@ const AppTooltip = {
         '물리 증폭', '아츠 증폭', '열기 증폭', '전기 증폭', '냉기 증폭', '자연 증폭',
         '물리 취약', '아츠 취약', '열기 취약', '전기 취약', '냉기 취약', '자연 취약',
         '받는 물리 피해', '받는 아츠 피해', '받는 열기 피해', '받는 전기 피해', '받는 냉기 피해', '받는 자연 피해',
-        '받는 불균형 피해', '받는 피해', '연타', '저항 감소',
-        '감전 부여', '동결 부여', '부식 부여', '연소 부여', '방어 불능 부여', '갑옷 파괴 부여',
-        '열기 부착', '냉기 부착', '전기 부착', '자연 부착', '아츠 부착'
+        '받는 불균형 피해', '받는 피해', '연타', '저항 감소', '감전 부여', '동결 부여', '부식 부여', '연소 부여', '방어 불능 부여', '열기 부착', '냉기 부착', '전기 부착', '자연 부착', '아츠 부착', '강타', '띄우기', '넘어뜨리기', '강제 띄우기', '강제 넘어뜨리기', '갑옷 파괴', '스킬 게이지 회복'
     ],
     /** 툴팁에 표시하지 않을 효과 타입 목록 (전투 외 효과) */
     EXCLUDE_TYPES: ['최대 생명력', '궁극기 충전', '치유 효율', '모든 능력치', '치유', '비호', '보호'],
@@ -270,7 +268,7 @@ const AppTooltip = {
     renderOperator(op, currentPot) {
         const traitItems = [], synergyItems = [];
 
-        const processSingle = (t, source, potLevel) => {
+        const processSingle = (t, source, sortWeight, potLevel = null) => {
             if (!t?.type) return;
 
             // type 정규화: string | string[] | object[] -> object[]
@@ -282,12 +280,10 @@ const AppTooltip = {
             });
 
             // 스킬 전용 효과 필터링 (오퍼레이터 공용 툴팁에서 제외)
-            // e.skilltype이 있거나, t.skilltype이 있는데 그것이 현재 스킬 자체 정의가 아닌 경우
             const sLabel = Array.isArray(source) ? source.join('/') : source;
             const filteredTypeArr = typeArr.filter(e => {
                 if (e.skillType) return false;
                 if (t.skillType) {
-                    // t.skilltype이 source(스킬 종류)와 다르다면 특정 스킬을 타겟팅한 보너스임
                     const sourceArr = Array.isArray(source) ? source : [source];
                     const isSelfSkill = t.skillType.some(st => sourceArr.includes(st));
                     if (!isSelfSkill) return false;
@@ -297,12 +293,7 @@ const AppTooltip = {
 
             if (filteredTypeArr.length === 0) return;
 
-            if (filteredTypeArr.length === 0) return;
-
             // 툴팁 표시 제외 타입 필터링
-            const hasExclude = filteredTypeArr.some(e => this.EXCLUDE_TYPES.includes(e.type));
-            const hasStat = filteredTypeArr.some(e => e.type === '스탯');
-
             // 제외 대상을 제거한 최종 표시 리스트 생성
             const finalDisplayArr = filteredTypeArr.filter(e => !this.EXCLUDE_TYPES.includes(e.type) && e.type !== '스탯');
             if (finalDisplayArr.length === 0) return;
@@ -322,29 +313,29 @@ const AppTooltip = {
             const isPotential = potLevel !== null;
             const isActive = isPotential ? (currentPot >= potLevel) : true;
             const isUnbalanced = typeIncludes('불균형 목표에 주는 피해');
-            const item = { ...t, _typeStr: typeStr, _isUnbalanced: isUnbalanced, sourceLabel: isPotential ? `잠재${potLevel}` : sLabel, active: isActive, isPotential };
-            const isSynergy = this.SYNERGY_TYPES.some(syn => typeIncludes(syn)) || t.target === '팀' || t.target === '적';
+            const item = { ...t, _typeStr: typeStr, _isUnbalanced: isUnbalanced, sourceLabel: isPotential ? `잠재${potLevel}` : sLabel, active: isActive, isPotential, sortWeight };
+            const isSynergy = this.SYNERGY_TYPES.some(syn => typeIncludes(syn)) || t.target === '팀' || t.target === '적' || finalDisplayArr.some(e => e.target === '팀' || e.target === '적');
             if (isSynergy) synergyItems.push(item);
             else if (this.TRAIT_TYPES.some(tr => typeIncludes(tr))) traitItems.push(item);
         };
 
-        const processData = (data, source, potLevel = null) => {
+        const processData = (data, source, sortWeight, potLevel = null) => {
             if (!data) return;
             data.forEach(t => {
-                if (t) t.forEach(sub => processSingle(sub, source, potLevel));
+                if (t) t.forEach(sub => processSingle(sub, source, sortWeight, potLevel));
             });
         };
 
-        if (op.talents) op.talents.forEach((t, i) => {
-            processData([t], `재능${i + 1}`);
-        });
         if (op.skill) op.skill.forEach(s => {
-            processData([[s]], s?.skillType || '스킬');
+            processData([[s]], s?.skillType || '스킬', 0);
         });
-        if (op.potential) op.potential.forEach((p, i) => processData([p], '잠재', i + 1));
+        if (op.talents) op.talents.forEach((t, i) => {
+            processData([t], `재능${i + 1}`, 1);
+        });
+        if (op.potential) op.potential.forEach((p, i) => processData([p], '잠재', 2, i + 1));
 
         const renderList = (list, isSynergy = false) => {
-            return [...list].sort((a, b) => a.isPotential !== b.isPotential ? (a.isPotential ? 1 : -1) : 0)
+            return [...list].sort((a, b) => a.sortWeight - b.sortWeight)
                 .map(t => {
                     const valStr = !t._typeStr && t.val !== undefined ? ` +${t.val}` : '';
                     const color = isSynergy ? '#FFFA00' : 'var(--accent)';
