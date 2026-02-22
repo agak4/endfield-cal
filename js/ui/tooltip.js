@@ -249,9 +249,10 @@ const AppTooltip = {
      * 오퍼레이터의 속성명을 반환한다.
      * phys 타입이면 '물리', 나머지는 element 필드로 판단한다.
      */
-    getElementName(op) {
-        if (op.type === 'phys') return '물리';
-        return { heat: '열기', cryo: '냉기', elec: '전기', nature: '자연' }[op.element] || '아츠';
+    getElementName(obj) {
+        const element = obj.element || obj.type;
+        if (element === 'phys') return '물리';
+        return { heat: '열기', cryo: '냉기', elec: '전기', nature: '자연' }[element] || '아츠';
     },
 
     /** 무기 타입 코드를 한글로 변환한다. */
@@ -296,9 +297,19 @@ const AppTooltip = {
 
             if (filteredTypeArr.length === 0) return;
 
-            const typeIncludes = (keyword) => filteredTypeArr.some(e => e.type.includes(keyword));
+            if (filteredTypeArr.length === 0) return;
+
+            // 툴팁 표시 제외 타입 필터링
+            const hasExclude = filteredTypeArr.some(e => this.EXCLUDE_TYPES.includes(e.type));
+            const hasStat = filteredTypeArr.some(e => e.type === '스탯');
+
+            // 제외 대상을 제거한 최종 표시 리스트 생성
+            const finalDisplayArr = filteredTypeArr.filter(e => !this.EXCLUDE_TYPES.includes(e.type) && e.type !== '스탯');
+            if (finalDisplayArr.length === 0) return;
+
+            const typeIncludes = (keyword) => finalDisplayArr.some(e => e.type.includes(keyword));
             // 표시 문자열: '물리 취약 +12% / 방어 불능 부여'
-            const typeStr = filteredTypeArr.map(e => {
+            const typeStr = finalDisplayArr.map(e => {
                 let suffix = '';
                 const st = e.skillType || t.skillType;
                 if ((e.type === '스킬 치명타 확률' || e.type === '스킬 치명타 피해' || e.type === '스킬 배율 증가') && st) {
@@ -308,8 +319,6 @@ const AppTooltip = {
                 return e.val !== undefined ? `${e.type}${suffix} +${e.val}` : `${e.type}${suffix}`;
             }).join(' / ');
 
-            // 툴팁 표시 제외 타입 필터링
-            if (this.EXCLUDE_TYPES.some(ex => typeIncludes(ex)) || typeArr.some(e => e.type === '스탯')) return;
             const isPotential = potLevel !== null;
             const isActive = isPotential ? (currentPot >= potLevel) : true;
             const isUnbalanced = typeIncludes('불균형 목표에 주는 피해');
@@ -513,7 +522,7 @@ const AppTooltip = {
         const entry = skillData;
         const attrLines = [];
 
-        const element = this.getElementName(opData);
+        const element = this.getElementName(entry.element ? entry : opData);
         if (element) {
             attrLines.push(`<div class="tooltip-bullet-point"><span class="tooltip-bullet-marker accent">•</span> 공격 속성: ${element}</div>`);
         }

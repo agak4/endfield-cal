@@ -657,7 +657,7 @@ function renderWeaponComparison(currentRes, currentCycle) {
     const { wepId: savedWepId, wepPot: savedWepPot, wepState: savedWepState } = state.mainOp;
 
     const comparisons = DATA_WEAPONS
-        .filter(w => currentOp.usableWeapons.includes(w.type) && w.id !== savedWepId)
+        .filter(w => currentOp.usableWeapons.includes(w.type))
         .map(w => {
             // 임시로 비교 무기로 교체하여 계산
             state.mainOp.wepId = w.id;
@@ -672,7 +672,8 @@ function renderWeaponComparison(currentRes, currentCycle) {
 
             const diff = compTotal - currentTotal;
             const pct = currentTotal > 0 ? ((diff / currentTotal) * 100).toFixed(1) : 0;
-            return { name: w.name, finalDmg: compTotal, pct: Number(pct) };
+            const displayName = w.name;
+            return { name: displayName, finalDmg: compTotal, pct: Number(pct) };
         })
         .filter(Boolean)
         .sort((a, b) => b.finalDmg - a.finalDmg);

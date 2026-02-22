@@ -195,6 +195,12 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
                 baseTriggerMet = baseTriggerMet && evaluateTrigger(eff.triggerTarget, state, effectiveOpData, null, true, eff.target);
             }
 
+            if (eff.targetFilter === '다른 속성') {
+                const sourceElem = effectiveOpData.element || effectiveOpData.type;
+                const targetElem = opData.element || opData.type;
+                if (sourceElem === targetElem) baseTriggerMet = false;
+            }
+
             const typeArr = eff.type ? (Array.isArray(eff.type) ? eff.type : [eff.type]).map(item => typeof item === 'string' ? { type: item } : item) : [];
             const bonuses = eff.bonus || [];
 
@@ -206,7 +212,7 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
                 const opTypeK = effectiveOpData.type === 'phys' ? '물리' : '아츠';
                 const elMap = { heat: '열기', elec: '전기', cryo: '냉기', nature: '자연' };
                 const opElK = elMap[effectiveOpData.element];
-                return (t && (t.includes(opTypeK) || (opElK && t.includes(opElK))));
+                return (t && (t.includes(opTypeK) || (opElK && t.includes(opElK)) || t.includes('취약') || t.includes('증폭')));
             });
             const isWeaponSource = !!eff.sourceId;
             const showEvenIfFailed = !baseTriggerMet && (isWeaponSource || isMatchOpType);
@@ -531,7 +537,8 @@ function applyPercentStats(effects, stats) {
 function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, activeEffects) {
     const baseAtk = opData.baseAtk + wepData.baseAtk;
     let atkInc = 0, critRate = 5, critDmg = 50, dmgInc = 0, amp = 0, vuln = 0, takenDmg = 0, multiHit = 1.0, unbalanceDmg = 0, originiumArts = 0, ultRecharge = 0, ultCostReduction = 0, skillMults = { all: { mult: 0, add: 0 } }, dmgIncMap = { all: 0, skill: 0, normal: 0, battle: 0, combo: 0, ult: 0 };
-    let cryoVuln = 0, cryoVulnAmpUlt = 0;
+    const vulnMap = { '물리 취약': 0, '아츠 취약': 0, '열기 취약': 0, '전기 취약': 0, '냉기 취약': 0, '자연 취약': 0, '취약': 0 };
+    const vulnAmpEffects = [];
     const skillCritData = { rate: { all: 0 }, dmg: { all: 0 } };
     const skillAtkIncData = { all: 0 };
     const logs = {
@@ -574,17 +581,6 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
         { txt: `무기 공격력: ${wepData.baseAtk.toLocaleString()}`, uid: 'base_wep_atk' }
     ];
 
-    const resolveVal = (val) => {
-        if (typeof val === 'number') return val;
-        if (typeof val === 'string') {
-            let statSum = 0;
-            ['str', 'agi', 'int', 'wil'].forEach(k => { if (val.includes(STAT_NAME_MAP[k])) statSum += stats[k]; });
-            const match = val.match(/([\d.]+)%/);
-            const num = parseFloat(val);
-            return isNaN(num) ? 0 : num;
-        }
-        return 0;
-    };
 
     const statLogs = [];
 
@@ -618,7 +614,7 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
 
         if (!isApplicableEffect(opData, eff.type, eff.name)) return;
 
-        const val = resolveVal(eff.val) * (eff.forgeMult || 1.0);
+        const val = resolveVal(eff.val, stats) * (eff.forgeMult || 1.0);
         const t = (eff.type || '').toString();
 
         const checkDisabled = (cat) => {
@@ -670,20 +666,16 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
         } else if (t === '연타') {
             if (!checkDisabled('common')) multiHit = Math.max(multiHit, val || 1);
             logs.multihit.push({ txt: `[${displayName}] x${val || 1}${eff.stack ? ` (${eff._stackCount}중첩)` : ''}`, uid: eff.uid, stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
-        } else if (t === '냉기 취약 증폭') {
-            const skTypes = eff.skillType || [];
-            if (skTypes.includes('궁극기')) {
-                if (!checkDisabled('ult')) cryoVulnAmpUlt += val;
-            }
+        } else if (t === '취약 증폭' || t === '냉기 취약 증폭') {
+            vulnAmpEffects.push(eff);
             const ampFactor = (1 + val).toFixed(1);
-            logs.vuln.push({ txt: `[${displayName}] *${ampFactor} (냉기 취약)`, uid: eff.uid, target: '적', _triggerFailed: eff._triggerFailed });
-        } else if (t.endsWith('증폭')) {
-            if (!checkDisabled('common')) amp += val;
-            logs.amp.push({ txt: `[${displayName}] ${valDisplay}${eff.stack ? ` (${eff._stackCount}중첩)` : ''} (${t})`, uid: eff.uid, stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
+            const targetLabel = (eff.targetEffect && Array.isArray(eff.targetEffect)) ? eff.targetEffect.join(', ') : (t === '냉기 취약 증폭' ? '냉기 취약' : '취약');
+            logs.vuln.push({ txt: `[${displayName}] *${ampFactor} (${targetLabel})`, uid: eff.uid, target: '적', _triggerFailed: eff._triggerFailed });
         } else if (t.endsWith('취약')) {
             if (!checkDisabled('common')) {
                 vuln += val;
-                if (t === '냉기 취약') cryoVuln += val;
+                if (vulnMap[t] !== undefined) vulnMap[t] += val;
+                else vulnMap['취약'] += val;
             }
             logs.vuln.push({ txt: `[${displayName}] ${valDisplay}${eff.stack ? ` (${eff._stackCount}중첩)` : ''} (${t})`, uid: eff.uid, stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
         } else if (t === '불균형 목표에 주는 피해') {
@@ -715,7 +707,7 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
             if (eff.skillType) typeLabel += ` (${eff.skillType.join(', ')})`;
             logs.crit.push({ txt: `[${displayName}] ${valDisplay}${eff.stack ? ` (${eff._stackCount}중첩)` : ''} (${typeLabel})`, uid: eff.uid, tag: 'skillCrit', skillType: eff.skillType, stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
         } else if (t === '스킬 배율 증가') {
-            const addVal = eff.dmg ? resolveVal(eff.dmg) * (eff.forgeMult || 1.0) : 0;
+            const addVal = eff.dmg ? resolveVal(eff.dmg, stats) * (eff.forgeMult || 1.0) : 0;
             const addSkillMult = (st) => {
                 const cat = { '일반 공격': 'normal', '배틀 스킬': 'battle', '연계 스킬': 'combo', '궁극기': 'ult' }[st] || 'common';
                 if (!checkDisabled(cat)) {
@@ -850,10 +842,22 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
             mainStatName: STAT_NAME_MAP[opData.mainStat], mainStatVal: stats[opData.mainStat],
             subStatName: STAT_NAME_MAP[opData.subStat], subStatVal: stats[opData.subStat],
             critExp, finalCritRate, critDmg, dmgInc, amp, vuln, takenDmg, unbalanceDmg: finalUnbal, originiumArts, skillMults, dmgIncData: dmgIncMap,
-            skillCritData, resistance: activeResVal, resMult, ultRecharge, finalUltCost, cryoVuln, cryoVulnAmpUlt
+            skillCritData, resistance: activeResVal, resMult, ultRecharge, finalUltCost, vulnMap, vulnAmpEffects
         },
         logs
     };
+}
+
+// ---- 유틸리티 함수 ----
+function resolveVal(val, stats) {
+    if (typeof val === 'number') return val;
+    if (typeof val === 'string') {
+        let statSum = 0;
+        ['str', 'agi', 'int', 'wil'].forEach(k => { if (val.includes(STAT_NAME_MAP[k])) statSum += stats[k]; });
+        const num = parseFloat(val);
+        return isNaN(num) ? 0 : num;
+    }
+    return 0;
 }
 
 // ---- 무기 특성 레벨/값 ----
@@ -887,24 +891,25 @@ function isApplicableEffect(opData, effectType, effectName) {
     if (ALWAYS_ON.includes(type) || type === '불균형 목표에 주는 피해') return true;
 
     const checkElement = (prefix) => {
-        if (prefix === '피해' || prefix === '모든') return true;
-        if (prefix === '물리' && opData.type === 'phys') return true;
-        if (prefix === '아츠' && opData.type === 'arts') return true;
-        if (prefix === '열기' && opData.element === 'heat') return true;
-        if (prefix === '냉기' && opData.element === 'cryo') return true;
-        if (prefix === '전기' && opData.element === 'elec') return true;
-        if (prefix === '자연' && opData.element === 'nature') return true;
+        const p = prefix ? prefix.trim() : '';
+        if (!p || p === '피해' || p === '모든' || p === '취약') return true;
+        if (p === '물리' && opData.type === 'phys') return true;
+        if (p === '아츠' && opData.type === 'arts') return true;
+        if (p === '열기' && opData.element === 'heat') return true;
+        if (p === '냉기' && opData.element === 'cryo') return true;
+        if (p === '전기' && opData.element === 'elec') return true;
+        if (p === '자연' && opData.element === 'nature') return true;
         return false;
     };
 
-    if (type.endsWith('취약 증폭')) return checkElement(type.replace(' 취약 증폭', ''));
-    if (type.endsWith('증폭')) return checkElement(type.replace(' 증폭', ''));
+    if (type.endsWith('취약 증폭')) return checkElement(type.replace('취약 증폭', ''));
+    if (type.endsWith('증폭')) return checkElement(type.replace('증폭', ''));
     if (type.includes('받는') || type.endsWith('취약')) {
         const prefix = type.replace('받는 ', '').replace(' 피해', '').replace(' 취약', '');
         return checkElement(prefix);
     }
     if (type.endsWith('저항 무시')) {
-        return checkElement(type.replace(' 저항 무시', ''));
+        return checkElement(type.replace('저항 무시', ''));
     }
     return checkElement(type.replace(' 피해', ''));
 }
@@ -1006,7 +1011,14 @@ function evaluateTrigger(trigger, state, opData, triggerType, isTargetOnly = fal
                 if (t === '띄우기') checkTypes.push('강제 띄우기');
                 if (t === '넘어뜨리기') checkTypes.push('강제 넘어뜨리기');
 
-                const hasInSkill = skillPool.some(s => s.type && (Array.isArray(s.type) ? s.type.some(st => checkTypes.includes(st)) : checkTypes.includes(s.type)));
+                const hasInSkill = skillPool.some(s => {
+                    if (!s.type) return false;
+                    const typeItems = Array.isArray(s.type) ? s.type : [s.type];
+                    return typeItems.some(item => {
+                        const tName = (typeof item === 'object' && item !== null) ? item.type : item;
+                        return Array.isArray(tName) ? tName.some(tn => checkTypes.includes(tn)) : checkTypes.includes(tName);
+                    });
+                });
                 if (hasInSkill) return true;
 
                 // 트리거 타입이 없으면 특성/잠재/타입/속성도 확인
@@ -1094,7 +1106,7 @@ function calcSingleSkillDamage(type, st, bRes) {
     const skillDef = skillMap[type];
     if (!skillDef) return null;
 
-    const { finalAtk, atkInc, baseAtk, statBonusPct, skillAtkIncData = { all: 0 }, critExp, finalCritRate, critDmg, amp, takenDmg, vuln, unbalanceDmg, resMult, originiumArts = 0, skillMults = { all: { mult: 0, add: 0 } }, dmgIncData = { all: 0, skill: 0, normal: 0, battle: 0, combo: 0, ult: 0 }, skillCritData = { rate: { all: 0 }, dmg: { all: 0 } }, cryoVuln = 0, cryoVulnAmpUlt = 0 } = bRes.stats;
+    const { finalAtk, atkInc, baseAtk, statBonusPct, skillAtkIncData = { all: 0 }, critExp, finalCritRate, critDmg, amp, takenDmg, vuln, unbalanceDmg, resMult, originiumArts = 0, skillMults = { all: { mult: 0, add: 0 } }, dmgIncData = { all: 0, skill: 0, normal: 0, battle: 0, combo: 0, ult: 0 }, skillCritData = { rate: { all: 0 }, dmg: { all: 0 } }, vulnMap = {}, vulnAmpEffects = [] } = bRes.stats;
 
     // dmg 파싱
     const parseDmgPct = (v) => {
@@ -1232,11 +1244,21 @@ function calcSingleSkillDamage(type, st, bRes) {
     const baseMultOnly = adjDmgMult - abnormalMultTotal;
 
     let finalVuln = vuln;
-    if (baseType === '궁극기' && cryoVuln > 0 && cryoVulnAmpUlt > 0) {
-        const ampVal = (cryoVuln * cryoVulnAmpUlt);
-        finalVuln += ampVal;
-        bonusList.push({ name: '냉기 취약 증폭', val: ampVal / 100 });
-    }
+    vulnAmpEffects.forEach(eff => {
+        const isTypeMatch = !eff.skillType || (eff.skillType && eff.skillType.includes(baseType));
+        if (isTypeMatch && !st.disabledEffects.includes(eff.uid)) {
+            const targets = eff.targetEffect || (eff.type.includes('냉기 취약 증폭') ? ['냉기 취약'] : ['취약']);
+            targets.forEach(tKey => {
+                const vVal = vulnMap[tKey] || 0;
+                if (vVal > 0) {
+                    const ampVal = vVal * (resolveVal(eff.val) * (eff.forgeMult || 1.0));
+                    finalVuln += ampVal;
+                    const label = (eff.type === '취약 증폭' ? '취약 증폭' : '냉기 취약 증폭') + ` (${tKey})`;
+                    bonusList.push({ name: label, val: ampVal / 100 });
+                }
+            });
+        }
+    });
 
     const commonMults = adjCritExp * (1 + typeInc / 100) * (1 + amp / 100) * (1 + takenDmg / 100) * (1 + finalVuln / 100) * (1 + unbalanceDmg / 100) * resMult;
 
@@ -1265,7 +1287,10 @@ function calcSingleSkillDamage(type, st, bRes) {
         abnormalDmgMap[a.name] = Math.floor(aDmg);
     });
 
-    const myLogs = (bRes.logs.dmgInc || []).filter(l => {
+    const myLogs = JSON.parse(JSON.stringify(bRes.logs));
+
+    // 스킬 전용 로그 필터링
+    myLogs.dmgInc = (bRes.logs.dmgInc || []).filter(l => {
         if (l.tag === 'all') return false;
         if (l.tag === 'skillMult') {
             const arr = l.skillType || [];
@@ -1277,6 +1302,17 @@ function calcSingleSkillDamage(type, st, bRes) {
         return false;
     });
 
+    // 필터링된 공격력 로그 (스킬 타입 매칭되는 것만)
+    myLogs.atk = (bRes.logs.atk || []).filter(l => {
+        if (l.uid === 'base_op_atk' || l.uid === 'base_wep_atk' || l.uid === 'stat_bonus_atk') return true;
+        if (l.tag === 'skillAtk') {
+            const arr = l.skillType || [];
+            if (arr.length === 0) return true;
+            return arr.includes(baseType) || arr.includes(type);
+        }
+        return true;
+    });
+
     // 연타(Combo) 곱연산 버프 처리
     let comboMult = 1;
     const comboStacks = st.debuffState?.physDebuff?.combo || 0;
@@ -1285,25 +1321,40 @@ function calcSingleSkillDamage(type, st, bRes) {
         else if (baseType === '궁극기') comboMult = 1 + ([0, 20, 30, 40, 50][comboStacks] / 100);
     }
 
-    let finalBaseUnitDmg = Math.floor(baseHitDmg);
     if (comboMult > 1) {
-        finalBaseUnitDmg = Math.floor(finalBaseUnitDmg * comboMult);
         const tag = baseType === '배틀 스킬' ? 'battle' : 'ult';
-        myLogs.push({ txt: `[연타 ${comboStacks}단계] x${comboMult.toFixed(2)} (곱연산)`, uid: 'combo_buff', tag: tag });
+        myLogs.dmgInc.push({ txt: `[연타 ${comboStacks}단계] x${comboMult.toFixed(2)} (곱연산)`, uid: 'combo_buff', tag: tag });
     }
 
     // 판 전용 강타 로그 추가
     if (st.mainOp.id === 'Da Pan' && abnormalDmgMap['강타'] !== undefined) {
-        myLogs.push({ txt: `[판 고유 특성] 강타 피해 x1.20 (곱연산)`, uid: 'fan_smash_bonus', tag: typeMap[baseType] });
+        myLogs.dmgInc.push({ txt: `[판 고유 특성] 강타 피해 x1.20 (곱연산)`, uid: 'fan_smash_bonus', tag: typeMap[baseType] });
     }
 
     // 아츠 강도 로그 추가
     if (originiumArts > 0 && (hasSmash || isArtsSkill)) {
-        myLogs.push({ txt: `오리지늄 아츠 강도: +${originiumArts.toFixed(1)}%`, uid: 'skill_arts_strength', tag: typeMap[baseType] });
+        myLogs.arts.push({ txt: `오리지늄 아츠 강도: +${originiumArts.toFixed(1)}%`, uid: 'skill_arts_strength', tag: typeMap[baseType] });
     }
 
-    const finalSingleHitDmg = finalBaseUnitDmg + Object.values(abnormalDmgMap).reduce((acc, v) => acc + v, 0);
+    // 취약 증폭 로그 추가
+    vulnAmpEffects.forEach(eff => {
+        const isTypeMatch = !eff.skillType || (eff.skillType && eff.skillType.includes(baseType));
+        if (isTypeMatch && !st.disabledEffects.includes(eff.uid)) {
+            const targets = eff.targetEffect || (eff.type.includes('냉기 취약 증폭') ? ['냉기 취약'] : ['취약']);
+            targets.forEach(tKey => {
+                const vVal = vulnMap[tKey] || 0;
+                if (vVal > 0) {
+                    const ampFactor = (1 + (resolveVal(eff.val, bRes.stats) * (eff.forgeMult || 1.0))).toFixed(1);
+                    const displayName = (eff.name || '').replace(/(_t|_s)\d+$/g, '');
+                    myLogs.vuln.push({ txt: `[${displayName}] *${ampFactor} (${tKey})`, uid: eff.uid });
+                }
+            });
+        }
+    });
 
+    const finalSingleHitDmg = Math.floor(baseHitDmg * comboMult) + Object.values(abnormalDmgMap).reduce((acc, v) => acc + v, 0);
+
+    // 스킬 전용 치명타 로그 필터링 및 추가
     const critLogs = (bRes.logs.crit || []).filter(l => {
         if (l.tag === 'skillCrit') {
             const arr = l.skillType || [];
@@ -1312,7 +1363,9 @@ function calcSingleSkillDamage(type, st, bRes) {
         }
         return false;
     });
+    myLogs.crit.push(...critLogs);
 
+    // 스킬 전용 공격력 보너스 로그 필터링 및 추가
     const atkLogs = (bRes.logs.atkBuffs || []).filter(l => {
         if (l.tag === 'skillAtk') {
             const arr = l.skillType || [];
@@ -1321,13 +1374,11 @@ function calcSingleSkillDamage(type, st, bRes) {
         }
         return false;
     });
-
-    myLogs.push(...critLogs);
-    myLogs.push(...atkLogs);
+    myLogs.atk.push(...atkLogs);
 
     return {
         unitDmg: finalSingleHitDmg,
-        baseUnitDmg: finalBaseUnitDmg,
+        baseUnitDmg: Math.floor(baseHitDmg * comboMult),
         abnormalDmgs: abnormalDmgMap,
         logs: myLogs,
         dmgRate: (adjDmgMult * 100).toFixed(0) + '%' + abnormalDesc,
