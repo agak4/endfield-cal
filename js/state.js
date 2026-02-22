@@ -276,7 +276,9 @@ function saveState() {
 function saveOpSettings(opId, settings) {
     if (!opId) return;
     try {
-        localStorage.setItem(`opSettings_${opId}`, JSON.stringify(settings));
+        const existing = loadOpSettings(opId) || {};
+        const merged = { ...existing, ...settings };
+        localStorage.setItem(`opSettings_${opId}`, JSON.stringify(merged));
     } catch (e) {
         console.error('Failed to save op settings:', e);
     }

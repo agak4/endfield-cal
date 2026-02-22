@@ -477,7 +477,7 @@ function restoreGears() {
     const gearForgeCb = document.getElementById('main-gear-forge');
     if (gearForgeCb) {
         gearForgeCb.checked = state.mainOp.gearForge;
-        updateToggleButton(document.getElementById('main-forge-toggle'), gearForgeCb.checked, '단조');
+        updateToggleButton(document.getElementById('main-forge-toggle'), gearForgeCb.checked, '전체 단조');
     }
 
     GEAR_SELECT_IDS.forEach((id, idx) => {

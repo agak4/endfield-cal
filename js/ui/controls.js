@@ -130,7 +130,7 @@ function setupMainForgeToggle() {
     const toggle = document.createElement('button');
     toggle.id = 'main-forge-toggle';
     toggle.className = 'toggle-btn';
-    toggle.innerText = '단조: OFF';
+    toggle.innerText = '전체 단조: OFF';
     toggle.onclick = () => {
         mainForgeCb.checked = !mainForgeCb.checked;
         // 모든 슬롯 단조 체크박스 일괄 동기화
@@ -141,11 +141,11 @@ function setupMainForgeToggle() {
             if (gbtn) updateToggleButton(gbtn, mainForgeCb.checked, '단조');
             syncForgedToTooltip(gid, mainForgeCb.checked);
         });
-        updateToggleButton(toggle, mainForgeCb.checked, '단조');
+        updateToggleButton(toggle, mainForgeCb.checked, '전체 단조');
         updateState();
     };
     mainForgeCb.parentNode.appendChild(toggle);
-    updateToggleButton(toggle, mainForgeCb.checked, '단조');
+    updateToggleButton(toggle, mainForgeCb.checked, '전체 단조');
 }
 
 /**
@@ -172,7 +172,7 @@ function setupGearForgeToggles() {
             // 모든 슬롯이 ON인지 확인하여 메인 단조 버튼 상태를 갱신
             const allOn = GEAR_FORGE_IDS.every(gid => document.getElementById(gid)?.checked || false);
             if (mainForgeCb) mainForgeCb.checked = allOn;
-            if (mainForgeToggle) updateToggleButton(mainForgeToggle, allOn, '단조');
+            if (mainForgeToggle) updateToggleButton(mainForgeToggle, allOn, '전체 단조');
             updateState();
         };
         cb.parentNode.appendChild(btn);

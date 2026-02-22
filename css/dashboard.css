@@ -412,7 +412,7 @@
 }
 
 .sub-stat-item label {
-    font-size: 0.7rem;
+    font-size: 0.9rem;
     color: var(--text-muted);
     margin-bottom: 2px;
     white-space: nowrap;
@@ -644,8 +644,7 @@
 
 .active-set-badge .set-desc {
     font-size: 0.8rem;
-    color: var(--text-secondary);
-    line-height: 1.4;
+    line-height: 1.6;
     white-space: pre-line;
     border-top: 1px solid var(--border);
     padding-top: 8px;
@@ -963,12 +962,6 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-}
-
-#dmg-inc-stats-container .sub-stat-item label {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    margin-bottom: 2px;
 }
 
 #dmg-inc-stats-container .sub-stat-item span {
