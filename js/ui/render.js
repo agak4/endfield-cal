@@ -467,7 +467,7 @@ function renderCyclePerSkill(cycleRes) {
     // FLIP 애니메이션: 현재 위치 저장 및 기존 노드 매핑
     const firstPositions = new Map();
     const existingNodes = new Map();
-    
+
     Array.from(list.children).forEach(child => {
         const key = child.getAttribute('data-item-key');
         if (key) {
@@ -507,11 +507,11 @@ function renderCyclePerSkill(cycleRes) {
         const abnormals = allItems.filter(i => i.type === 'abnormal');
 
         abnormals.sort((a, b) => {
-            const isAProc = a.key.startsWith('재능') || a.key.startsWith('잠재');
-            const isBProc = b.key.startsWith('재능') || b.key.startsWith('잠재');
+            const isAProc = a.key.startsWith('무기') || a.key.startsWith('재능') || a.key.startsWith('잠재');
+            const isBProc = b.key.startsWith('무기') || b.key.startsWith('재능') || b.key.startsWith('잠재');
             if (isAProc && !isBProc) return 1;
             if (!isAProc && isBProc) return -1;
-            return 0;
+            return 0; // 나머지는 원래 순서(계산 순서) 유지
         });
 
         allItems = [...skills, ...abnormals];
@@ -580,7 +580,7 @@ function renderCyclePerSkill(cycleRes) {
 
         const header = document.createElement('div');
         header.className = 'skill-card-header';
-        
+
         let displayName = name;
         header.innerHTML = `<span class="skill-name">${displayName}</span><span class="skill-dmg">${dmgVal.toLocaleString()}</span>`;
 
@@ -596,7 +596,7 @@ function renderCyclePerSkill(cycleRes) {
                 let content;
                 if (skillDef) {
                     const activeEffects = window.lastCalcResult ? window.lastCalcResult.activeEffects : [];
-                    const extraHtml = ''; 
+                    const extraHtml = '';
 
                     let targetSt = state;
                     if (data.customState) {
@@ -621,7 +621,7 @@ function renderCyclePerSkill(cycleRes) {
                 const isProc = name.startsWith('재능') || name.startsWith('잠재') || name.startsWith('무기');
                 if (!isProc) {
                     const artsStrength = window.lastCalcResult?.stats?.originiumArts || 0;
-                    const content = AppTooltip.renderAbnormalTooltip(name, artsStrength);
+                    const content = AppTooltip.renderAbnormalTooltip(name, artsStrength, state);
                     AppTooltip.showCustom(content, e, { width: '260px' });
                 }
             }
@@ -651,16 +651,16 @@ function renderCyclePerSkill(cycleRes) {
         Array.from(list.children).forEach(child => {
             const key = child.getAttribute('data-item-key');
             const firstRect = firstPositions.get(key);
-            
+
             if (firstRect) {
                 // 기존 요소: 이동 애니메이션
                 const lastRect = child.getBoundingClientRect();
                 const deltaY = firstRect.top - lastRect.top;
-                
+
                 if (deltaY !== 0) {
                     child.style.transition = 'none';
                     child.style.transform = `translateY(${deltaY}px)`;
-                    
+
                     requestAnimationFrame(() => {
                         child.style.transition = 'transform 0.3s ease';
                         child.style.transform = '';
@@ -680,11 +680,11 @@ function renderCyclePerSkill(cycleRes) {
 function initCycleSortButton() {
     const btn = document.getElementById('btn-sort-cycle');
     if (!btn) return;
-    
+
     btn.onclick = () => {
         window.isCycleSortEnabled = !window.isCycleSortEnabled;
         btn.classList.toggle('active', window.isCycleSortEnabled);
-        
+
         if (window.lastCycleRes) {
             renderCyclePerSkill(window.lastCycleRes);
         }

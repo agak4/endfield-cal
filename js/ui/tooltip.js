@@ -520,8 +520,13 @@ const AppTooltip = {
             let valStr = '';
             if (val !== undefined) {
                 if (t === '스킬 배율 증가') {
-                    const n = parseFloat(val) || 0;
-                    valStr = ` *${(1 + n / 100).toFixed(2)}`;
+                    // 합연산(dmg)인지 곱연산(val)인지 확인
+                    if (eff.dmg !== undefined) {
+                        valStr = ` +${eff.dmg}`;
+                    } else {
+                        const n = parseFloat(val) || 0;
+                        valStr = ` *${(1 + n / 100).toFixed(2)}`;
+                    }
                 } else {
                     valStr = ` +${val}`;
                 }
@@ -535,10 +540,21 @@ const AppTooltip = {
     },
 
     /** 물리 이상 또는 아츠 이상/폭발 툴팁을 렌더링한다. */
-    renderAbnormalTooltip(aName, artsStrength = 0) {
-        const data = (typeof DATA_ABNORMALS !== 'undefined') ? DATA_ABNORMALS[aName] : null;
+    renderAbnormalTooltip(aName, artsStrength = 0, st = null) {
+        const getAbnormalData = (name) => {
+            if (typeof DATA_ABNORMALS === 'undefined') return null;
+            // 1. 정확한 이름 매칭
+            if (DATA_ABNORMALS[name]) return DATA_ABNORMALS[name];
+            // 2. '(이상)' 접미사 제거 후 매칭 (예: '연소(이상)' -> '연소')
+            const baseName = name.replace('(이상)', '');
+            if (DATA_ABNORMALS[baseName]) return DATA_ABNORMALS[baseName];
+            return null;
+        };
+
+        const data = getAbnormalData(aName);
         let desc = '설명 없음';
         let attrLines = [];
+        let synergyLines = [];
 
         if (data) {
             desc = data.desc;
@@ -552,24 +568,36 @@ const AppTooltip = {
 
             // 데미지 표시
             if (data.base) {
-                let dmgStr = `기본 데미지: <strong class="tooltip-highlight">${data.base}</strong>`;
+                const multiplier = 1 + (artsStrength / 100);
+                const parseVal = (str) => parseFloat(str.replace('%', '')) || 0;
+
+                const finalBase = (parseVal(data.base) * multiplier).toFixed(0) + '%';
+                let dmgStr = `기본 데미지: <strong class="tooltip-highlight">${finalBase}</strong>`;
+
                 if (data.perStack) {
-                    dmgStr += ` <span class="tooltip-muted">+ ${data.trigger || '스택'} * <strong class="tooltip-highlight">${data.perStack}</strong></span>`;
+                    const finalPerStack = (parseVal(data.perStack) * multiplier).toFixed(0) + '%';
+                    dmgStr += ` <span class="tooltip-muted">+ ${data.trigger || '스택'} * <strong class="tooltip-highlight">${finalPerStack}</strong></span>`;
                 }
                 attrLines.push(`<div class="tooltip-bullet-point"><span class="tooltip-bullet-marker">•</span> ${dmgStr}</div>`);
             }
-        } else {
-            // Fallback for unknown abnormals
-            if (aName === '아츠 폭발') {
-                desc = '동일 속성의 아츠 부착을 부여할 때 발생하며, 160%의 고정 피해를 입힙니다. 기존 부착 스택을 소모하지 않습니다.';
-            } else if (aName.includes('연소')) {
-                desc = '다른 속성의 아츠 부착을 소모하여 연소를 일으킵니다. 소모한 스택에 비례하여 초기 열기 피해와 지속 열기 피해를 입힙니다.';
-            } else if (aName.includes('감전')) {
-                desc = '다른 속성의 아츠 부착을 소모하여 감전을 일으킵니다. 소모한 스택에 비례하여 초기 전기 피해를 입힙니다.';
-            } else if (aName.includes('동결')) {
-                desc = '다른 속성의 아츠 부착을 소모하여 동결을 일으킵니다. 130%의 냉기 피해를 입힙니다.';
-            } else if (aName.includes('부식')) {
-                desc = '다른 속성의 아츠 부착을 소모하여 부식을 일으킵니다. 소모한 스택에 비례하여 초기 자연 피해를 입힙니다.';
+
+            // 시너지(디버프) 정보 추가
+            if (st?.debuffState) {
+                const ds = st.debuffState;
+                const isPhys = data.element === 'phys';
+                const isArts = ['heat', 'elec', 'cryo', 'nature'].includes(data.element);
+
+                // 방어 불능 (모든 이상 데미지 공통 적용으로 추정되나 보통 물리 데미지 비중이 큼, 여기서는 공통 표시)
+                if (ds.physDebuff?.defenseless > 0) synergyLines.push(`방어 불능 ${ds.physDebuff.defenseless}스택`);
+
+                // 갑옷 파괴 (물리만)
+                if (isPhys && ds.physDebuff?.armorBreak > 0) synergyLines.push(`갑옷 파괴 ${ds.physDebuff.armorBreak}단계`);
+
+                // 감전 (아츠만)
+                if (isArts && ds.artsAbnormal?.['감전'] > 0) synergyLines.push(`감전 ${ds.artsAbnormal['감전']}단계 (받는 아츠 피해 증가)`);
+
+                // 부식 (모든 속성 저항 감소이므로 공통)
+                if (ds.artsAbnormal?.['부식'] > 0) synergyLines.push(`부식 ${ds.artsAbnormal['부식']}단계 (모든 저항 감소)`);
             }
         }
 
@@ -579,9 +607,18 @@ const AppTooltip = {
             html += `<div class="tooltip-section tooltip-group">${attrLines.join('')}</div>`;
         }
 
-        html += `<div style="margin-top:8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top:8px;"></div>`;
-        html += `<div class="tooltip-label" style="font-size:11px; color:var(--accent); margin-bottom:4px;">적용 중인 추가 효과</div>`;
-        html += `<div class="tooltip-bullet-point" style="color:var(--accent); font-size:12px;"><span class="tooltip-bullet-marker">•</span> 오리지늄 아츠 강도 +${artsStrength.toFixed(1)}%</div>`;
+        if (synergyLines.length > 0 || artsStrength > 0) {
+            html += `<div style="margin-top:8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top:8px;"></div>`;
+            html += `<div class="tooltip-label" style="font-size:11px; color:var(--accent); margin-bottom:4px;">적용 중인 추가 효과</div>`;
+
+            if (artsStrength > 0) {
+                html += `<div class="tooltip-bullet-point" style="color:var(--accent); font-size:12px;"><span class="tooltip-bullet-marker">•</span> 오리지늄 아츠 강도 +${artsStrength.toFixed(1)}%</div>`;
+            }
+
+            synergyLines.forEach(txt => {
+                html += `<div class="tooltip-bullet-point" style="color:#FFFA00; font-size:12px;"><span class="tooltip-bullet-marker">•</span> ${txt}</div>`;
+            });
+        }
 
         html += `<div class="tooltip-desc">${this.colorizeText(desc)}</div>`;
 

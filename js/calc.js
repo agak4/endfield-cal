@@ -725,9 +725,16 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
             let typeLabel = t;
             if (eff.skillType) typeLabel += ` (${eff.skillType.join(', ')})`;
 
-            // 표시 형식 변경: +15% -> *1.15
             const nVal = parseFloat(eff.val !== undefined ? eff.val : (eff.dmg !== undefined ? eff.dmg : 0)) || 0;
-            const multDisplay = `*${(1 + nVal / 100).toFixed(2)}`;
+            let multDisplay;
+
+            if (eff.dmg !== undefined) {
+                // 합연산
+                multDisplay = `+${nVal}%`;
+            } else {
+                // 곱연산
+                multDisplay = `*${(1 + nVal / 100).toFixed(2)}`;
+            }
 
             logs.dmgInc.push({
                 txt: `[${displayName}] ${multDisplay}${eff.stack ? ` (${eff._stackCount}중첩)` : ''} (${typeLabel})`,
@@ -854,7 +861,9 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
             mainStatName: STAT_NAME_MAP[opData.mainStat], mainStatVal: stats[opData.mainStat],
             subStatName: STAT_NAME_MAP[opData.subStat], subStatVal: stats[opData.subStat],
             critExp, finalCritRate, critDmg, dmgInc, amp, vuln, takenDmg, unbalanceDmg: finalUnbal, originiumArts, skillMults, dmgIncData: dmgIncMap,
-            skillCritData, resistance: activeResVal, resMult, defMult, enemyDefense: defVal, ultRecharge, finalUltCost, vulnMap, vulnAmpEffects
+            skillCritData, resistance: activeResVal, resMult, defMult, enemyDefense: defVal, ultRecharge, finalUltCost, vulnMap, vulnAmpEffects,
+            allRes: resistance, armorBreakVal: abVal, gamsunVal: gamsunVal, baseTakenDmg: (takenDmg - (opData.type === 'phys' ? abVal : (opData.type === 'arts' ? gamsunVal : 0))),
+            resIgnore: resIgnore
         },
         logs
     };
@@ -1198,54 +1207,71 @@ function calcSingleSkillDamage(type, st, bRes) {
 
         // 스킬이 부여하는 아츠 타입 확인
         let nextAttachType = null;
-        let isForcedAbnormal = false; // '연소 부여' 등 강제 부여 여부
+        let isForcedAbnormal = false;
 
-        if (typeName.includes('부착')) nextAttachType = typeName;
-        else if (typeName.includes('부여')) {
-            // '연소 부여' -> '연소 부착'으로 매핑하여 판정
+        if (typeName.includes('부착')) {
+            nextAttachType = typeName;
+        } else if (typeName.includes('부여')) {
             const base = typeName.replace(' 부여', '');
             nextAttachType = base + ' 부착';
             isForcedAbnormal = true;
         }
 
-        if (nextAttachType && currentAttachType) {
+        // 아츠 속성 - 이상 상태 매핑
+        const ELEMENT_TO_ANOMALY = {
+            '열기': '연소',
+            '냉기': '동결',
+            '전기': '감전',
+            '자연': '부식'
+        };
+
+        if (nextAttachType) {
+            const nextBase = nextAttachType.replace(' 부착', '');
+            const currentBase = currentAttachType ? currentAttachType.replace(' 부착', '') : null;
+
             let artsMult = 0;
             let artsName = '';
+            let shouldTrigger = false;
 
-            if (currentAttachType === nextAttachType) {
+            if (currentAttachType && currentBase === nextBase) {
                 // 1. 아츠 폭발 (동일 속성)
-                artsName = '아츠 폭발';
-                artsMult = 1.6;
-            } else {
-                // 2. 아츠 이상 (다른 속성)
-                const targetBase = nextAttachType.replace(' 부착', '');
-                artsName = targetBase + '(이상)';
+                artsName = currentBase + ' 폭발';
+                // 강제 부여로 인한 폭발은 데미지 0
+                artsMult = isForcedAbnormal ? 0 : 1.6;
+                shouldTrigger = true;
+            } else if (currentAttachType || isForcedAbnormal) {
+                // 2. 아츠 이상 (다른 속성 혹은 강제 부여)
+                const targetAnomaly = ELEMENT_TO_ANOMALY[nextBase] || nextBase;
+                artsName = targetAnomaly + '(이상)';
+                shouldTrigger = true;
 
                 const S = currentStacks;
-                if (targetBase === '연소') {
+                if (targetAnomaly === '연소') {
                     // 연소: 초기 (80%+S*80%) + 추가 (120%+S*120%)
+                    // 강제 부여(연소 부여)는 초기 데미지 0, 추가 데미지는 스택 보너스 없이 1스택분(120%) 고정
                     const initial = isForcedAbnormal ? 0 : (0.8 + S * 0.8);
-                    const additional = (1.2 + S * 1.2);
+                    const additional = isForcedAbnormal ? 1.2 : (1.2 + S * 1.2);
                     artsMult = initial + additional;
-                } else if (targetBase === '감전') {
-                    // 감전: 초기 (80%+S*80%)
-                    artsMult = (0.8 + S * 0.8);
-                } else if (targetBase === '동결') {
-                    // 동결: 130% 고정
-                    artsMult = 1.3;
-                } else if (targetBase === '부식') {
-                    // 부식: 초기 (80%+S*80%)
-                    artsMult = (0.8 + S * 0.8);
+                } else {
+                    // 감전, 동결, 부식: 강제 부여된 아츠 이상은 데미지가 없음
+                    if (isForcedAbnormal) {
+                        artsMult = 0;
+                    } else {
+                        if (targetAnomaly === '감전') artsMult = (0.8 + S * 0.8);
+                        else if (targetAnomaly === '동결') artsMult = 1.3;
+                        else if (targetAnomaly === '부식') artsMult = (0.8 + S * 0.8);
+                    }
                 }
             }
 
-            if (artsMult > 0) {
+            if (shouldTrigger) {
                 abnormalList.push({
                     name: artsName,
                     mult: artsMult,
-                    triggerName: currentAttachType,
+                    triggerName: currentAttachType || '없음',
                     stackCount: currentStacks,
-                    isArts: true
+                    isArts: true,
+                    originalType: typeName // 트리거 연동용
                 });
                 abnormalMultTotal += artsMult;
             }
@@ -1255,7 +1281,11 @@ function calcSingleSkillDamage(type, st, bRes) {
     // 스킬 관련 로그/기록용 최종 배율 (UI용)
     let abnormalDesc = '';
     if (abnormalList.length > 0) {
-        const descParts = abnormalList.map(a => `${a.name} +${(a.mult * 100).toFixed(0)}%`);
+        const artsStrengthMult = 1 + (originiumArts / 100);
+        const descParts = abnormalList.map(a => {
+            const boostedMult = a.mult * artsStrengthMult;
+            return `${a.name} +${(boostedMult * 100).toFixed(0)}%`;
+        });
         abnormalDesc = ` (${descParts.join(', ')})`;
     }
 
@@ -1281,7 +1311,9 @@ function calcSingleSkillDamage(type, st, bRes) {
         }
     }
 
-    let adjDmgMult = SKILL_MULT_TYPES.has(baseType) ? dmgMult * (1 + (sMult + sAdd) / 100) : dmgMult;
+    let adjDmgMult = SKILL_MULT_TYPES.has(baseType)
+        ? (dmgMult + sAdd / 100) * (1 + sMult / 100)
+        : dmgMult;
 
     // 물리 이상은 스킬 배율(sMult)에 영향받지 않도록 나중에 더함
     adjDmgMult += abnormalMultTotal;
@@ -1334,14 +1366,40 @@ function calcSingleSkillDamage(type, st, bRes) {
 
     // [Fix] 오리지늄 아츠 강도는 물리/아츠 이상 데미지에만 적용 (스킬 기본 데미지 미적용)
     const finalSkillCommonMults = commonMults;
-    const abnormalCommonMults = adjCritExp * (1 + abnormalInc / 100) * (1 + amp / 100) * (1 + takenDmg / 100) * (1 + vuln / 100) * (1 + unbalanceDmg / 100) * resMult * defMult * artsStrengthMult;
 
     const baseHitDmg = adjFinalAtk * baseMultOnly * finalSkillCommonMults;
 
     const abnormalDmgMap = {};
+    const resKeyMap = { heat: '열기', elec: '전기', cryo: '냉기', nature: '자연' };
 
     abnormalList.forEach(a => {
-        let aDmg = adjFinalAtk * a.mult * abnormalCommonMults;
+        const aData = DATA_ABNORMALS[a.name] || DATA_ABNORMALS[a.name.replace('(이상)', '')];
+        let aResMult = resMult;
+        let aVuln = vuln;
+        let aTaken = takenDmg;
+
+        if (aData) {
+            const aElem = aData.element;
+            const activeResKey = aElem === 'phys' ? '물리' : (resKeyMap[aElem] || null);
+
+            if (activeResKey && bRes.stats.allRes) {
+                const aResVal = bRes.stats.allRes[activeResKey] - (bRes.stats.resIgnore || 0);
+                aResMult = 1 - aResVal / 100;
+            }
+
+            const eKey = aElem === 'phys' ? '물리' : (resKeyMap[aElem] || null);
+            if (eKey) {
+                aVuln = (bRes.stats.vulnMap['취약'] || 0) + (bRes.stats.vulnMap[eKey + ' 취약'] || 0);
+
+                const isArts = (aElem !== 'phys');
+                const abVal = bRes.stats.armorBreakVal || 0;
+                const gsVal = bRes.stats.gamsunVal || 0;
+                aTaken = (bRes.stats.baseTakenDmg || 0) + (isArts ? gsVal : abVal);
+            }
+        }
+
+        const aCommonMults = adjCritExp * (1 + abnormalInc / 100) * (1 + amp / 100) * (1 + aTaken / 100) * (1 + aVuln / 100) * (1 + unbalanceDmg / 100) * aResMult * defMult * artsStrengthMult;
+        let aDmg = adjFinalAtk * a.mult * aCommonMults;
 
         // 판(Da Pan) 전용 강타 보너스 (1.2배 곱연산)
         if (st.mainOp.id === 'Da Pan' && a.name === '강타') {
@@ -1592,7 +1650,21 @@ function calculateCycleDamage(currentState, baseRes, forceMaxStack = false) {
             procEffects.forEach(pe => {
                 // 발동 조건(trigger) 중 하나라도 스킬의 상태 이상(abnormalInfo)에 포함되어 있는지 확인
                 const isTriggerMet = pe.trigger.some(t =>
-                    skillData.abnormalInfo.some(a => a.name === t || (t === '넘어뜨리기' && a.name === '강제 넘어뜨리기') || (t === '띄우기' && a.name === '강제 띄우기'))
+                    skillData.abnormalInfo.some(a => {
+                        // 1. 기본 이름 매칭 (예: '강타')
+                        if (a.name === t) return true;
+                        // 2. 물리 이상 강제 이름 매칭
+                        if ((t === '넘어뜨리기' && a.name === '강제 넘어뜨리기') || (t === '띄우기' && a.name === '강제 띄우기')) return true;
+                        // 3. 아츠 이상 매칭 (원본 부여 타입 혹은 이상 상태 이름)
+                        if (a.isArts) {
+                            if (a.originalType === t) return true;
+                            const artsBaseName = a.name.replace('(이상)', '');
+                            if (artsBaseName === t || artsBaseName + ' 부여' === t) return true;
+                            // '동결 부여' 트리거는 '동결(이상)'과 매칭되어야 함
+                            if (t.endsWith(' 부여') && t.startsWith(artsBaseName)) return true;
+                        }
+                        return false;
+                    })
                 );
 
                 if (isTriggerMet) {

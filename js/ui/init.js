@@ -575,7 +575,7 @@ function applyOpSettingsToUI(opId, type, subIdx) {
     const wepStateVal = settings?.wepState || false;
 
     if (type === 'main') {
-        // 잠재
+        // 잠재 초기화 및 설정
         document.getElementById('main-op-pot').value = potVal;
         setupPotencyButtons('main-op-pot', 'main-op-pot-group');
 
@@ -588,50 +588,42 @@ function applyOpSettingsToUI(opId, type, subIdx) {
             if (wepData) document.getElementById('main-wep-select-btn').innerText = wepData.name;
             updateEntityImage(wepId, 'main-wep-image', 'weapons');
             applyWepSettingsToUI(wepId);
-        } else if (!settings) {
-            // 저장된 설정이 없으면 기본 무기 자동 선택됨 (updateMainWeaponList에서 처리)
+        } else {
+            // 저장된 설정이 없거나 유효하지 않으면 기본 무기 설정 (이미 updateMainWeaponList에서 기본값 선택됨)
+            const currentWepId = wepSel.value;
+            if (currentWepId) applyWepSettingsToUI(currentWepId);
         }
 
-        // 무기 잠재/기질 (이제 applyWepSettingsToUI에서 처리함)
-        /*
-        document.getElementById('main-wep-pot').value = wepPotVal;
-        setupPotencyButtons('main-wep-pot', 'main-wep-pot-group');
-        const wepStateCb = document.getElementById('main-wep-state');
-        if (wepStateCb) {
-            wepStateCb.checked = wepStateVal;
-            updateToggleButton(document.getElementById('main-wep-toggle'), wepStateVal, '기질');
-        }
-        */
+        // 장비 일괄 초기화 후 설정
+        GEAR_SELECT_IDS.forEach((id, idx) => {
+            const val = settings?.gears ? settings.gears[idx] : null;
+            const el = document.getElementById(id);
+            if (el) {
+                el.value = val || '';
+                updateEntityImage(val || '', id.replace('-select', '-image'), 'gears');
+            }
+        });
 
-        // 장비
-        if (settings?.gears) {
-            GEAR_SELECT_IDS.forEach((id, idx) => {
-                const val = settings.gears[idx];
-                if (val) {
-                    document.getElementById(id).value = val;
-                    updateEntityImage(val, id.replace('-select', '-image'), 'gears');
-                }
-            });
-        }
-
-        // 장비 단조
-        if (settings?.gearForged) {
-            GEAR_FORGE_IDS.forEach((id, idx) => {
-                const checked = settings.gearForged[idx];
-                document.getElementById(id).checked = checked;
+        // 장비 단조 일괄 초기화 후 설정
+        GEAR_FORGE_IDS.forEach((id, idx) => {
+            const checked = settings?.gearForged ? settings.gearForged[idx] : false;
+            const el = document.getElementById(id);
+            if (el) {
+                el.checked = checked;
                 updateToggleButton(document.getElementById(id + '-toggle'), checked, '단조');
                 syncForgedToTooltip(id, checked);
-            });
-            // 메인 단조 토글 동기화
-            const allOn = GEAR_FORGE_IDS.every(gid => document.getElementById(gid)?.checked);
-            const mainForgeCb = document.getElementById('main-gear-forge');
-            if (mainForgeCb) {
-                mainForgeCb.checked = allOn;
-                updateToggleButton(document.getElementById('main-forge-toggle'), allOn, '단조');
             }
+        });
+
+        // 메인 단조 토글 동기화
+        const allOn = GEAR_FORGE_IDS.every(gid => document.getElementById(gid)?.checked);
+        const mainForgeCb = document.getElementById('main-gear-forge');
+        if (mainForgeCb) {
+            mainForgeCb.checked = allOn;
+            updateToggleButton(document.getElementById('main-forge-toggle'), allOn, '단조');
         }
 
-        // 스킬 시퀀스 복원
+        // 스킬 시퀀스 복원 (없으면 기본값)
         if (settings && settings.skillSequence) {
             state.skillSequence = settings.skillSequence.map((item, idx) => {
                 if (typeof item === 'string') {
@@ -645,34 +637,38 @@ function applyOpSettingsToUI(opId, type, subIdx) {
             }));
         }
 
-        // 전용 스택 복원
-        if (settings?.specialStack) {
-            state.mainOp.specialStack = { ...settings.specialStack };
-        } else {
-            state.mainOp.specialStack = {};
+        // 전용 스택 초기화 후 복원
+        state.mainOp.specialStack = settings?.specialStack ? { ...settings.specialStack } : {};
+
+        // 선택된 스킬 ID 초기화 (오퍼레이터가 바뀌면 시퀀스가 바뀜)
+        state.selectedSeqId = null;
+
+        if (typeof updateUIStateVisuals === 'function') {
+            updateUIStateVisuals();
         }
 
-        // 메인 오퍼레이터 변경 시 강화 스킬 버튼 업데이트
         if (typeof updateEnhancedSkillButtons === 'function') {
             updateEnhancedSkillButtons(opId);
         }
 
     } else {
-        // 서브 오퍼레이터
+        // 서브 오퍼레이터 초기화 및 설정
         document.getElementById(`sub-${subIdx}-pot`).value = potVal;
         setupPotencyButtons(`sub-${subIdx}-pot`, `sub-${subIdx}-pot-group`);
 
-        // 무기
         const wepSel = document.getElementById(`sub-${subIdx}-wep`);
         const wepId = settings?.wepId;
-        // 목록에 있는 경우에만 값 설정 (유효성 검사는 updateSubWeaponList에서 했지만, 저장된 무기가 해당 오퍼레이터 무기인지 확인 필요)
-        if (wepSel && wepId && wepSel.querySelector(`option[value="${wepId}"]`)) {
-            wepSel.value = wepId;
-            const wepData = DATA_WEAPONS.find(w => w.id === wepId);
-            if (wepData) document.getElementById(`sub-${subIdx}-wep-btn`).innerText = wepData.name;
-            updateEntityImage(wepId, `sub-${subIdx}-wep-image`, 'weapons');
-        } else {
-            // 저장된 무기가 없거나 유효하지 않으면 초기화 (이미 updateSubWeaponList에서 처리됨)
+        if (wepSel) {
+            if (wepId && wepSel.querySelector(`option[value="${wepId}"]`)) {
+                wepSel.value = wepId;
+                const wepData = DATA_WEAPONS.find(w => w.id === wepId);
+                if (wepData) document.getElementById(`sub-${subIdx}-wep-btn`).innerText = wepData.name;
+                updateEntityImage(wepId, `sub-${subIdx}-wep-image`, 'weapons');
+            } else {
+                wepSel.value = '';
+                document.getElementById(`sub-${subIdx}-wep-btn`).innerText = '== 선택 해제 ==';
+                updateEntityImage('', `sub-${subIdx}-wep-image`, 'weapons');
+            }
         }
 
         document.getElementById(`sub-${subIdx}-wep-pot`).value = wepPotVal;
