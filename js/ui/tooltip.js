@@ -398,8 +398,12 @@ const AppTooltip = {
             if (entry.bonus) {
                 dmgStr += (entry.bonus || []).map(b => {
                     const triggerLines = (b.trigger || []).join(', ');
-                    let bValStr = b.val !== undefined && b.val !== '0%' ? '+' + b.val : (b.perStack !== undefined && b.perStack !== '0%' ? (b.base && b.base !== '0%' ? `+${b.base} + ${b.perStack}/스택` : `+${b.perStack}/스택`) : (b.base && b.base !== '0%' ? '+' + b.base : ''));
-                    return bValStr ? ` <span class="tooltip-muted">+ (${triggerLines} <strong class="tooltip-highlight">${bValStr}</strong>)</span>` : '';
+                    let bValStr =
+                        b.val !== undefined && b.val !== '0%' ? '+' + b.val :
+                            b.perStack !== undefined && b.perStack !== '0%' ?
+                                (b.base && b.base !== '0%' ? `${b.base} + ${b.perStack}/스택` : `${b.perStack}/스택`) : // perStack이 있을때
+                                (b.base && b.base !== '0%' ? b.base : ''); // perStack이 없을때
+                    return bValStr ? ` <span class="tooltip-muted">+ ${triggerLines} <strong class="tooltip-highlight">${bValStr}</strong></span>` : '';
                 }).filter(Boolean).join('');
             }
             attrLines.push(`<div class="tooltip-bullet-point"><span class="tooltip-bullet-marker">•</span> ${dmgStr}</div>`);
@@ -530,41 +534,57 @@ const AppTooltip = {
         return html;
     },
 
-    /** 물리 이상/아츠 이상/폭발 툴팁 렌더링 */
+    /** 물리 이상 또는 아츠 이상/폭발 툴팁을 렌더링한다. */
     renderAbnormalTooltip(aName, artsStrength = 0) {
-        let desc = '기본 배율에 오리지늄 아츠 강도 보너스가 곱연산으로 적용됩니다.';
-        if (aName.includes('강타')) {
-            desc = '방어 불능이 없는 적이라면 방어 불능 1스택을 부여하고, 방어 불능 상태의 적이라면 확정적인 강타 이상 효과가 발동됩니다. 강타 이상 효과는 목표의 모든 방어 불능 스택 수치를 소모하고, 대량의 물리 피해를 줍니다.';
-        } else if (aName.includes('띄우기')) {
-            desc = '방어 불능 1스택을 부여하고, 방어 불능 상태의 적이라면 확정적인 띄우기 이상 효과가 발동됩니다. 띄우기 이상 효과는 물리 피해를 주며, 일정량의 불균형치를 쌓습니다. 약한 적은 공중에 뜸 상태가 됩니다.';
-        } else if (aName.includes('넘어뜨리기')) {
-            desc = '방어 불능 1스택을 부여하고, 방어 불능 상태의 적이라면 확정적인 넘어뜨리기 이상 효과가 발동됩니다. 넘어뜨리기 이상 효과는 물리 피해를 주며, 일정량의 불균형치를 쌓습니다. 약한 적은 넘어집니다.';
-        } else if (aName.includes('갑옷 파괴')) {
-            desc = '방어 불능이 없는 적이라면 방어 불능 1스택을 부여하고, 방어 불능 상태의 적이라면 확정적인 갑옷 파괴 이상 효과가 발동됩니다. 갑옷 파괴 이상 효과는 목표의 모든 방어 불능 스택 수치를 소모하여 물리 피해를 주고, 일정 시간 동안 받는 물리 피해를 증가시킵니다.';
-        } else if (aName.includes('열기 폭발')) {
-            desc = '열기 부착 상태의 적에게 다시 열기 부착을 부여하면, 열기 폭발을 발생시키며 짧은 지연 후 열기 피해를 줍니다.';
-        } else if (aName.includes('전기 폭발')) {
-            desc = '전기 부착 상태의 적에게 다시 전기 부착을 부여하면, 전기 폭발을 발생시키며 짧은 지연 후 전기 피해를 줍니다.';
-        } else if (aName.includes('냉기 폭발')) {
-            desc = '냉기 부착 상태의 적에게 다시 냉기 부착을 부여하면, 냉기 폭발을 발생시키며 짧은 지연 후 냉기 피해를 줍니다.';
-        } else if (aName.includes('자연 폭발')) {
-            desc = '자연 부착 상태의 적에게 다시 자연 부착을 부여하면, 자연 폭발을 발생시키며 짧은 지연 후 자연 피해를 줍니다.';
-        } else if (aName.includes('연소')) {
-            desc = '다른 아츠 부착 상태의 적에게 열기 부착을 부여하면, 모든 아츠 부착을 소모하고, 한 차례의 열기 피해를 주며, 적을 연소 상태로 만듭니다. 연소 상태가 된 경우, 적은 매초 열기 속성의 지속 피해를 받습니다. 연소는 소모한 아츠 부착의 스택 수치가 많을수록 초기 피해가 증가하며, 연소의 피해가 증가합니다. 강제로 부여된 연소는 초기 피해가 없습니다.';
-        } else if (aName.includes('감전')) {
-            desc = '다른 아츠 부착 상태의 적에게 전기 부착을 부여하면, 모든 아츠 부착을 소모하고, 한 차례의 전기 피해를 주며, 적을 감전 상태로 만듭니다. 감전 상태가 된 경우, 적은 받는 아츠 피해가 증가합니다. 감전은 소모한 아츠 부착의 스택 수치가 많을수록 초기 피해가 증가하며, 적이 받는 아츠 피해 증가 효과가 강해집니다. 강제로 부여된 감전은 초기 피해가 없습니다.';
-        } else if (aName.includes('동결')) {
-            desc = '다른 아츠 부착 상태의 적에게 냉기 부착을 부여하면, 모든 아츠 부착을 소모하고, 한 차례의 냉기 피해를 주며, 적을 동결 상태로 만듭니다. 동결 상태가 된 경우, 약한 적은 움직일 수 없게 됩니다. 동결 상태의 적에게 방어 불능 혹은 물리 이상 효과를 부여하면 쇄빙이 발동합니다. 쇄빙은 적의 동결 상태를 소모하고, 대량의 물리 피해를 줍니다. 동결은 소모한 아츠 부착의 스택 수치가 많을수록 초기 피해가 증가하며, 동결의 지속 시간이 길어지고, 쇄빙 피해가 증가합니다. 강제로 부여된 동결은 초기 피해가 없습니다.';
-        } else if (aName.includes('부식')) {
-            desc = '다른 아츠 부착 상태의 적에게 부식 부착을 부여하면, 모든 아츠 부착을 소모하고, 한 차례의 부식 피해를 주며, 적을 부식 상태로 만듭니다. 부식 상태가 된 경우, 전체 속성 저항이 조금씩 감소하며, 해당 효과에는 최대치가 존재합니다. 부식 상태가 갱신되면, 이전에 떨어진 저항 수치가 그대로 유지됩니다. 부식은 소모한 아츠 부착의 스택 수치가 많을수록 초기 피해가 증가하며, 부식이 매초 감소시키는 전체 속성 저항이 증가하고, 감소하는 전체 속성 저항 효과의 최대치가 증가합니다. 강제로 부여된 부식은 초기 피해가 없습니다.';
+        const data = (typeof DATA_ABNORMALS !== 'undefined') ? DATA_ABNORMALS[aName] : null;
+        let desc = '설명 없음';
+        let attrLines = [];
+
+        if (data) {
+            desc = data.desc;
+
+            // 속성 표시
+            const elementMap = { phys: '물리', heat: '열기', elec: '전기', cryo: '냉기', nature: '자연', arts: '아츠(속성 일치)' };
+            const elName = elementMap[data.element] || data.element;
+            if (elName) {
+                attrLines.push(`<div class="tooltip-bullet-point"><span class="tooltip-bullet-marker accent">•</span> 공격 속성: ${elName}</div>`);
+            }
+
+            // 데미지 표시
+            if (data.base) {
+                let dmgStr = `기본 데미지: <strong class="tooltip-highlight">${data.base}</strong>`;
+                if (data.perStack) {
+                    dmgStr += ` <span class="tooltip-muted">+ ${data.trigger || '스택'} * <strong class="tooltip-highlight">${data.perStack}</strong></span>`;
+                }
+                attrLines.push(`<div class="tooltip-bullet-point"><span class="tooltip-bullet-marker">•</span> ${dmgStr}</div>`);
+            }
+        } else {
+            // Fallback for unknown abnormals
+            if (aName === '아츠 폭발') {
+                desc = '동일 속성의 아츠 부착을 부여할 때 발생하며, 160%의 고정 피해를 입힙니다. 기존 부착 스택을 소모하지 않습니다.';
+            } else if (aName.includes('연소')) {
+                desc = '다른 속성의 아츠 부착을 소모하여 연소를 일으킵니다. 소모한 스택에 비례하여 초기 열기 피해와 지속 열기 피해를 입힙니다.';
+            } else if (aName.includes('감전')) {
+                desc = '다른 속성의 아츠 부착을 소모하여 감전을 일으킵니다. 소모한 스택에 비례하여 초기 전기 피해를 입힙니다.';
+            } else if (aName.includes('동결')) {
+                desc = '다른 속성의 아츠 부착을 소모하여 동결을 일으킵니다. 130%의 냉기 피해를 입힙니다.';
+            } else if (aName.includes('부식')) {
+                desc = '다른 속성의 아츠 부착을 소모하여 부식을 일으킵니다. 소모한 스택에 비례하여 초기 자연 피해를 입힙니다.';
+            }
         }
 
-        return `
-            <div class="tooltip-title">${aName}</div>
-            <div style="margin-top:8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top:8px;"></div>
-            <div class="tooltip-label" style="font-size:11px; color:var(--accent); margin-bottom:4px;">적용 중인 추가 효과</div>
-            <div class="tooltip-bullet-point" style="color:var(--accent); font-size:12px;"><span class="tooltip-bullet-marker">•</span> 오리지늄 아츠 강도 +${artsStrength}%</div>
-            <div class="tooltip-desc">${this.colorizeText(desc)}</div>
-        `;
+        let html = `<div class="tooltip-title">${aName}</div>`;
+
+        if (attrLines.length > 0) {
+            html += `<div class="tooltip-section tooltip-group">${attrLines.join('')}</div>`;
+        }
+
+        html += `<div style="margin-top:8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top:8px;"></div>`;
+        html += `<div class="tooltip-label" style="font-size:11px; color:var(--accent); margin-bottom:4px;">적용 중인 추가 효과</div>`;
+        html += `<div class="tooltip-bullet-point" style="color:var(--accent); font-size:12px;"><span class="tooltip-bullet-marker">•</span> 오리지늄 아츠 강도 +${artsStrength.toFixed(1)}%</div>`;
+
+        html += `<div class="tooltip-desc">${this.colorizeText(desc)}</div>`;
+
+        return html;
     }
 };
