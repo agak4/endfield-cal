@@ -535,7 +535,7 @@ function applyPercentStats(effects, stats) {
 // ---- 최종 데미지 산출 ----
 function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, activeEffects) {
     const baseAtk = opData.baseAtk + wepData.baseAtk;
-    let atkInc = 0, critRate = 5, critDmg = 50, dmgInc = 0, amp = 0, vuln = 0, takenDmg = 0, multiHit = 1.0, unbalanceDmg = 0, originiumArts = 0, ultRecharge = 0, ultCostReduction = 0, skillMults = { all: { mult: 0, add: 0 } }, dmgIncMap = { all: 0, skill: 0, normal: 0, battle: 0, combo: 0, ult: 0 };
+    let atkInc = 0, critRate = 5, critDmg = 50, dmgInc = 0, amp = 0, vuln = 0, takenDmg = 0, multiHit = 1.0, unbalanceDmg = 0, originiumArts = 0, ultRecharge = 0, ultCostReduction = 0, skillMults = { all: { mult: 0, add: 0 } }, dmgIncMap = { all: 0, skill: 0, normal: 0, battle: 0, combo: 0, ult: 0, phys: 0, heat: 0, elec: 0, cryo: 0, nature: 0 };
     const vulnMap = { '물리 취약': 0, '아츠 취약': 0, '열기 취약': 0, '전기 취약': 0, '냉기 취약': 0, '자연 취약': 0, '취약': 0 };
     const vulnAmpEffects = [];
     const skillCritData = { rate: { all: 0 }, dmg: { all: 0 } };
@@ -763,9 +763,26 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
                 } else if (t.includes('궁극기')) {
                     if (!checkDisabled('ult')) dmgIncMap.ult += val;
                 } else {
-                    if (!checkDisabled('common')) {
-                        dmgInc += val;
-                        dmgIncMap.all += val;
+                    const elMap = { '물리': 'phys', '열기': 'heat', '전기': 'elec', '냉기': 'cryo', '자연': 'nature' };
+                    let foundEl = null;
+                    for (const [ek, ev] of Object.entries(elMap)) {
+                        if (t.includes(ek)) { foundEl = ev; break; }
+                    }
+
+                    if (foundEl) {
+                        if (!checkDisabled('common')) {
+                            dmgIncMap[foundEl] += val;
+                            // 오퍼레이터의 주 속성과 일치하는 경우 기본 dmgInc에도 합산 (스킬 데미지용)
+                            const opElKey = opData.type === 'phys' ? 'phys' : opData.element;
+                            if (foundEl === opElKey) {
+                                dmgInc += val;
+                            }
+                        }
+                    } else {
+                        if (!checkDisabled('common')) {
+                            dmgInc += val;
+                            dmgIncMap.all += val;
+                        }
                     }
                 }
             } else {
@@ -1377,6 +1394,7 @@ function calcSingleSkillDamage(type, st, bRes) {
         let aResMult = resMult;
         let aVuln = vuln;
         let aTaken = takenDmg;
+        let aInc = abnormalInc; // 기본은 dmgIncData.all
 
         if (aData) {
             const aElem = aData.element;
@@ -1395,10 +1413,14 @@ function calcSingleSkillDamage(type, st, bRes) {
                 const abVal = bRes.stats.armorBreakVal || 0;
                 const gsVal = bRes.stats.gamsunVal || 0;
                 aTaken = (bRes.stats.baseTakenDmg || 0) + (isArts ? gsVal : abVal);
+
+                // 속성별 피해 증가 적용 (예: 물리 피해 증가, 열기 피해 증가)
+                const elKey = aElem; // phys, heat, elec, cryo, nature
+                aInc = (bRes.stats.dmgIncData.all || 0) + (bRes.stats.dmgIncData[elKey] || 0);
             }
         }
 
-        const aCommonMults = adjCritExp * (1 + abnormalInc / 100) * (1 + amp / 100) * (1 + aTaken / 100) * (1 + aVuln / 100) * (1 + unbalanceDmg / 100) * aResMult * defMult * artsStrengthMult;
+        const aCommonMults = adjCritExp * (1 + aInc / 100) * (1 + amp / 100) * (1 + aTaken / 100) * (1 + aVuln / 100) * (1 + unbalanceDmg / 100) * aResMult * defMult * artsStrengthMult;
         let aDmg = adjFinalAtk * a.mult * aCommonMults;
 
         // 판(Da Pan) 전용 강타 보너스 (1.2배 곱연산)
