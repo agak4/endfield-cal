@@ -168,6 +168,9 @@ function renderResult(res) {
 
     // 무기 비교 렌더링 (사이클 데미지 우선)
     renderWeaponComparison(res, cycleRes);
+
+    // 오퍼레이터 비중 렌더링
+    renderOperatorShare(cycleRes);
 }
 
 /**
@@ -960,4 +963,38 @@ function updateEnhancedSkillButtons(opId) {
         btnContainer.appendChild(btn);
     });
     console.log(`[DEBUG] updateEnhancedSkillButtons(${opId}) created ${enhancedSkills.length} buttons.`);
+}
+
+/**
+ * 오퍼레이터별 데미지 비중을 렌더링한다.
+ * @param {object} cycleRes - calculateCycleDamage 결과
+ */
+function renderOperatorShare(cycleRes) {
+    const box = document.getElementById('operator-comparison');
+    if (!box || !cycleRes || !cycleRes.perOperator) return;
+
+    const total = cycleRes.total || 0;
+    const items = Object.entries(cycleRes.perOperator)
+        .map(([name, dmg]) => {
+            const pct = total > 0 ? (dmg / total * 100) : 0;
+            return { name, dmg, pct };
+        })
+        .sort((a, b) => b.dmg - a.dmg);
+
+    box.innerHTML = '';
+
+    items.forEach(item => {
+        const barWidth = total > 0 ? (item.dmg / total * 100) : 0;
+        const div = document.createElement('div');
+        div.className = 'comp-item op-share-item';
+        div.innerHTML = `
+            <div class="comp-info">
+                <span class="comp-name">${item.name}</span>
+                <span class="comp-dmg">${Math.floor(item.dmg).toLocaleString()}</span>
+                <span class="comp-pct">${item.pct.toFixed(1)}%</span>
+            </div>
+            <div class="comp-bar-bg"><div class="comp-bar" style="width:${barWidth}%"></div></div>
+        `;
+        box.appendChild(div);
+    });
 }

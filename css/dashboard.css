@@ -581,6 +581,20 @@
     background: var(--error);
 }
 
+.op-share-item.comp-item {
+    border-left: 3px solid #00d9ff;
+    background: rgba(0, 217, 255, 0.03);
+}
+
+.op-share-item .comp-bar {
+    background: #00d9ff;
+    box-shadow: 0 0 5px rgba(0, 217, 255, 0.5);
+}
+
+.op-share-item .comp-pct {
+    color: #00d9ff;
+}
+
 .comp-settings-panel {
     margin-bottom: 20px;
     padding: 15px;

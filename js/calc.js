@@ -465,6 +465,30 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
             const merged = mergeEffects(pot);
             addEffect(merged, `${prefix} 잠재${sp + 1}`, 1.0, true, false, forceMaxStack, subOpData, `${subOpData.id}_pot${sp}`);
         }
+
+        // 서브 오퍼레이터 개별 장비 특성 수집 루프 추가
+        if (sub.gears) {
+            sub.gears.forEach((gId, gidx) => {
+                if (!gId) return;
+                const gear = DATA_GEAR.find(g => g.id === gId);
+                const isForged = sub.gearForged ? sub.gearForged[gidx] : false;
+                if (gear?.trait) {
+                    const processGearTrait = (t) => {
+                        const val = isForged && t.val_f !== undefined ? t.val_f : t.val;
+                        let type = t.type;
+                        let stat = t.stat;
+                        if (t.type === '스탯') {
+                            const isPercent = (typeof val === 'string' && val.includes('%'));
+                            type = isPercent ? '스탯%' : '스탯';
+                            stat = t.stat === '주스탯' ? subOpData.mainStat : t.stat === '부스탯' ? subOpData.subStat : t.stat;
+                        }
+                        return { ...t, type, stat, val };
+                    };
+                    const traits = gear.trait.map(processGearTrait);
+                    addEffect(traits, `${prefix} ${gear.name}_s${gidx}`, 1.0, true, false, forceMaxStack, subOpData);
+                }
+            });
+        }
     });
 
     // 5. 세트 효과
@@ -1010,6 +1034,9 @@ function evaluateTrigger(trigger, state, opData, triggerType, isTargetOnly = fal
                 const checkTypes = [t];
                 if (t === '띄우기') checkTypes.push('강제 띄우기');
                 if (t === '넘어뜨리기') checkTypes.push('강제 넘어뜨리기');
+                if (t === '증폭') checkTypes.push('열기 증폭', '전기 증폭', '냉기 증폭', '자연 증폭', '아츠 증폭', '물리 증폭');
+                if (t === '취약') checkTypes.push('열기 취약', '전기 취약', '냉기 취약', '자연 취약', '아츠 취약', '물리 취약');
+                if (t === '비호') checkTypes.push('비호 부여');
 
                 const hasInSkill = skillPool.some(s => {
                     if (!s.type) return false;
@@ -1033,8 +1060,8 @@ function evaluateTrigger(trigger, state, opData, triggerType, isTargetOnly = fal
             };
 
             if (checkOpCapability(opData)) return true;
-            // 팀 버프인 경우 메인 오퍼레이터의 역량도 트리거로 보정
-            if (effectTarget === '팀') {
+            // 팀 버프인 경우 메인 오퍼레이터의 역량도 트리거로 보정 (적 대상 효과도 포함)
+            if (effectTarget === '팀' || effectTarget === '팀_외' || effectTarget === '적') {
                 const mainOpData = DATA_OPERATORS.find(o => o.id === (state.mainOp?.id));
                 if (mainOpData && mainOpData.id !== opData.id && checkOpCapability(mainOpData)) return true;
             }
@@ -1411,52 +1438,96 @@ function calculateCycleDamage(currentState, baseRes, forceMaxStack = false) {
 
     const perSkill = {};
     const perAbnormal = {};
+    const perOperator = { [opData.name]: 0 };
 
-    // 추가 피해(Proc) 효과 수집 (재능/잠재 중 dmg와 trigger가 있는 항목)
+    // 오퍼레이터별 스탯(baseRes) 맵 생성 (Proc 데미지 계산 시 자신의 스탯 사용을 위함)
+    const partyResMap = { [opData.id]: baseRes };
+    currentState.subOps.forEach(sub => {
+        if (!sub.id) return;
+        // 서브 오퍼레이터의 계산 결과가 이미 캐시되어 있거나 전역 결과가 있으면 좋겠지만, 
+        // 여기서는 정확성을 위해 각 서브 오퍼레이터를 메인으로 하는 임시 계산을 수행함.
+        // (calculateDamage는 내부에서 calculateCycleDamage를 호출하지 않으므로 무한 루프 위험 없음)
+        const subRes = calculateDamage({
+            ...currentState,
+            mainOp: {
+                id: sub.id, pot: sub.pot,
+                wepId: sub.wepId, wepPot: sub.wepPot, wepState: sub.wepState,
+                gears: sub.gears || [null, null, null, null],
+                gearForged: sub.gearForged || [false, false, false, false],
+                gearForge: sub.gearForge || false
+            },
+            // 서브 오퍼레이터 입장에서는 원래 메인 오퍼레이터가 서브 오퍼레이터가 됨
+            subOps: [
+                { id: currentState.mainOp.id, pot: currentState.mainOp.pot, wepId: currentState.mainOp.wepId, wepPot: currentState.mainOp.wepPot, wepState: currentState.mainOp.wepState, equipSet: getActiveSetID(currentState.mainOp.gears) },
+                ...currentState.subOps.filter(s => s.id && s.id !== sub.id)
+            ]
+        }, forceMaxStack);
+        if (subRes) partyResMap[sub.id] = subRes;
+    });
+
+    // 추가 피해(Proc) 효과 수집 (재능/잠재/무기 중 dmg와 trigger가 있는 항목)
     const procEffects = [];
-    if (opData.talents) {
-        opData.talents.forEach((tArr, i) => {
-            tArr.forEach(eff => {
-                if (eff.dmg && eff.trigger) {
-                    procEffects.push({ ...eff, label: `재능${i + 1}` });
-                }
-            });
-        });
-    }
-    const mainPot = Number(currentState.mainOp.pot) || 0;
-    for (let p = 0; p < mainPot; p++) {
-        if (opData.potential?.[p]) {
-            opData.potential[p].forEach(eff => {
-                if (eff.dmg && eff.trigger) {
-                    procEffects.push({ ...eff, label: `잠재${p + 1}` });
-                }
+
+    // 1. 메인 오퍼레이터 Proc 효과
+    const collectOpProcs = (op, currentPot, ownerName) => {
+        if (op.talents) {
+            op.talents.forEach((tArr, i) => {
+                tArr.forEach(eff => {
+                    if (eff.dmg && eff.trigger) {
+                        procEffects.push({ ...eff, label: `재능${i + 1}`, owner: ownerName });
+                    }
+                });
             });
         }
-    }
+        for (let p = 0; p < (Number(currentPot) || 0); p++) {
+            if (op.potential?.[p]) {
+                op.potential[p].forEach(eff => {
+                    if (eff.dmg && eff.trigger) {
+                        procEffects.push({ ...eff, label: `잠재${p + 1}`, owner: ownerName });
+                    }
+                });
+            }
+        }
+    };
 
-    // 무기 특성 Proc 효과 수집
-    if (currentState.mainOp?.wepId) {
-        const wepData = DATA_WEAPONS.find(w => w.id === currentState.mainOp.wepId);
-        const wepRefine = Math.max(0, (Number(currentState.mainOp.wepRefine) || 1) - 1);
+    const collectWepProcs = (wepId, wepRefine, ownerName) => {
+        if (!wepId) return;
+        const wepData = DATA_WEAPONS.find(w => w.id === wepId);
+        const refineIdx = Math.max(0, (Number(wepRefine) || 1) - 1);
         if (wepData && wepData.traits) {
-            wepData.traits.forEach(trait => {
+            wepData.traits.forEach((trait, tidx) => {
                 const isProcType = trait.dmg || (Array.isArray(trait.type) && trait.type.includes('물리 데미지'));
                 if (isProcType && trait.trigger) {
                     let dmgValue = trait.dmg;
                     if (!dmgValue && trait.valByLevel) {
-                        dmgValue = trait.valByLevel[wepRefine];
+                        dmgValue = trait.valByLevel[refineIdx];
                     }
                     if (dmgValue) {
                         procEffects.push({
                             ...trait,
                             dmg: dmgValue,
-                            label: `무기:${wepData.name}`
+                            label: `무기:${wepData.name}`,
+                            owner: ownerName
                         });
                     }
                 }
             });
         }
-    }
+    };
+
+    collectOpProcs(opData, currentState.mainOp.pot, opData.name);
+    collectWepProcs(currentState.mainOp.wepId, currentState.mainOp.wepRefine, opData.name);
+
+    // 2. 서브 오퍼레이터 Proc 효과
+    currentState.subOps.forEach(sub => {
+        if (!sub.id) return;
+        const sOpData = DATA_OPERATORS.find(o => o.id === sub.id);
+        if (!sOpData) return;
+        if (!perOperator[sOpData.name]) perOperator[sOpData.name] = 0;
+
+        collectOpProcs(sOpData, sub.pot, sOpData.name);
+        collectWepProcs(sub.wepId, sub.wepRefine, sOpData.name);
+    });
 
     // 1. 모든 스킬 타입(강화 스킬 포함)의 기본 데미지
     Object.keys(skillMap).forEach(type => {
@@ -1522,6 +1593,9 @@ function calculateCycleDamage(currentState, baseRes, forceMaxStack = false) {
         const skillBaseDmg = skillData.baseUnitDmg || 0;
         let skillTotal = skillData.unitDmg || 0;
 
+        // 스킬 기본 데미지 귀속 (메인 오퍼레이터)
+        perOperator[opData.name] = (perOperator[opData.name] || 0) + skillTotal;
+
         // 발동형 추가 피해(Proc) 처리
         if (skillData.abnormalInfo && procEffects.length > 0) {
             procEffects.forEach(pe => {
@@ -1531,8 +1605,10 @@ function calculateCycleDamage(currentState, baseRes, forceMaxStack = false) {
                 );
 
                 if (isTriggerMet) {
-                    // Proc 데미지 계산 (해당 스킬 시점의 스탯/버프 반영)
-                    const targetStats = (hasCustomState && cRes) ? cRes.stats : skillData.stats || (cRes ? cRes.stats : baseRes.stats);
+                    // Proc 데미지 계산 (해당 소유자의 스탯 사용)
+                    const ownerOpId = (DATA_OPERATORS.find(o => o.name === pe.owner))?.id;
+                    const ownerRes = partyResMap[ownerOpId] || baseRes;
+                    const targetStats = (hasCustomState && cRes && pe.owner === opData.name) ? cRes.stats : ownerRes.stats;
 
                     // 계수 파싱
                     const parsePct = (v) => {
@@ -1553,6 +1629,9 @@ function calculateCycleDamage(currentState, baseRes, forceMaxStack = false) {
                     const procDmg = Math.floor(targetStats.finalAtk * dmgMult * commonMults);
                     if (procDmg > 0) {
                         skillTotal += procDmg;
+
+                        // 해당 Proc 효과의 소유자에게 데미지 귀속
+                        perOperator[pe.owner] = (perOperator[pe.owner] || 0) + procDmg;
 
                         if (!perAbnormal[pe.label]) perAbnormal[pe.label] = { dmg: 0, count: 0 };
                         perAbnormal[pe.label].dmg += procDmg;
@@ -1589,5 +1668,5 @@ function calculateCycleDamage(currentState, baseRes, forceMaxStack = false) {
         });
     });
 
-    return { sequence: sequenceResult, perSkill, perAbnormal, total };
+    return { sequence: sequenceResult, perSkill, perAbnormal, perOperator, total };
 }
