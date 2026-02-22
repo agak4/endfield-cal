@@ -1038,3 +1038,52 @@
 .text-red {
     color: #ff4d4d !important;
 }
+
+/* 사이클 상세 합산 정렬 버튼 */
+#btn-sort-cycle {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+#btn-sort-cycle:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+#btn-sort-cycle.active {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+    font-weight: bold;
+}
+
+/* 스킬 카드 딜 지분 바 */
+.skill-card {
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    /* 기존 스타일 유지 */
+}
+
+.skill-dmg-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    background-color: rgba(88, 155, 255, 0.3);
+    z-index: -1;
+    transition: width 0.3s ease;
+    border-right: 1px solid rgba(0, 217, 255, 0.3);
+}
+
+/* 스킬 카드 내부 텍스트가 바 위로 올라오도록 */
+.skill-card-header {
+    position: relative;
+    z-index: 2;
+}

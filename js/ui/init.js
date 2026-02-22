@@ -226,6 +226,10 @@ function initUI() {
         clearCycleBtn.onclick = () => clearCycleItems();
     }
 
+    if (typeof window.initCycleSortButton === 'function') {
+        window.initCycleSortButton();
+    }
+
     AppTooltip.init();
 }
 

@@ -268,6 +268,7 @@ function renderLog(id, list) {
  * @param {{sequence: Array, perSkill: object, total: number}|null} cycleRes
  */
 function renderCycleDamage(cycleRes) {
+    window.lastCycleRes = cycleRes;
     renderCycleSequence(cycleRes);
     renderCyclePerSkill(cycleRes);
 }
@@ -453,6 +454,8 @@ function renderCycleSequence(cycleRes) {
     });
 }
 
+window.isCycleSortEnabled = false;
+
 function renderCyclePerSkill(cycleRes) {
     const list = document.getElementById('cycle-dmg-list');
     const totalEl = document.getElementById('cycle-dmg-total');
@@ -462,20 +465,78 @@ function renderCyclePerSkill(cycleRes) {
 
     if (!cycleRes || !list) return;
 
-    // cycleRes.perSkill에 존재하는 모든 스킬 타입을 가져와서 렌더링 (강화 스킬 포함)
-    const SKILL_TYPES = Object.keys(cycleRes.perSkill);
-    SKILL_TYPES.forEach(t => {
-        const data = cycleRes.perSkill[t];
-        if (!data) return;
+    // FLIP 애니메이션: 현재 위치 저장
+    const firstPositions = new Map();
+    Array.from(list.children).forEach(child => {
+        const key = child.getAttribute('data-item-key');
+        if (key) firstPositions.set(key, child.getBoundingClientRect());
+    });
+
+    let allItems = [];
+
+    // 1. 데이터 통합
+    if (cycleRes.perSkill) {
+        Object.keys(cycleRes.perSkill).forEach(key => {
+            allItems.push({
+                type: 'skill',
+                key: key,
+                data: cycleRes.perSkill[key]
+            });
+        });
+    }
+
+    if (cycleRes.perAbnormal) {
+        Object.keys(cycleRes.perAbnormal).forEach(key => {
+            allItems.push({
+                type: 'abnormal',
+                key: key,
+                data: cycleRes.perAbnormal[key]
+            });
+        });
+    }
+
+    // 2. 정렬 로직
+    if (window.isCycleSortEnabled) {
+        // 데미지 내림차순 정렬 (전체 통합)
+        allItems.sort((a, b) => (b.data.dmg || 0) - (a.data.dmg || 0));
+    } else {
+        // 기본 순서: 스킬 목록 -> Abnormal 목록
+        // 스킬은 기본 키 순서(또는 정의된 순서) 유지
+        // Abnormal은 기존 로직대로 재능/잠재를 뒤로 보냄
+        const skills = allItems.filter(i => i.type === 'skill');
+        const abnormals = allItems.filter(i => i.type === 'abnormal');
+
+        abnormals.sort((a, b) => {
+            const isAProc = a.key.startsWith('재능') || a.key.startsWith('잠재');
+            const isBProc = b.key.startsWith('재능') || b.key.startsWith('잠재');
+            if (isAProc && !isBProc) return 1;
+            if (!isAProc && isBProc) return -1;
+            return 0;
+        });
+
+        allItems = [...skills, ...abnormals];
+    }
+
+    // 3. 렌더링
+    allItems.forEach(item => {
+        const name = item.key;
+        const data = item.data;
         const dmgVal = data.dmg || 0;
         const count = data.count || 0;
-        const dmgRate = data.dmgRate || '0%';
+        const totalValue = cycleRes.total || 0;
+        const share = totalValue > 0 ? (dmgVal / totalValue * 100) : 0;
 
         const row = document.createElement('div');
         row.className = 'cycle-dmg-row';
+        if (item.type === 'abnormal') row.classList.add('abnormal-row'); // 스타일 유지를 위해 클래스 추가
+        
+        // FLIP 식별자 (유니크해야 함)
+        row.setAttribute('data-item-key', name);
+        
         row.style.display = 'flex';
         row.style.alignItems = 'center';
         row.style.gap = '8px';
+        if (item.type === 'abnormal') row.style.opacity = '0.9';
 
         // 1. 횟수 표시 뱃지
         const countDiv = document.createElement('div');
@@ -494,44 +555,67 @@ function renderCyclePerSkill(cycleRes) {
         card.className = 'skill-card';
         card.style.flex = '1';
 
+        // 딜 지분 바 (배경)
+        const bar = document.createElement('div');
+        bar.className = 'skill-dmg-bar';
+        bar.style.width = `${share.toFixed(1)}%`;
+        card.appendChild(bar);
+
         const header = document.createElement('div');
         header.className = 'skill-card-header';
-        // 배율(%) 표시 제거
-        header.innerHTML = `<span class="skill-name">${t}</span><span class="skill-dmg">${dmgVal.toLocaleString()}</span>`;
+        
+        // 이름 표시 처리 (abnormal의 경우)
+        let displayName = name;
+        // 기존 로직에서는 abnormal의 경우 name 그대로 사용했음. 
+        // 만약 '재능1' 등을 식별하기 어렵다면 보강 필요하나, 현재는 그대로 사용.
+        
+        header.innerHTML = `<span class="skill-name">${displayName}</span><span class="skill-dmg">${dmgVal.toLocaleString()}</span>`;
 
-        // 툴팁에는 1회 데미지를 추가로 표시
+        // 툴팁 이벤트
         header.onmouseenter = (e) => {
-            const unitDmgStr = data.unitDmg ? data.unitDmg.toLocaleString() + ' / 회' : '';
-            const opData = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
-            const skillDef = opData?.skill?.find(s => {
-                const entry = s;
-                return entry?.skillType?.includes(t);
-            });
+            if (item.type === 'skill') {
+                const opData = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
+                const skillDef = opData?.skill?.find(s => {
+                    const entry = s;
+                    return entry?.skillType?.includes(name);
+                });
 
-            let content;
-            if (skillDef) {
-                const activeEffects = window.lastCalcResult ? window.lastCalcResult.activeEffects : [];
-                const extraHtml = ''; // 1회 데미지 항목 제거
+                let content;
+                if (skillDef) {
+                    const activeEffects = window.lastCalcResult ? window.lastCalcResult.activeEffects : [];
+                    const extraHtml = ''; 
 
-                let targetSt = state;
-                if (data.customState) {
-                    targetSt = {
-                        ...state,
-                        disabledEffects: data.customState.disabledEffects,
-                        debuffState: data.customState.debuffState,
-                        enemyUnbalanced: data.customState.enemyUnbalanced,
-                        mainOp: { ...state.mainOp, specialStack: data.customState.specialStack }
-                    };
+                    let targetSt = state;
+                    if (data.customState) {
+                        targetSt = {
+                            ...state,
+                            disabledEffects: data.customState.disabledEffects,
+                            debuffState: data.customState.debuffState,
+                            enemyUnbalanced: data.customState.enemyUnbalanced,
+                            mainOp: { ...state.mainOp, specialStack: data.customState.specialStack }
+                        };
+                    }
+
+                    content = AppTooltip.renderSkillTooltip(name, skillDef, opData, extraHtml, activeEffects, targetSt);
+                } else {
+                    content = `
+                        <div class="tooltip-title">${name}</div> 
+                        <div class="tooltip-desc">${data.desc ? data.desc : '설명 없음'}</div>
+                    `;
                 }
-
-                content = AppTooltip.renderSkillTooltip(t, skillDef, opData, extraHtml, activeEffects, targetSt);
+                AppTooltip.showCustom(content, e, { width: '260px' });
             } else {
-                content = `
-                    <div class="tooltip-title">${t}</div> 
-                    <div class="tooltip-desc">${data.desc ? data.desc : '설명 없음'}</div>
-                `;
+                // Abnormal Tooltip
+                const isProc = name.startsWith('재능') || name.startsWith('잠재') || name.startsWith('무기');
+                if (!isProc) {
+                    const artsStrength = window.lastCalcResult?.stats?.originiumArts || 0;
+                    const content = AppTooltip.renderAbnormalTooltip(name, artsStrength);
+                    AppTooltip.showCustom(content, e, { width: '260px' });
+                } else {
+                    // 재능/잠재/무기 특성 등은 별도 툴팁이 없으면 표시하지 않거나 간단히 표시
+                    // 기존 코드에서는 !isProc 일때만 툴팁을 띄웠음.
+                }
             }
-            AppTooltip.showCustom(content, e, { width: '260px' });
         };
         header.onmouseleave = () => AppTooltip.hide();
 
@@ -540,8 +624,6 @@ function renderCyclePerSkill(cycleRes) {
         // 3. 지분율 표시
         const shareDiv = document.createElement('div');
         shareDiv.className = 'skill-dmg-share';
-        const totalValue = cycleRes.total || 0;
-        const share = totalValue > 0 ? (dmgVal / totalValue * 100) : 0;
         shareDiv.innerText = share.toFixed(1) + '%';
 
         row.appendChild(countDiv);
@@ -551,74 +633,49 @@ function renderCyclePerSkill(cycleRes) {
         list.appendChild(row);
     });
 
-    // 물리 이상 및 재능/잠재 항목 추가 렌더링
-    if (cycleRes.perAbnormal && Object.keys(cycleRes.perAbnormal).length > 0) {
-        // 물리 이상은 위로, 재능/잠재는 아래로 정렬
-        const abnormalEntries = Object.entries(cycleRes.perAbnormal).sort((a, b) => {
-            const isAProc = a[0].startsWith('재능') || a[0].startsWith('잠재');
-            const isBProc = b[0].startsWith('재능') || b[0].startsWith('잠재');
-            if (isAProc && !isBProc) return 1;
-            if (!isAProc && isBProc) return -1;
-            return 0;
-        });
-
-        abnormalEntries.forEach(([aName, aData]) => {
-            const dmgVal = aData.dmg || 0;
-            const count = aData.count || 0;
-
-            const row = document.createElement('div');
-            row.className = 'cycle-dmg-row abnormal-row';
-            row.style.display = 'flex';
-            row.style.alignItems = 'center';
-            row.style.gap = '8px';
-            row.style.opacity = '0.9';
-
-            const isProc = aName.startsWith('재능') || aName.startsWith('잠재');
-            const labelText = isProc ? aName : `${aName}`;
-
-            const countDiv = document.createElement('div');
-            countDiv.className = 'skill-count-badge';
-            countDiv.innerText = `${count}회`;
-            countDiv.style.minWidth = '40px';
-            countDiv.style.textAlign = 'center';
-            countDiv.style.fontSize = '0.8rem';
-            countDiv.style.background = 'rgba(255, 255, 255, 0.05)';
-            countDiv.style.padding = '4px';
-            countDiv.style.borderRadius = '4px';
-
-            const card = document.createElement('div');
-            card.className = 'skill-card';
-            card.style.flex = '1';
-
-            const header = document.createElement('div');
-            header.className = 'skill-card-header';
-            header.innerHTML = `<span class="skill-name">${labelText}</span><span class="skill-dmg">${dmgVal.toLocaleString()}</span>`;
-
-            header.onmouseenter = (e) => {
-                if (!isProc) {
-                    const artsStrength = window.lastCalcResult?.stats?.originiumArts || 0;
-                    const content = AppTooltip.renderAbnormalTooltip(aName, artsStrength);
-                    AppTooltip.showCustom(content, e, { width: '260px' });
+    // FLIP 애니메이션 적용
+    requestAnimationFrame(() => {
+        Array.from(list.children).forEach(child => {
+            const key = child.getAttribute('data-item-key');
+            const firstRect = firstPositions.get(key);
+            if (firstRect) {
+                const lastRect = child.getBoundingClientRect();
+                const deltaY = firstRect.top - lastRect.top;
+                if (deltaY !== 0) {
+                    child.style.transition = 'none';
+                    child.style.transform = `translateY(${deltaY}px)`;
+                    requestAnimationFrame(() => {
+                        child.style.transition = 'transform 0.3s ease';
+                        child.style.transform = '';
+                    });
                 }
-            };
-            header.onmouseleave = () => AppTooltip.hide();
-
-            card.appendChild(header);
-
-            const shareDiv = document.createElement('div');
-            shareDiv.className = 'skill-dmg-share';
-            const totalValue = cycleRes.total || 0;
-            const share = totalValue > 0 ? (dmgVal / totalValue * 100) : 0;
-            shareDiv.innerText = share.toFixed(1) + '%';
-
-            row.appendChild(countDiv);
-            row.appendChild(card);
-            row.appendChild(shareDiv);
-
-            list.appendChild(row);
+            } else {
+                // 새로 추가된 항목 페이드인
+                child.style.opacity = '0';
+                requestAnimationFrame(() => {
+                    child.style.transition = 'opacity 0.3s ease';
+                    child.style.opacity = '1'; // abnormal일 경우 0.9로 설정했었으나, transition으로는 1로 가는게 깔끔함 (또는 클래스로 제어)
+                    if (child.classList.contains('abnormal-row')) child.style.opacity = '0.9';
+                });
+            }
         });
-    }
+    });
 }
+
+function initCycleSortButton() {
+    const btn = document.getElementById('btn-sort-cycle');
+    if (!btn) return;
+    
+    btn.onclick = () => {
+        window.isCycleSortEnabled = !window.isCycleSortEnabled;
+        btn.classList.toggle('active', window.isCycleSortEnabled);
+        
+        if (window.lastCycleRes) {
+            renderCyclePerSkill(window.lastCycleRes);
+        }
+    };
+}
+
 
 /**
  * 현재 오퍼레이터가 사용할 수 있는 모든 무기의 데미지를 비교 렌더링한다.
