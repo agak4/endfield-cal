@@ -32,6 +32,7 @@ const AppTooltip = {
         '일반 공격': 'kw-special', '배틀 스킬': 'kw-special', '연계 스킬': 'kw-special', '궁극기': 'kw-special',
         '불균형': 'kw-special', '치유': 'kw-nature', '보호': 'kw-nature', '비호': 'kw-nature', '연타': 'kw-special', '스킬 게이지': 'kw-special', '소모': 'kw-special', '궁극기 에너지': 'kw-special', '치명타 확률': 'kw-special', '치명타 피해': 'kw-special',
         '녹아내린 불꽃': 'kw-heat', '썬더랜스': 'kw-elec', '강력한 썬더랜스': 'kw-elec',
+        '아츠 폭발': 'kw-special', '연소': 'kw-heat', '감전': 'kw-elec', '동결': 'kw-cryo', '부식': 'kw-nature',
     },
 
     /** 속성별 대표 색상 (CSS 변수 기반) */
@@ -404,9 +405,45 @@ const AppTooltip = {
             attrLines.push(`<div class="tooltip-bullet-point"><span class="tooltip-bullet-marker">•</span> ${dmgStr}</div>`);
         }
 
+        const synergyHtml = this.renderSynergySection(activeEffects, st, opData, skillType);
+        if (synergyHtml) attrLines.push(synergyHtml);
+
+        return `<div class="tooltip-title">${skillType}</div>${extraHtml ? `<div class="tooltip-group">${extraHtml}</div>` : ''}${attrLines.length > 0 ? `<div class="tooltip-section tooltip-group">${attrLines.join('')}</div>` : ''}<div class="tooltip-desc">${this.colorizeText(entry.desc || '설명 없음')}</div>`;
+    },
+
+    /** 시퀀스 아이템 전용 간소화된 툴팁 */
+    renderSequenceTooltip(type, displayDmg, rateHtml, activeEffects, st, opData) {
+        const extraHtml = `
+            <div class="tooltip-desc">
+                피해량: <strong class="tooltip-highlight">${Math.floor(displayDmg).toLocaleString()}</strong><br>
+                데미지 배율: <strong>${rateHtml}</strong>
+            </div>
+        `;
+
+        const synergyHtml = this.renderSynergySection(activeEffects, st, opData, type);
+
+        return `
+            <div class="tooltip-title tooltip-highlight">${type}</div>
+            <div class="tooltip-group">${extraHtml}</div>
+            ${synergyHtml ? `<div class="tooltip-section tooltip-group">${synergyHtml}</div>` : ''}
+        `;
+    },
+
+    /** 적용 중인 추가 효과(시너지) 섹션 렌더링 */
+    renderSynergySection(activeEffects, st, opData, skillType) {
+        const typeMap = { '배틀 스킬': 'battle', '연계 스킬': 'combo', '궁극기': 'ult', '일반 공격': 'normal' };
+        const catKey = typeMap[skillType] || (skillType.includes('일반 공격') ? 'normal' : (skillType.includes('배틀 스킬') ? 'battle' : 'common'));
+
         const filteredEffects = activeEffects.filter(eff => {
             const stTypes = eff.skillType || [];
             const t = Array.isArray(eff.type) ? eff.type[0] : eff.type;
+
+            // 실시간 동기화: 현재 카테고리(catKey) 기준으로 비활성화 여부 재확인
+            if (st?.disabledEffects) {
+                const uiUid = `${eff.uid}#${catKey}`;
+                if (st.disabledEffects.includes(uiUid) || st.disabledEffects.includes(`${eff.uid}#common`)) return false;
+            }
+
             if (eff._isExternal && stTypes.includes(skillType)) {
                 return t.endsWith('피해') || t.includes('피해') || t.includes('공격력') || t.includes('배율') || t.includes('치명타');
             }
@@ -419,57 +456,104 @@ const AppTooltip = {
             if (isUlt && t === '궁극기 피해') return true;
             if ((isBattle || isCombo || isUlt) && (t === '모든 스킬 피해' || t === '스킬 배율 증가')) return stTypes.length === 0 || stTypes.includes(skillType);
             return false;
+        }).sort((a, b) => {
+            const ta = Array.isArray(a.type) ? a.type[0] : a.type;
+            const tb = Array.isArray(b.type) ? b.type[0] : b.type;
+
+            const isAllSkillA = ta === '모든 스킬 피해';
+            const isAllSkillB = tb === '모든 스킬 피해';
+            if (isAllSkillA && !isAllSkillB) return -1;
+            if (!isAllSkillA && isAllSkillB) return 1;
+
+            if (ta === '스킬 배율 증가' && tb !== '스킬 배율 증가') return 1;
+            if (ta !== '스킬 배율 증가' && tb === '스킬 배율 증가') return -1;
+            return 0;
         });
 
-        if (filteredEffects.length > 0 || st) {
-            const extraEffects = [];
-            if (st?.debuffState) {
-                const ds = st.debuffState;
-                if (ds.physDebuff) {
-                    if (ds.physDebuff.defenseless > 0) extraEffects.push(`방어 불능 ${ds.physDebuff.defenseless}스택`);
-                    if (ds.physDebuff.armorBreak > 0) extraEffects.push(`갑옷 파괴 ${ds.physDebuff.armorBreak}스택`);
-                    if (ds.physDebuff.originiumSeal > 0) extraEffects.push('오리지늄 결정');
-                    if (ds.physDebuff.combo > 0) {
-                        const m = (skillType === '배틀 스킬' || skillType.includes('강화 배틀 스킬')) ? [0, 1.3, 1.45, 1.6, 1.75] : (skillType === '궁극기' ? [0, 1.2, 1.3, 1.4, 1.5] : null);
-                        extraEffects.push(m ? `연타 *${m[Math.min(ds.physDebuff.combo, 4)].toFixed(2)}배` : `연타 ${ds.physDebuff.combo}스택`);
-                    }
+        const extraEffects = [];
+        if (st?.debuffState) {
+            const ds = st.debuffState;
+            if (ds.physDebuff) {
+                if (ds.physDebuff.defenseless > 0) extraEffects.push(`방어 불능 ${ds.physDebuff.defenseless}스택`);
+                if (ds.physDebuff.armorBreak > 0) extraEffects.push(`갑옷 파괴 ${ds.physDebuff.armorBreak}스택`);
+                if (ds.physDebuff.combo > 0) {
+                    const m = (skillType === '배틀 스킬' || skillType.includes('강화 배틀 스킬')) ? [0, 1.3, 1.45, 1.6, 1.75] : (skillType === '궁극기' ? [0, 1.2, 1.3, 1.4, 1.5] : null);
+                    extraEffects.push(m ? `연타 *${m[Math.min(ds.physDebuff.combo, 4)].toFixed(2)}배` : `연타 ${ds.physDebuff.combo}스택`);
                 }
-                if (ds.artsAttach?.type && ds.artsAttach.stacks > 0) extraEffects.push(`${ds.artsAttach.type} ${ds.artsAttach.stacks}스택`);
-                if (ds.artsAbnormal) Object.entries(ds.artsAbnormal).forEach(([n, s]) => { if (s > 0) extraEffects.push(`${n} ${s}스택`); });
             }
-            if (st?.mainOp?.specialStack && opData?.specialStack) {
-                (Array.isArray(opData.specialStack) ? opData.specialStack : [opData.specialStack]).forEach(s => {
-                    const c = st.mainOp.specialStack[s.id || 'default'] || 0;
-                    if (c > 0) extraEffects.push(`${s.name} ${c}스택`);
-                });
-            }
-            if (st && entry.bonus) {
-                (Array.isArray(entry.bonus) ? entry.bonus : [entry.bonus]).forEach(b => {
-                    if (b.trigger && evaluateTrigger(b.trigger, st)) extraEffects.push(`${Array.isArray(b.trigger) ? b.trigger.join(', ') : b.trigger} (보너스 발동)`);
-                });
-            }
-
-            if (filteredEffects.length > 0 || extraEffects.length > 0) {
-                attrLines.push('<div style="margin-top:8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top:8px;"></div>');
-                attrLines.push('<div class="tooltip-label" style="font-size:11px; color:var(--accent); margin-bottom:4px;">적용 중인 추가 효과</div>');
-                filteredEffects.forEach(eff => {
-                    attrLines.push(`<div class="tooltip-bullet-point" style="color:var(--accent); font-size:12px;"><span class="tooltip-bullet-marker">•</span> ${(Array.isArray(eff.type) ? eff.type[0] : eff.type)}${eff.val !== undefined ? ` +${eff.val}` : ''}</div>`);
-                });
-                extraEffects.forEach(txt => attrLines.push(`<div class="tooltip-bullet-point" style="color:#FFFA00; font-size:12px;"><span class="tooltip-bullet-marker">•</span> ${txt}</div>`));
+            if (ds.artsAttach?.type && ds.artsAttach.stacks > 0) extraEffects.push(`${ds.artsAttach.type} ${ds.artsAttach.stacks}스택`);
+            if (ds.artsAbnormal) Object.entries(ds.artsAbnormal).forEach(([n, s]) => { if (s > 0) extraEffects.push(`${n} ${s}스택`); });
+        }
+        if (st?.mainOp?.specialStack && opData?.specialStack) {
+            (Array.isArray(opData.specialStack) ? opData.specialStack : [opData.specialStack]).forEach(s => {
+                const c = st.mainOp.specialStack[s.id || 'default'] || 0;
+                if (c > 0) extraEffects.push(`${s.name} ${c}스택`);
+            });
+        }
+        if (st && skillType) {
+            const opDataLocal = opData || (typeof DATA_OPERATORS !== 'undefined' ? DATA_OPERATORS.find(o => o.id === st.mainOp.id) : null);
+            if (opDataLocal) {
+                const skillDef = opDataLocal.skill?.find(s => s.skillType?.includes(skillType));
+                if (skillDef && skillDef.bonus) {
+                    (Array.isArray(skillDef.bonus) ? skillDef.bonus : [skillDef.bonus]).forEach(b => {
+                        if (b.trigger && evaluateTrigger(b.trigger, st)) {
+                            const triggerTxt = Array.isArray(b.trigger) ? b.trigger.join(', ') : b.trigger;
+                            // 스페셜 스택과 이름이 겹치면 (보너스 발동) 라인은 생략
+                            const isAlreadyShown = extraEffects.some(ee => ee.includes(triggerTxt));
+                            if (!isAlreadyShown) {
+                                extraEffects.push(`${triggerTxt} (보너스 발동)`);
+                            }
+                        }
+                    });
+                }
             }
         }
 
-        return `<div class="tooltip-title">${skillType}</div>${extraHtml ? `<div class="tooltip-group">${extraHtml}</div>` : ''}${attrLines.length > 0 ? `<div class="tooltip-section tooltip-group">${attrLines.join('')}</div>` : ''}<div class="tooltip-desc">${this.colorizeText(entry.desc || '설명 없음')}</div>`;
+        if (filteredEffects.length === 0 && extraEffects.length === 0) return '';
+
+        let html = '<div style="margin-top:8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top:8px;"></div>';
+        html += '<div class="tooltip-label" style="font-size:11px; color:var(--accent); margin-bottom:4px;">적용 중인 추가 효과</div>';
+        filteredEffects.forEach(eff => {
+            const t = Array.isArray(eff.type) ? eff.type[0] : eff.type;
+            let val = eff.val !== undefined ? eff.val : eff.dmg;
+            let valStr = '';
+            if (val !== undefined) {
+                if (t === '스킬 배율 증가') {
+                    const n = parseFloat(val) || 0;
+                    valStr = ` *${(1 + n / 100).toFixed(2)}`;
+                } else {
+                    valStr = ` +${val}`;
+                }
+            }
+            html += `<div class="tooltip-bullet-point" style="color:var(--accent); font-size:12px;"><span class="tooltip-bullet-marker">•</span> ${t}${valStr}</div>`;
+        });
+        extraEffects.forEach(txt => {
+            html += `<div class="tooltip-bullet-point" style="color:#FFFA00; font-size:12px;"><span class="tooltip-bullet-marker">•</span> ${txt}</div>`;
+        });
+        return html;
     },
 
-    /** 물리 이상 또는 프로세서(재능/잠재 발동) 툴팁을 렌더링한다. */
+    /** 물리 이상 또는 아츠 이상/폭발 툴팁을 렌더링한다. */
     renderAbnormalTooltip(aName, artsStrength = 0) {
+        let desc = '기본 배율에 오리지늄 아츠 강도 보너스가 곱연산으로 적용됩니다.';
+        if (aName === '아츠 폭발') {
+            desc = '동일 속성의 아츠 부착을 부여할 때 발생하며, 160%의 고정 피해를 입힙니다. 기존 부착 스택을 소모하지 않습니다.';
+        } else if (aName.includes('연소')) {
+            desc = '다른 속성의 아츠 부착을 소모하여 연소를 일으킵니다. 소모한 스택에 비례하여 초기 열기 피해와 지속 열기 피해를 입힙니다.';
+        } else if (aName.includes('감전')) {
+            desc = '다른 속성의 아츠 부착을 소모하여 감전을 일으킵니다. 소모한 스택에 비례하여 초기 전기 피해를 입힙니다.';
+        } else if (aName.includes('동결')) {
+            desc = '다른 속성의 아츠 부착을 소모하여 동결을 일으킵니다. 130%의 냉기 피해를 입힙니다.';
+        } else if (aName.includes('부식')) {
+            desc = '다른 속성의 아츠 부착을 소모하여 부식을 일으킵니다. 소모한 스택에 비례하여 초기 자연 피해를 입힙니다.';
+        }
+
         return `
             <div class="tooltip-title">${aName}</div>
             <div style="margin-top:8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top:8px;"></div>
             <div class="tooltip-label" style="font-size:11px; color:var(--accent); margin-bottom:4px;">적용 중인 추가 효과</div>
             <div class="tooltip-bullet-point" style="color:var(--accent); font-size:12px;"><span class="tooltip-bullet-marker">•</span> 오리지늄 아츠 강도 +${artsStrength}%</div>
-            <div class="tooltip-desc">기본 배율에 오리지늄 아츠 강도 보너스가 곱연산으로 적용됩니다.</div>
+            <div class="tooltip-desc">${this.colorizeText(desc)}</div>
         `;
     }
 };

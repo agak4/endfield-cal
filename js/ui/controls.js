@@ -344,9 +344,7 @@ function handleDebuffRightClick(el, e) {
     const attachType = el.dataset.attachType;
     const abnormalType = el.dataset.abnormalType;
 
-    if (debuffType === 'originiumSeal') {
-        cycleDebuffToggle(el);
-    } else if (debuffType === 'specialStack') {
+    if (debuffType === 'specialStack') {
         cycleSpecialStack(el, -1);
     } else if (attachType) {
         cycleDebuffAttach(el, -1);
@@ -598,14 +596,6 @@ function applyDebuffStateToUI() {
     // 갑옷 파괴
     const abEl = document.getElementById('debuff-icon-armorBreak');
     if (abEl) applyDebuffIconState(abEl, ds.physDebuff?.armorBreak || 0);
-
-    // 오리지늘 결정 (ON/OFF)
-    const osEl = document.getElementById('debuff-icon-originiumSeal');
-    if (osEl) {
-        const v = ds.physDebuff?.originiumSeal || 0;
-        osEl.dataset.stacks = v;
-        applyDebuffIconState(osEl, v);
-    }
 
     // 연타
     const comboEl = document.getElementById('debuff-icon-combo');

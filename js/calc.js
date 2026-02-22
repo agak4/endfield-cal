@@ -118,7 +118,6 @@ function getAdjustedStackCount(triggerName, state, opData, skillTypes) {
 
     // 기타 디버프 스택
     if (triggerName === '갑옷 파괴') return state.debuffState?.physDebuff?.armorBreak || 0;
-    if (triggerName === '오리지늄 결정') return state.debuffState?.physDebuff?.originiumSeal || 0;
     if (['열기 부착', '전기 부착', '냉기 부착', '자연 부착'].includes(triggerName)) {
         if (state.debuffState?.artsAttach?.type === triggerName) return state.debuffState.artsAttach.stacks || 0;
     }
@@ -725,12 +724,18 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
             }
             let typeLabel = t;
             if (eff.skillType) typeLabel += ` (${eff.skillType.join(', ')})`;
+
+            // 표시 형식 변경: +15% -> *1.15
+            const nVal = parseFloat(eff.val !== undefined ? eff.val : (eff.dmg !== undefined ? eff.dmg : 0)) || 0;
+            const multDisplay = `*${(1 + nVal / 100).toFixed(2)}`;
+
             logs.dmgInc.push({
-                txt: `[${displayName}] ${valDisplay}${eff.stack ? ` (${eff._stackCount}중첩)` : ''} (${typeLabel})`,
+                txt: `[${displayName}] ${multDisplay}${eff.stack ? ` (${eff._stackCount}중첩)` : ''} (${typeLabel})`,
                 uid: eff.uid,
                 tag: 'skillMult',
                 skillType: eff.skillType,
                 stack: eff.stack,
+                val: nVal,
                 stackCount: eff._stackCount,
                 _triggerFailed: eff._triggerFailed
             });
@@ -1000,57 +1005,7 @@ function evaluateTrigger(trigger, state, opData, triggerType, isTargetOnly = fal
 
     const triggers = Array.isArray(trigger) ? trigger : [trigger];
     return triggers.some(t => {
-        // 1. 오퍼레이터 역량 확인 (OpTrigger)
-        if (opData && !isTargetOnly) {
-            const checkOpCapability = (targetOp) => {
-                if (!targetOp) return false;
-                let skillPool = targetOp.skill || [];
-                if (triggerType && (Array.isArray(triggerType) ? triggerType.length > 0 : !!triggerType)) {
-                    const triggerTypeArr = Array.isArray(triggerType) ? triggerType : [triggerType];
-                    skillPool = skillPool.filter(s => {
-                        const skillTypes = Array.isArray(s.skillType) ? s.skillType : [s.skillType];
-                        return skillTypes.some(st => triggerTypeArr.includes(st));
-                    });
-                }
-
-                // 이름 매핑 (강제 포함)
-                const checkTypes = [t];
-                if (t === '띄우기') checkTypes.push('강제 띄우기');
-                if (t === '넘어뜨리기') checkTypes.push('강제 넘어뜨리기');
-
-                const hasInSkill = skillPool.some(s => {
-                    if (!s.type) return false;
-                    const typeItems = Array.isArray(s.type) ? s.type : [s.type];
-                    return typeItems.some(item => {
-                        const tName = (typeof item === 'object' && item !== null) ? item.type : item;
-                        return Array.isArray(tName) ? tName.some(tn => checkTypes.includes(tn)) : checkTypes.includes(tName);
-                    });
-                });
-                if (hasInSkill) return true;
-
-                // 트리거 타입이 없으면 특성/잠재/타입/속성도 확인
-                if (!triggerType || (Array.isArray(triggerType) ? triggerType.length === 0 : !triggerType)) {
-                    const talentPool = (targetOp.talents || []).flat();
-                    const potentialPool = (targetOp.potential || []).flat();
-                    const hasInOther = [...talentPool, ...potentialPool].some(e => e.type && (Array.isArray(e.type) ? e.type.some(et => checkTypes.includes(et)) : checkTypes.includes(e.type)));
-                    if (hasInOther) return true;
-                    if (t === targetOp.type || t === targetOp.element) return true;
-                }
-                return false;
-            };
-
-            if (checkOpCapability(opData)) return true;
-            // 팀 버프인 경우 메인 오퍼레이터의 역량도 트리거로 보정
-            if (effectTarget === '팀') {
-                const mainOpData = DATA_OPERATORS.find(o => o.id === (state.mainOp?.id));
-                if (mainOpData && mainOpData.id !== opData.id && checkOpCapability(mainOpData)) return true;
-            }
-        }
-
-        // 2. 타겟 상태 확인 (TargetTrigger - 기존 로직)
-        const physDebuff = state.debuffState?.physDebuff || {};
-        const artsAttach = state.debuffState?.artsAttach || {};
-        const artsAbnormal = state.debuffState?.artsAbnormal || {};
+        // 1. 타겟 상태 확인 (TargetTrigger - TRIGGER_MAP 우선)
         const specialStackVal = state.getSpecialStack ? state.getSpecialStack() : (state.mainOp?.specialStack || 0);
 
         const TRIGGER_MAP = {
@@ -1075,9 +1030,52 @@ function evaluateTrigger(trigger, state, opData, triggerType, isTargetOnly = fal
         const evalFn = TRIGGER_MAP[t];
         if (evalFn && evalFn()) return true;
 
+        // 2. 오퍼레이터 역량 확인 (OpTrigger)
+        if (opData && !isTargetOnly) {
+            const checkOpCapability = (targetOp) => {
+                if (!targetOp) return false;
+                let skillPool = targetOp.skill || [];
+                if (triggerType && (Array.isArray(triggerType) ? triggerType.length > 0 : !!triggerType)) {
+                    const triggerTypeArr = Array.isArray(triggerType) ? triggerType : [triggerType];
+                    skillPool = skillPool.filter(s => {
+                        const skillTypes = Array.isArray(s.skillType) ? s.skillType : [s.skillType];
+                        return skillTypes.some(st => triggerTypeArr.includes(st));
+                    });
+                }
+
+                const checkTypes = [t];
+                if (t === '띄우기') checkTypes.push('강제 띄우기');
+                if (t === '넘어뜨리기') checkTypes.push('강제 넘어뜨리기');
+
+                const hasInSkill = skillPool.some(s => {
+                    if (!s.type) return false;
+                    const typeItems = Array.isArray(s.type) ? s.type : [s.type];
+                    return typeItems.some(item => {
+                        const tName = (typeof item === 'object' && item !== null) ? item.type : item;
+                        return Array.isArray(tName) ? tName.some(tn => checkTypes.includes(tn)) : checkTypes.includes(tName);
+                    });
+                });
+                if (hasInSkill) return true;
+
+                if (!triggerType || (Array.isArray(triggerType) ? triggerType.length === 0 : !triggerType)) {
+                    const talentPool = (targetOp.talents || []).flat();
+                    const potentialPool = (targetOp.potential || []).flat();
+                    const hasInOther = [...talentPool, ...potentialPool].some(e => e.type && (Array.isArray(e.type) ? e.type.some(et => checkTypes.includes(et)) : checkTypes.includes(e.type)));
+                    if (hasInOther) return true;
+                    if (t === targetOp.type || t === targetOp.element) return true;
+                }
+                return false;
+            };
+
+            if (checkOpCapability(opData)) return true;
+            if (effectTarget === '팀') {
+                const mainOpData = DATA_OPERATORS.find(o => o.id === (state.mainOp?.id));
+                if (mainOpData && mainOpData.id !== opData.id && checkOpCapability(mainOpData)) return true;
+            }
+        }
+
         if (t === '상시' || t === '팀_상시' || t.startsWith('메인_')) return true;
 
-        // 스킬 시퀀스 실행 중 상태 확인
         if (state.mainOp?.skill) {
             if (t === '배틀 스킬 중' && state.mainOp.skill === '배틀 스킬') return true;
             if ((t === '연계 스킬 중' || t === '팀_연계 스킬 방출') && state.mainOp.skill === '연계 스킬') return true;
@@ -1188,8 +1186,68 @@ function calcSingleSkillDamage(type, st, bRes) {
         }
 
         if (addMult > 0) {
-            abnormalMultTotal += addMult;
             abnormalList.push({ name: typeName, mult: addMult, triggerName: '방어 불능', stackCount: defenselessStacks });
+            abnormalMultTotal += addMult;
+        }
+
+        // --- 아츠 이상 및 아츠 폭발 구현 ---
+        const artsAttach = st.debuffState?.artsAttach || { type: null, stacks: 0 };
+        const currentAttachType = artsAttach.type;
+        const currentStacks = artsAttach.stacks || 0;
+
+        // 스킬이 부여하는 아츠 타입 확인
+        let nextAttachType = null;
+        let isForcedAbnormal = false; // '연소 부여' 등 강제 부여 여부
+
+        if (typeName.includes('부착')) nextAttachType = typeName;
+        else if (typeName.includes('부여')) {
+            // '연소 부여' -> '연소 부착'으로 매핑하여 판정
+            const base = typeName.replace(' 부여', '');
+            nextAttachType = base + ' 부착';
+            isForcedAbnormal = true;
+        }
+
+        if (nextAttachType && currentAttachType) {
+            let artsMult = 0;
+            let artsName = '';
+
+            if (currentAttachType === nextAttachType) {
+                // 1. 아츠 폭발 (동일 속성)
+                artsName = '아츠 폭발';
+                artsMult = 1.6;
+            } else {
+                // 2. 아츠 이상 (다른 속성)
+                const targetBase = nextAttachType.replace(' 부착', '');
+                artsName = targetBase + '(이상)';
+
+                const S = currentStacks;
+                if (targetBase === '연소') {
+                    // 연소: 초기 (80%+S*80%) + 추가 (120%+S*120%)
+                    const initial = isForcedAbnormal ? 0 : (0.8 + S * 0.8);
+                    const additional = (1.2 + S * 1.2);
+                    artsMult = initial + additional;
+                } else if (targetBase === '감전') {
+                    // 감전: 초기 (80%+S*80%)
+                    artsMult = (0.8 + S * 0.8);
+                } else if (targetBase === '동결') {
+                    // 동결: 130% 고정
+                    artsMult = 1.3;
+                } else if (targetBase === '부식') {
+                    // 부식: 초기 (80%+S*80%)
+                    artsMult = (0.8 + S * 0.8);
+                }
+            }
+
+            if (artsMult > 0) {
+                abnormalList.push({
+                    name: artsName,
+                    mult: artsMult,
+                    triggerName: currentAttachType,
+                    stackCount: currentStacks,
+                    isArts: true
+                });
+                abnormalMultTotal += artsMult;
+            }
         }
     });
 
@@ -1392,7 +1450,8 @@ function calcSingleSkillDamage(type, st, bRes) {
         baseRate: dmgMult - bonusList.reduce((acc, b) => acc + b.val, 0),
         bonusList,
         abnormalList,
-        abnormalInfo: abnormalList.length > 0 ? abnormalList : undefined
+        abnormalInfo: abnormalList.length > 0 ? abnormalList : undefined,
+        activeEffects: bRes.activeEffects
     };
 }
 
@@ -1591,7 +1650,8 @@ function calculateCycleDamage(currentState, baseRes, forceMaxStack = false) {
             customState: hasCustomState ? itemObj.customState : null,
             indivDmg: hasCustomState ? skillTotal : undefined,
             indivRate: hasCustomState ? skillData.rawRate : undefined,
-            cRes: cRes
+            cRes: cRes,
+            activeEffects: skillData.activeEffects
         });
     });
 

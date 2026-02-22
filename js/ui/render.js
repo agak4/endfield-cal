@@ -54,6 +54,7 @@ window.updateStaticCycleButtonsElementColor = updateStaticCycleButtonsElementCol
  * @param {object|null} res - calculateDamage 반환값
  */
 function renderResult(res) {
+    if (typeof AppTooltip !== 'undefined' && AppTooltip.hide) AppTooltip.hide();
     if (!res) {
         const el = document.getElementById('final-damage');
         if (el) el.innerText = '0';
@@ -67,7 +68,7 @@ function renderResult(res) {
 
     // 2. Identify if we are viewing an individual custom item and extract its calculation results
     let displayRes = res;
-    if (state.cycleMode === 'individual' && state.selectedSeqId && cycleRes && cycleRes.sequence) {
+    if (state.selectedSeqId && cycleRes && cycleRes.sequence) {
         const item = cycleRes.sequence.find(s => s.id === state.selectedSeqId);
         if (item && item.cRes) {
             displayRes = item.cRes;
@@ -397,14 +398,18 @@ function renderCycleSequence(cycleRes) {
                     });
                 }
 
-                // 물리 이상 항목
+                // 물리/아츠 이상 항목
                 if (item.abnormalList && item.abnormalList.length > 0) {
                     item.abnormalList.forEach(a => {
                         let suffix = '';
                         if (state.mainOp.id === 'Da Pan' && a.name === '강타') {
                             suffix = ' <span style="color:var(--accent); font-size: 0.9em;">[판 특성] * 120%</span>';
                         }
-                        rateHtml += ` + ${a.name} ${(a.mult * 100).toFixed(0)}%${suffix}`;
+                        // 아츠 이상인 경우 colorizeText를 통해 색상 적용 (아츠 폭발, 연소 등)
+                        const nameHtml = (typeof AppTooltip !== 'undefined' && AppTooltip.colorizeText)
+                            ? AppTooltip.colorizeText(a.name)
+                            : a.name;
+                        rateHtml += ` + ${nameHtml} ${(a.mult * 100).toFixed(0)}%${suffix}`;
                     });
                 }
             } else {
@@ -412,36 +417,20 @@ function renderCycleSequence(cycleRes) {
             }
 
             const opData = DATA_OPERATORS.find(o => o.id === (state.mainOp?.id || ''));
-            const skillDef = opData?.skill?.find(s => s.skillType?.includes(type));
-
-            const extraHtml = `
-                <div class="tooltip-desc">
-                    피해량: <strong class="tooltip-highlight">${Math.floor(displayDmg).toLocaleString()}</strong><br>
-                    데미지 배율: <strong>${rateHtml}</strong>
-                </div>
-            `;
-
-            if (skillDef) {
-                const activeEffects = item.activeEffects || (window.lastCalcResult ? window.lastCalcResult.activeEffects : []);
-                let targetSt = state;
-                if (item.customState) {
-                    targetSt = {
-                        ...state,
-                        disabledEffects: item.customState.disabledEffects,
-                        debuffState: item.customState.debuffState,
-                        enemyUnbalanced: item.customState.enemyUnbalanced,
-                        mainOp: { ...state.mainOp, specialStack: item.customState.specialStack }
-                    };
-                }
-                const content = AppTooltip.renderSkillTooltip(type, skillDef, opData, extraHtml, activeEffects, targetSt);
-                AppTooltip.showCustom(content, e, { width: '260px' });
-            } else {
-                const content = `
-                    <div class="tooltip-title tooltip-highlight">${type}</div>
-                    ${extraHtml}
-                `;
-                AppTooltip.showCustom(content, e, { width: '260px' });
+            const activeEffects = item.activeEffects || (window.lastCalcResult ? window.lastCalcResult.activeEffects : []);
+            let targetSt = state;
+            if (item.customState) {
+                targetSt = {
+                    ...state,
+                    disabledEffects: item.customState.disabledEffects,
+                    debuffState: item.customState.debuffState,
+                    enemyUnbalanced: item.customState.enemyUnbalanced,
+                    mainOp: { ...state.mainOp, specialStack: item.customState.specialStack }
+                };
             }
+
+            const content = AppTooltip.renderSequenceTooltip(type, displayDmg, rateHtml, activeEffects, targetSt, opData);
+            AppTooltip.showCustom(content, e, { width: '260px' });
         };
         cardContainer.onmouseleave = () => AppTooltip.hide();
 
@@ -778,8 +767,20 @@ function renderDmgInc(res, cycleRes) {
 
     // 1. 로그 분류
     (res.logs.dmgInc || []).forEach(log => {
-        const valMatch = log.txt.match(/([+-]?\s*\d+(\.\d+)?)\s*%/);
-        const val = valMatch ? parseFloat(valMatch[1].replace(/\s/g, '')) : 0;
+        let val = 0;
+        const isMult = (log.tag === 'skillMult' || log.txt.includes('*'));
+
+        // 배율 증가(곱셈 형식)는 퍼센트 합계에서 제외
+        if (!isMult) {
+            if (log.val !== undefined) {
+                val = log.val;
+            } else {
+                const valMatch = log.txt.match(/([+-]?\s*\d+(\.\d+)?)\s*%/);
+                if (valMatch) {
+                    val = parseFloat(valMatch[1].replace(/\s/g, ''));
+                }
+            }
+        }
         const targetState = getTargetState();
 
         // 태그 기반 분류
@@ -865,7 +866,18 @@ function renderDmgInc(res, cycleRes) {
         const ul = document.createElement('ul');
         ul.className = 'detail-list';
 
-        catLogs[cat.id].forEach(log => {
+        const sortedLogs = [...catLogs[cat.id]].sort((a, b) => {
+            const isAllSkillA = a.txt.includes('모든 스킬 피해');
+            const isAllSkillB = b.txt.includes('모든 스킬 피해');
+            if (isAllSkillA && !isAllSkillB) return -1;
+            if (!isAllSkillA && isAllSkillB) return 1;
+
+            if (a.tag === 'skillMult' && b.tag !== 'skillMult') return 1;
+            if (a.tag !== 'skillMult' && b.tag === 'skillMult') return -1;
+            return 0;
+        });
+
+        sortedLogs.forEach(log => {
             const li = document.createElement('li');
             li.innerText = log.txt;
 

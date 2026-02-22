@@ -37,6 +37,9 @@ const DATA_OPERATORS = [
         element: null,
         stats: { str: 123, agi: 200, int: 96, wil: 107 },
         usableWeapons: ['sword'],
+        specialStack: [
+            { name: '오리지늄 결정', id: 'originiumSeal', max: 1, triggers: ['오리지늄 결정'] }
+        ],
         skill: [
             { skillType: ['일반 공격'], element: 'phys', dmg: '348%', desc: '적에게 최대 5단 공격을 하여 물리 피해를 줍니다.' },
             { skillType: ['배틀 스킬'], element: 'phys', dmg: '350%', type: ['강타'], target: '적', desc: '오리지늄 아츠를 사용해 전방 일정 범위 내의 적을 공격하여 물리 피해를 주고 강타합니다.' },
@@ -54,6 +57,7 @@ const DATA_OPERATORS = [
             [{ desc: '???' }],
             [{ desc: '???' }]
         ]
+
     },
     {
         id: 'Lifeng',

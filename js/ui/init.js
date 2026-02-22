@@ -294,6 +294,10 @@ function setupSubOperatorEvents(i) {
                 document.getElementById(`sub-${i}-wep-pot`).value = 0;
                 setupPotencyButtons(`sub-${i}-wep-pot`, `sub-${i}-wep-pot-group`);
             }
+
+            const sSel = document.getElementById(`sub-${i}-set`);
+            if (sSel) sSel.value = '';
+
             updateState();
         };
         potGroup.parentNode.appendChild(removeBtn);
@@ -635,6 +639,13 @@ function applyOpSettingsToUI(opId, type, subIdx) {
             state.skillSequence = ['일반 공격', '배틀 스킬', '연계 스킬', '궁극기'].map((type, idx) => ({
                 id: 'seq_def_' + Date.now() + '_' + idx, type, customState: null
             }));
+        }
+
+        // 전용 스택 복원
+        if (settings?.specialStack) {
+            state.mainOp.specialStack = { ...settings.specialStack };
+        } else {
+            state.mainOp.specialStack = {};
         }
 
         // 메인 오퍼레이터 변경 시 강화 스킬 버튼 업데이트
