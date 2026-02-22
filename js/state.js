@@ -47,6 +47,7 @@ let state = {
     ],
     subOpsCollapsed: [false, true, true], // 기본값: 첫 번째만 펼침
     enemyUnbalanced: false,
+    enemyResistance: 0, // 적의 기본 저항 (0, 20, 50, 70)
     activeSetId: null,   // collectAllEffects에서 갱신됨
     disabledEffects: [],  // uid 문자열 배열
     effectStacks: {},     // { [uid]: count }

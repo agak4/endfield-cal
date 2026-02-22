@@ -549,7 +549,8 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
 
     // ---- 저항 (적 속성별, 0 시작 / 낮을수록 피해 증가) ----
     const ALL_RES_KEYS = ['물리', '열기', '전기', '냉기', '자연'];
-    const resistance = { '물리': 0, '열기': 0, '전기': 0, '냉기': 0, '자연': 0 };
+    const baseRes = state.enemyResistance || 0;
+    const resistance = { '물리': baseRes, '열기': baseRes, '전기': baseRes, '냉기': baseRes, '자연': baseRes };
 
     // 갑옷 파괴 디버프 (물리 받는 피해 증가)
     const ARMOR_BREAK_BONUS = [0, 12, 16, 20, 24];

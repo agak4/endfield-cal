@@ -136,6 +136,17 @@ function initUI() {
         updateToggleButton(enemyBtn, enemyCb.checked, '불균형');
     }
 
+    // 적의 저항 버튼
+    const resBtns = document.querySelectorAll('.res-btn');
+    resBtns.forEach(btn => {
+        btn.onclick = () => {
+            resBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.enemyResistance = Number(btn.dataset.val);
+            updateState();
+        };
+    });
+
     // 디버프 아이콘 우클릭 바인딩
     document.querySelectorAll('.debuff-icon-wrap').forEach(el => {
         el.oncontextmenu = (e) => {
@@ -385,6 +396,15 @@ function applyStateToUI() {
         enemyCb.checked = state.enemyUnbalanced;
         updateToggleButton(document.getElementById('enemy-unbalanced-toggle'), enemyCb.checked, '불균형');
     }
+
+    const resBtns = document.querySelectorAll('.res-btn');
+    resBtns.forEach(btn => {
+        if (Number(btn.dataset.val) === (state.enemyResistance || 0)) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
 
     applyDebuffStateToUI();
     applySkillCountsToUI();

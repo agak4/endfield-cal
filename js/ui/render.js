@@ -121,6 +121,16 @@ function renderResult(res) {
         'stat-res-mult': (((displayRes.stats.resMult ?? 1) - 1) * 100).toFixed(1) + '%'
     };
 
+    // 피해 배율 빨간색 표시
+    const resMultEl = document.getElementById('stat-res-mult');
+    if (resMultEl) {
+        if ((displayRes.stats.resistance ?? 0) > 0) {
+            resMultEl.classList.add('text-red');
+        } else {
+            resMultEl.classList.remove('text-red');
+        }
+    }
+
     for (const [id, val] of Object.entries(mapping)) {
         const el = document.getElementById(id);
         if (el) el.innerText = val;
