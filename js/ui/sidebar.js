@@ -92,8 +92,9 @@ function renderGearSidebar(filterPart) {
             if (!isMatch) item.classList.add('disabled');
             if (document.getElementById(currentGearInputId)?.value === gear.id) item.classList.add('selected');
 
+            const v = Date.now();
             item.innerHTML = `
-                <div class="sidebar-item-img"><img src="images/gears/${gear.name}.webp"></div>
+                <div class="sidebar-item-img"><img src="images/gears/${gear.name}.webp?v=${v}" loading="lazy"></div>
                 <span class="sidebar-item-name">${gear.name}</span>
             `;
             if (isMatch) item.onclick = () => selectGear(gear.id);

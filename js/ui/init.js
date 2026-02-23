@@ -544,21 +544,79 @@ function restoreSubOps() {
 
 // ============ 이미지 프리로딩 ============
 window._preloadedImages = [];
+
+/**
+ * 모든 이미지를 프리로딩하되, 주요 이미지를 먼저 로드하고 나머지는 유휴 시간에 분할 로드한다.
+ */
 function preloadAllImages() {
+    const v = Date.now();
     const categories = {
         operators: typeof DATA_OPERATORS !== 'undefined' ? DATA_OPERATORS : [],
         weapons: typeof DATA_WEAPONS !== 'undefined' ? DATA_WEAPONS : [],
         gears: typeof DATA_GEAR !== 'undefined' ? DATA_GEAR : []
     };
+
+    // 1. 현재 장착 중인 필수 이미지 리스트 추출
+    const essentialSpecs = [];
+    if (state.mainOp.id) {
+        const op = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
+        if (op) essentialSpecs.push({ folder: 'operators', name: op.name });
+
+        const wep = DATA_WEAPONS.find(w => w.id === state.mainOp.wepId);
+        if (wep) essentialSpecs.push({ folder: 'weapons', name: wep.name });
+
+        (state.mainOp.gears || []).forEach(gid => {
+            const g = DATA_GEAR.find(item => item.id === gid);
+            if (g) essentialSpecs.push({ folder: 'gears', name: g.name });
+        });
+    }
+    state.subOps.forEach(sub => {
+        if (sub.id) {
+            const op = DATA_OPERATORS.find(o => o.id === sub.id);
+            if (op) essentialSpecs.push({ folder: 'operators', name: op.name });
+        }
+        if (sub.wepId) {
+            const wep = DATA_WEAPONS.find(w => w.id === sub.wepId);
+            if (wep) essentialSpecs.push({ folder: 'weapons', name: wep.name });
+        }
+    });
+
+    // 2. 필수 이미지 즉시 로드
+    essentialSpecs.forEach(spec => {
+        const img = new Image();
+        img.src = `images/${spec.folder}/${spec.name}.webp?v=${v}`;
+        window._preloadedImages.push(img);
+    });
+
+    // 3. 나머지 이미지는 청크 단위로 지연 로드
+    const allRemaining = [];
     Object.entries(categories).forEach(([folder, data]) => {
         data.forEach(item => {
-            if (item.name) {
-                const img = new Image();
-                img.src = `images/${folder}/${item.name}.webp`;
-                window._preloadedImages.push(img);
+            if (item.name && !essentialSpecs.some(s => s.name === item.name && s.folder === folder)) {
+                allRemaining.push({ folder, name: item.name });
             }
         });
     });
+
+    let index = 0;
+    const CHUNK_SIZE = 5;
+    const INTERVAL = 200;
+
+    function loadNextChunk() {
+        if (index >= allRemaining.length) return;
+        const end = Math.min(index + CHUNK_SIZE, allRemaining.length);
+        for (let i = index; i < end; i++) {
+            const spec = allRemaining[i];
+            const img = new Image();
+            img.src = `images/${spec.folder}/${spec.name}.webp?v=${v}`;
+            window._preloadedImages.push(img);
+        }
+        index = end;
+        setTimeout(loadNextChunk, INTERVAL);
+    }
+
+    // 초기 렌더링 부하를 피해 약간의 지연 후 나머지 로드 시작
+    setTimeout(loadNextChunk, 1000);
 }
 
 /**
