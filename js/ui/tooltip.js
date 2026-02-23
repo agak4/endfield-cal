@@ -2,15 +2,15 @@
  * ui/tooltip.js — 마우스오버 툴팁 시스템
  *
  * [역할]
- * - 애플리케이션 전반의 툴팁 로직을 중앙 집중화하여 관리한다.
- * - 오퍼레이터, 무기, 장비, 스킬, 상태 이상 등에 대한 상세 정보를 HTML 툴팁으로 제공한다.
- * - 모바일/태블릿(≤1024px)에서는 사용자 경험을 고려하여 툴팁을 비활성화한다.
+ * - 애플리케이션 전반의 툴팁 로직을 중앙 집중화하여 관리합니다.
+ * - 오퍼레이터, 무기, 장비, 스킬, 상태 이상 등에 대한 상세 정보를 HTML 툴팁으로 제공합니다.
+ * - 모바일/태블릿(≤1024px)에서는 사용자 경험을 고려하여 툴팁 노출을 제한합니다.
  *
  * [주요 구성]
- * 1. 설정/상수 (HIGHLIGHTS, TYPES, COLORS)
- * 2. 내부 유틸리티 (colorizeText, position, getElementName)
- * 3. 생명주기 제어 (init, show, showCustom, hide)
- * 4. HTML 렌더러 (renderOperator, renderWeapon, renderGear, renderSkillTooltip, renderAbnormalTooltip)
+ * 1. 설정/상수 (HIGHLIGHTS, COLORS): 텍스트 색상화 및 속성별 테마 설정
+ * 2. 내부 유틸리티 (colorizeText, position): 키워드 하이라이트 및 위치 계산
+ * 3. 생명주기 제어 (init, show, hide): 이벤트 바인딩 및 표시 관리
+ * 4. HTML 렌더러 (render*): 각 엔티티 타입별 툴팁 HTML 생성
  */
 
 const AppTooltip = {
@@ -205,8 +205,12 @@ const AppTooltip = {
     // 4. HTML 렌더러
     // ==========================================
 
+    /** 오퍼레이터 툴팁 HTML을 렌더링합니다. */
     renderOperator(op, currentPot, isModal = false) {
+        // 오퍼레이터 특성(자체 버프) 및 시너지(파티/적 버프) 아이템을 저장할 배열
         const traitItems = [], synergyItems = [];
+
+        /** 단일 특성/시너지 항목을 처리하여 traitItems 또는 synergyItems에 추가합니다. */
         const processSingle = (t, source, sortWeight, potLevel = null) => {
             if (!t?.type) return;
             const typeArr = (Array.isArray(t.type) ? t.type : [t.type]).map(item => {
@@ -247,15 +251,18 @@ const AppTooltip = {
             else if (this.TRAIT_TYPES.some(tr => typeIncludes(tr))) traitItems.push(item);
         };
 
+        /** 데이터 배열을 순회하며 processSingle 함수를 호출합니다. */
         const processData = (data, source, sortWeight, potLevel = null) => {
             if (!data) return;
             data.forEach(t => { if (t) t.forEach(sub => processSingle(sub, source, sortWeight, potLevel)); });
         };
 
+        // 스킬, 재능, 잠재 데이터를 처리하여 특성/시너지 아이템을 분류합니다.
         if (op.skill) op.skill.forEach(s => { processData([[s]], s?.skillType || '스킬', 0); });
         if (op.talents) op.talents.forEach((t, i) => { processData([t], `재능${i + 1}`, 1); });
         if (op.potential) op.potential.forEach((p, i) => processData([p], '잠재', 2, i + 1));
 
+        /** 특성/시너지 목록을 HTML로 렌더링합니다. */
         const renderList = (list, isSynergy = false) => {
             return [...list].sort((a, b) => a.sortWeight - b.sortWeight)
                 .map(t => {
@@ -266,11 +273,13 @@ const AppTooltip = {
                 }).join('');
         };
 
+        // 재능 설명을 추출하고 색상화합니다.
         const talentDescs = (op.talents || []).map((t, i) => {
             const entry = t.find(e => e.desc);
             return entry ? `[재능${i + 1}] ${this.colorizeText(entry.desc)}` : null;
         }).filter(Boolean);
 
+        // 잠재 설명을 추출하고 색상화합니다.
         const potDescs = (op.potential || []).map((p, i) => {
             const entry = p.find(e => e.desc);
             return entry ? `[잠재${i + 1}] ${this.colorizeText(entry.desc)}` : null;
@@ -300,7 +309,9 @@ const AppTooltip = {
         `;
     },
 
+    /** 무기 툴팁 HTML을 렌더링합니다. */
     renderWeapon(wep) {
+        // 무기 특성(자체 버프) 및 시너지(파티/적 버프) 아이템을 저장할 배열
         const traitItems = [], synergyItems = [];
         wep.traits.forEach((t) => {
             const typeArr = (Array.isArray(t.type) ? t.type : [t.type]).map(item => typeof item === 'string' ? { type: item } : item);
@@ -352,6 +363,7 @@ const AppTooltip = {
 
     },
 
+    /** 장비 툴팁 HTML을 렌더링합니다. */
     renderGear(gear, forged = false) {
         const setName = DATA_SETS?.find(s => s.id === gear.set)?.name || '일반';
         const valStyle = forged ? 'style="color:var(--accent);font-weight:bold;"' : '';
@@ -363,6 +375,7 @@ const AppTooltip = {
             `<div class="tooltip-stat-item"><span class="tooltip-stat-key">${getStatName(s.type)}</span><span class="tooltip-stat-val" ${valStyle}>+${Math.floor(s.val)}</span></div>`
         ).join('');
 
+        // 장비 특성 HTML을 렌더링합니다.
         let traitHtml = '';
         if (gear.trait) {
             const traitLines = (gear.trait || []).map(t => {
@@ -402,6 +415,7 @@ const AppTooltip = {
         `;
     },
 
+    /** 스킬 툴팁 HTML을 렌더링합니다. */
     renderSkillTooltip(skillType, skillData, opData, extraHtml = '', activeEffects = [], st = null) {
         if (!skillData) return '';
         const entry = skillData;
@@ -446,7 +460,7 @@ const AppTooltip = {
         return `<div class="tooltip-title">${skillType}</div>${extraHtml ? `<div class="tooltip-group">${extraHtml}</div>` : ''}${attrLines.length > 0 ? `<div class="tooltip-section tooltip-group">${attrLines.join('')}</div>` : ''}<div class="tooltip-desc">${this.colorizeText(entry.desc || '설명 없음')}</div>`;
     },
 
-    /** 시퀀스 아이템 전용 간소화된 툴팁 */
+    /** 시퀀스 아이템 전용 간소화된 툴팁을 렌더링합니다. */
     renderSequenceTooltip(type, displayDmg, rateHtml, activeEffects, st, opData) {
         const extraHtml = `
             <div class="tooltip-desc">피해량: <strong class="tooltip-highlight">${Math.floor(displayDmg).toLocaleString()}</strong><br>데미지 배율: <strong>${rateHtml}</strong></div>
@@ -461,11 +475,12 @@ const AppTooltip = {
         `;
     },
 
-    /** 적용 중인 추가 효과(시너지) 섹션 렌더링 */
+    /** 적용 중인 추가 효과(시너지) 섹션을 렌더링합니다. (스킬 툴팁 내부용) */
     renderSynergySection(activeEffects, st, opData, skillType) {
         const typeMap = { '배틀 스킬': 'battle', '연계 스킬': 'combo', '궁극기': 'ult', '일반 공격': 'normal' };
         const catKey = typeMap[skillType] || (skillType.includes('일반 공격') ? 'normal' : (skillType.includes('배틀 스킬') ? 'battle' : 'common'));
 
+        // 현재 스킬 타입에 맞는 활성화된 효과만 필터링합니다.
         const filteredEffects = activeEffects.filter(eff => {
             const stTypes = eff.skillType || [];
             const t = Array.isArray(eff.type) ? eff.type[0] : eff.type;
@@ -502,6 +517,7 @@ const AppTooltip = {
             return 0;
         });
 
+        // 추가적인 효과(디버프, 특수 스택 등)를 수집합니다.
         const extraEffects = [];
         if (st?.debuffState) {
             const ds = st.debuffState;
@@ -572,6 +588,7 @@ const AppTooltip = {
 
     /** 물리 이상 또는 아츠 이상/폭발 툴팁을 렌더링한다. */
     renderAbnormalTooltip(aName, artsStrength = 0, st = null) {
+        /** 이상 상태 데이터를 이름으로 찾습니다. */
         const getAbnormalData = (name) => {
             if (typeof DATA_ABNORMALS === 'undefined') return null;
             // 1. 정확한 이름 매칭
@@ -585,6 +602,7 @@ const AppTooltip = {
         const data = getAbnormalData(aName);
         let desc = '설명 없음';
         let attrLines = [];
+        // 이상 상태에 적용되는 시너지(디버프) 효과를 저장할 배열
         let synergyLines = [];
 
         if (data) {
