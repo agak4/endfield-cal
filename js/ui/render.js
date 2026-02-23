@@ -744,11 +744,11 @@ function renderWeaponComparison(currentRes, currentCycle) {
             tempState.mainOp.wepPot = compPot;
             tempState.mainOp.wepState = compState;
 
-            // forceMaxStack: false로 설정하여 현재 중첩 상태 유지
-            const res = calculateDamage(tempState, false);
+            // forceMaxStack: true로 설정하여 비교 시에만 최대 중첩 상태 가정
+            const res = calculateDamage(tempState, true);
             if (!res) return null;
 
-            const cRes = typeof calculateCycleDamage === 'function' ? calculateCycleDamage(tempState, res, false) : null;
+            const cRes = typeof calculateCycleDamage === 'function' ? calculateCycleDamage(tempState, res, true) : null;
             const compTotal = (cRes && cRes.total > 0) ? cRes.total : res.finalDmg;
 
             const diff = compTotal - currentTotal;
