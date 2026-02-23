@@ -253,7 +253,9 @@ function updateEntityImage(entityId, imgElementId, folder) {
     if (fileName) {
         if (rarity && container) container.classList.add(`rarity-${rarity}`);
 
-        imgElement.src = `images/${folder}/${fileName}.webp`;
+        const v = Date.now();
+        imgElement.src = `images/${folder}/${fileName}.webp?v=${v}`;
+        imgElement.loading = "eager"; // 메인 화면 필수 이미지는 즉시 로드
         imgElement.style.display = 'block';
 
         // 툴팁용 데이터 속성 설정
