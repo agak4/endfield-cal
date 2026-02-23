@@ -185,11 +185,40 @@ const AppTooltip = {
     hide() { if (this.el) this.el.style.display = 'none'; },
 
     position(e) {
-        const offset = 20;
+        const offset = 20; // 커서와의 간격
+        const margin = 10; // 화면 끝과의 최소 여백
+        const tipWidth = this.el.offsetWidth;
+        const tipHeight = this.el.offsetHeight;
+        const winWidth = window.innerWidth;
+        const winHeight = window.innerHeight;
+
         let x = e.clientX + offset;
         let y = e.clientY + offset;
-        if (x + this.el.offsetWidth > window.innerWidth) x = e.clientX - this.el.offsetWidth - offset;
-        if (y + this.el.offsetHeight > window.innerHeight) y = e.clientY - this.el.offsetHeight - offset;
+
+        // 오른쪽 경계 체크: 화면을 벗어나면 커서 왼쪽으로 배치
+        if (x + tipWidth + margin > winWidth) {
+            x = e.clientX - tipWidth - offset;
+        }
+
+        // 왼쪽 경계 체크: 왼쪽으로 보냈는데도 화면을 벗어나면 화면 왼쪽에 붙임
+        if (x < margin) {
+            x = margin;
+        }
+
+        // 하단 경계 체크: 화면을 벗어나면 커서 위쪽으로 배치
+        if (y + tipHeight + margin > winHeight) {
+            y = e.clientY - tipHeight - offset;
+        }
+
+        // 상단 경계 체크: 위로 보냈는데도 화면을 벗어나면 화면 상단에 붙임
+        if (y < margin) {
+            y = margin;
+        }
+
+        // 툴팁 자체가 화면보다 큰 경우에 대한 최종 보정 (상단/좌측 고정)
+        if (tipWidth + margin * 2 > winWidth) x = margin;
+        if (tipHeight + margin * 2 > winHeight) y = margin;
+
         this.el.style.left = x + 'px';
         this.el.style.top = y + 'px';
     },
