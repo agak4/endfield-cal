@@ -1,8 +1,16 @@
 /* ============ 결과 대시보드 ============ */
 /* ============ 최종/사이클 계산값 가로 배치 ============ */
+.result-debuff-wrapper {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
 .result-area-row {
     display: flex;
     gap: 12px;
+    flex: 1;
+    height: -webkit-fill-available;
 }
 
 .result-box {
@@ -706,10 +714,10 @@
 /* ============ 디버프 아이콘 섹션 ============ */
 .debuff-icon-section {
     display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    flex-flow: wrap;
+    flex-direction: column;
+    align-items: center;
     gap: 7px;
+    flex-shrink: 0;
 }
 
 .debuff-group {
@@ -721,6 +729,7 @@
 
 .debuff-attach-row {
     display: flex;
+    flex-direction: row;
 }
 
 .debuff-label {
