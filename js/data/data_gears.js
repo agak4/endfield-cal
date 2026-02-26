@@ -102,7 +102,8 @@ const DATA_GEAR = [
   { id: 'gear_70', name: '위기 탈출 도장 · I', part: 'kit', set: 'set_crisis', stat1: 'wil', val1: 43, val1_f: 55, stat2: null, val2: 0, trait: [{ type: ['치명타 확률'], val: '10.8%', val_f: '14%' }] },
   { id: 'gear_71', name: '위기 탈출 도장', part: 'kit', set: 'set_crisis', stat1: 'int', val1: 43, val1_f: 55, stat2: null, val2: 0, trait: [{ type: ['궁극기 충전 효율'], val: '25.7%', val_f: '33.4%' }] },
   { id: 'gear_72', name: '위기 탈출 식별 패널 · I', part: 'kit', set: 'set_crisis', stat1: 'agi', val1: 43, val1_f: 55, stat2: null, val2: 0, trait: [{ type: ['연계 스킬 피해'], val: '43.2%', val_f: '56.2%' }] },
-  { id: 'gear_73', name: '위기 탈출 식별 패널', part: 'kit', set: 'set_crisis', stat1: 'str', val1: 43, val1_f: 55, stat2: null, val2: 0, trait: [{ type: ['모든 피해 감소'], val: '17.8%', val_f: '21.9%' }] }
+  { id: 'gear_73', name: '위기 탈출 식별 패널', part: 'kit', set: 'set_crisis', stat1: 'str', val1: 43, val1_f: 55, stat2: null, val2: 0, trait: [{ type: ['모든 피해 감소'], val: '17.8%', val_f: '21.9%' }] },
+  { id: 'gear_74', name: '침식 방호 장갑 · I', part: 'gloves', set: 'set_50lv', stat1: 'wil', val1: 46, val1_f: 46, stat2: 'agi', val2: 30, val2_f: 30, trait: [{ type: ['공격력 증가'], val: '12.3%', val_f: '12.3%' }] }
 ];
 
 const DATA_SETS = [
@@ -208,5 +209,6 @@ const DATA_SETS = [
       { type: ['물리 데미지'], dmg: ['250%'], trigger: ['강타', '띄우기', '넘어뜨리기', '강제 띄우기', '강제 넘어뜨리기', '갑옷 파괴'], element: 'phys' }
     ]
   },
-  { id: 'set_crisis', name: '위기 탈출', effects: [] }
+  { id: 'set_crisis', name: '위기 탈출', effects: [] },
+  { id: 'set_50lv', name: '50레벨 장비', effects: [] }
 ];
