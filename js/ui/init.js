@@ -496,10 +496,13 @@ window.updateSkillLevelButtonsUI = function () {
                 lvlBtn.className = 'skill-lvl-btn';
                 lvlBtn.dataset.level = lvl;
                 lvlBtn.innerHTML = `
-                    <svg viewBox="0 0 100 100" class="mastery-svg">
-                        <polygon class="m1-on" points="10,50 21,31 43,31 54,50 43,69 21,69" />
-                        <polygon class="m3-on" points="46,29 57,10 79,10 90,29 79,48 57,48" />
-                        <polygon class="m2-on" points="46,71 57,52 79,52 90,71 79,90 57,90" />
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="mastery-svg">
+                        <!-- M1: Left center -->
+                        <polygon class="m1-on" points="5,50 17.5,28.4 42.5,28.4 55,50 42.5,71.6 17.5,71.6" />
+                        <!-- M3: Top right -->
+                        <polygon class="m3-on" points="45,29.1 57.5,7.5 82.5,7.5 95,29.1 82.5,50.7 57.5,50.7" />
+                        <!-- M2: Bottom right -->
+                        <polygon class="m2-on" points="45,70.9 57.5,49.3 82.5,49.3 95,70.9 82.5,92.5 57.5,92.5" />
                     </svg>
                 `;
                 lvlBtn.onclick = (e) => {

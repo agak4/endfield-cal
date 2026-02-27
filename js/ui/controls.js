@@ -438,7 +438,7 @@ function updateUIStateVisuals() {
             wrap.dataset.max = s.max; // Store max for UI display logic
 
             wrap.innerHTML = useSingleCircle ? `
-                <svg class="debuff-ring-svg single-ring-svg" viewBox="0 0 100 100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="debuff-ring-svg single-ring-svg" viewBox="0 0 100 100">
                     <path class="ring-bg"   d="M 50, 8 A 42, 42 0 1, 1 50, 92 A 42, 42 0 1, 1 50, 8" />
                     <path class="ring-fill" d="M 50, 8 A 42, 42 0 1, 1 50, 92 A 42, 42 0 1, 1 50, 8" />
                 </svg>
@@ -449,7 +449,7 @@ function updateUIStateVisuals() {
                 <div class="debuff-stack-bubble">0</div>
                 <span class="special-stack-name">${s.name}</span>
             ` : `
-                <svg class="debuff-ring-svg" viewBox="0 0 100 100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="debuff-ring-svg" viewBox="0 0 100 100">
                     <path class="ring-seg seg-0" d="M74.1,15.6 A42,42 0 0,0 25.9,15.6" />
                     <path class="ring-seg seg-1" d="M84.4,74.1 A42,42 0 0,0 84.4,25.9" />
                     <path class="ring-seg seg-2" d="M25.9,84.4 A42,42 0 0,0 74.1,84.4" />
