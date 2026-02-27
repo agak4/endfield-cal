@@ -794,6 +794,10 @@ h4.has-drag-handle {
     pointer-events: auto;
 }
 
+@media (max-width: 768px) {
+    /* 기존 미디어 쿼리 내용 유지 */
+}
+
 .debuff-icon-img-wrap {
     position: absolute;
     inset: 8px;
@@ -844,7 +848,6 @@ h4.has-drag-handle {
     display: none;
 }
 
-/* 단일 원형 SVG */
 .single-ring-svg .ring-bg {
     fill: none;
     stroke: rgba(255, 255, 255, 0.1);
@@ -853,17 +856,15 @@ h4.has-drag-handle {
 
 .single-ring-svg .ring-fill {
     fill: none;
-    stroke: var(--accent);
+    stroke: rgba(200, 200, 200, 0.9);
     stroke-width: 4;
-    stroke-dasharray: 263.89;
-    /* 2 * PI * 42 */
-    stroke-dashoffset: 263.89;
-    transition: stroke-dashoffset 0.3s ease;
     stroke-linecap: round;
+    filter: drop-shadow(0 0 2px rgba(200, 200, 200, 0.5));
+    display: none;
 }
 
 .single-ring-svg.active .ring-fill {
-    stroke-dashoffset: 0;
+    display: block;
 }
 
 /* ============ 사이클 데미지 UI 개편 (Flex Layout) ============ */

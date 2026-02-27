@@ -92,6 +92,18 @@ let state = {
      */
     debuffState: DEFAULT_DEBUFF_STATE(),
 
+    /**
+     * 사용 아이템 활성화 상태
+     * - 혼란의 약제, 아츠가 부여된 금속 병, 제이콥의 유산, 푹 삶은 갈비 미삼탕, 원기 회복 탕약
+     */
+    usables: {
+        '혼란의 약제': false,
+        '아츠가 부여된 금속 병': false,
+        '제이콥의 유산': false,
+        '푹 삶은 갈비 미삼탕': false,
+        '원기 회복 탕약': false
+    },
+
     selectedSeqId: null, // 현재 선택된 사이클 아이템의 id
     skillSequence: [],   // { id: 'seq_...', type: '일반 공격', customState: null | {...} }
 };
@@ -251,6 +263,7 @@ function ensureCustomState() {
             debuffState: deepClone(state.debuffState),
             enemyUnbalanced: state.enemyUnbalanced,
             specialStack: state.mainOp.specialStack,
+            usables: deepClone(state.usables)
         };
     }
 }
@@ -271,6 +284,7 @@ function getTargetState() {
                 disabledEffects: cs.disabledEffects,
                 effectStacks: cs.effectStacks,
                 debuffState: cs.debuffState,
+                usables: cs.usables,
                 isUnbalanced: () => cs.enemyUnbalanced,
                 setUnbalanced: (val) => { cs.enemyUnbalanced = val; },
                 getSpecialStack: () => cs.specialStack,
@@ -282,6 +296,7 @@ function getTargetState() {
         disabledEffects: state.disabledEffects,
         effectStacks: state.effectStacks,
         debuffState: state.debuffState,
+        usables: state.usables,
         isUnbalanced: () => state.enemyUnbalanced,
         setUnbalanced: (val) => { state.enemyUnbalanced = val; },
         getSpecialStack: () => state.mainOp.specialStack,
@@ -350,6 +365,15 @@ function loadState() {
     if (!state.effectStacks) state.effectStacks = {};
     if (typeof state.mainOp.specialStack !== 'object' || state.mainOp.specialStack === null) {
         state.mainOp.specialStack = {};
+    }
+    if (!state.usables) {
+        state.usables = {
+            '혼란의 약제': false,
+            '아츠가 부여된 금속 병': false,
+            '제이콥의 유산': false,
+            '푹 삶은 갈비 미삼탕': false,
+            '원기 회복 탕약': false
+        };
     }
 
     // enemyDefense는 저장값을 무시하고 항상 기본값(100)으로 초기화한다.

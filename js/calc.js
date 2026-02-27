@@ -611,6 +611,41 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
     };
     let resIgnore = 0;
 
+    // ---- 사용 아이템 호환 (usables) ----
+    const tsUsables = state.skillSequence?.find(s => s.id === state.selectedSeqId)?.customState?.usables || state.usables;
+    if (tsUsables) {
+        if (tsUsables['혼란의 약제']) {
+            ultRecharge += 24;
+            logs.ultRecharge.push({ txt: `궁극기 충전 효율 +24% (혼란의 약제)`, uid: 'usable_1', tag: 'recharge' });
+        }
+        if (tsUsables['아츠가 부여된 금속 병']) {
+            dmgInc += 25;
+            dmgIncMap.all += 25;
+            logs.dmgInc.push({ txt: `주는 모든 피해 +25% (아츠가 부여된 금속 병)`, uid: 'usable_2', tag: 'all' });
+        }
+        if (tsUsables['제이콥의 유산']) {
+            atkInc += 27;
+            logs.atkBuffs.push({ txt: `공격력 증가 +27% (제이콥의 유산)`, uid: 'usable_3' });
+        }
+        if (tsUsables['푹 삶은 갈비 미삼탕']) {
+            const val = 180;
+            // atk 에 평정스탯으로 추가 (공격력 증가가 아님)
+            logs.atk.push({ txt: `공격력 +${val} (푹 삶은 갈비 미삼탕)`, uid: 'usable_4_atk' });
+            stats.str += val;
+
+            critRate += 11;
+            logs.crit.push({ txt: `치명타 확률 +11% (푹 삶은 갈비 미삼탕)`, uid: 'usable_4_crit', type: 'rate' });
+        }
+        if (tsUsables['원기 회복 탕약']) {
+            critRate += 9;
+            logs.crit.push({ txt: `치명타 확률 +9% (원기 회복 탕약)`, uid: 'usable_5_crit', type: 'rate' });
+
+            dmgInc += 18;
+            dmgIncMap.all += 18;
+            logs.dmgInc.push({ txt: `주는 모든 피해 +18% (원기 회복 탕약)`, uid: 'usable_5_dmgInc', tag: 'all' });
+        }
+    }
+
     // ---- 저항 (적 속성별, 0 시작 / 낮을수록 피해 증가) ----
     const ALL_RES_KEYS = ['물리', '열기', '전기', '냉기', '자연'];
     const baseRes = state.enemyResistance || 0;
@@ -646,6 +681,9 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
         { txt: `무기 공격력: ${wepData.baseAtk.toLocaleString()}`, uid: 'base_wep_atk' }
     ];
 
+    if (tsUsables && tsUsables['푹 삶은 갈비 미삼탕']) {
+        atkBaseLogs.push({ txt: `사용 아이템 공격력: 180 (푹 삶은 갈비 미삼탕)`, uid: 'base_usable_atk' });
+    }
 
     const statLogs = [];
 

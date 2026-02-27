@@ -354,6 +354,7 @@ function applyDebuffIconState(wrap, stacks) {
     }
 
     const ringSvg = wrap.querySelector('.debuff-ring-svg');
+    wrap.classList.toggle('active', stacks > 0);
     if (ringSvg?.classList.contains('single-ring-svg')) {
         ringSvg.classList.toggle('active', stacks > 0);
     } else {
@@ -374,6 +375,7 @@ function handleDebuffRightClick(el, e) {
     else if (el.dataset.attachType) cycleDebuffAttach(el, -1);
     else if (el.dataset.abnormalType) cycleDebuffAbnormal(el, -1);
     else if (el.dataset.debuff) cycleDebuff(el, -1);
+    else if (el.dataset.usable) cycleDebuff(el, -1);
 }
 
 /**
@@ -395,6 +397,9 @@ function updateUIStateVisuals() {
         } else if (el.dataset.debuff) {
             const type = el.dataset.debuff;
             val = ds.physDebuff?.[type] !== undefined ? ds.physDebuff[type] : (ds[type] || 0);
+        } else if (el.dataset.usable) {
+            const type = el.dataset.usable;
+            val = ts.usables?.[type] ? 1 : 0;
         }
         applyDebuffIconState(el, val);
     });
@@ -479,6 +484,22 @@ function updateUIStateVisuals() {
  */
 function cycleDebuff(el, dir = 1) {
     ensureCustomState();
+
+    // 사용 아이템인 경우 토글 처리
+    if (el.dataset.usable) {
+        const type = el.dataset.usable;
+        const ts = getTargetState();
+        if (!ts.usables) ts.usables = {};
+
+        // 클릭(dir=1) 시 토글, 우클릭(dir=-1) 시 끄기
+        const next = dir === 1 ? !ts.usables[type] : false;
+        ts.usables[type] = next;
+
+        applyDebuffIconState(el, next ? 1 : 0);
+        commitDebuffChange('debuff');
+        return;
+    }
+
     const type = el.dataset.debuff;
     const next = ((parseInt(el.dataset.stacks, 10) || 0) + dir + 5) % 5;
     const ds = getTargetState().debuffState;
@@ -586,49 +607,58 @@ function cycleSpecialStack(el, dir = 1) {
 // 디버프 상태 → UI 반영
 // ============================================================
 
-/**
- * 저장된 state.debuffState를 UI 아이콘에 반영한다.
- * loadState() 후 applyStateToUI()에서 호출한다.
- */
 function applyDebuffStateToUI() {
-    const ds = getTargetState().debuffState;
-    if (!ds) return;
-
-    // 물리 디버프 (방어불능, 갑옷파괴, 연타)
-    ['defenseless', 'armorBreak', 'combo'].forEach(type => {
-        const el = document.getElementById(`debuff-icon-${type}`);
-        if (el) applyDebuffIconState(el, ds.physDebuff?.[type] || 0);
-    });
-
-    // 아츠 부착 (단일 선택)
-    ATTACH_TYPES.forEach(t => {
-        const wrap = document.getElementById(`debuff-icon-${t}`);
-        if (!wrap) return;
-        const activeType = ds.artsAttach?.type;
-        applyDebuffIconState(wrap, activeType === t ? (ds.artsAttach?.stacks || 0) : 0);
-        wrap.classList.toggle('attach-disabled', activeType !== null && activeType !== t);
-    });
-
-    // 아츠 이상 4종
-    ABNORMAL_TYPES.forEach(t => {
-        const wrap = document.getElementById(`debuff-icon-${t}`);
-        if (wrap) applyDebuffIconState(wrap, ds.artsAbnormal?.[t] || 0);
-    });
-
-    // 전용 스택
-    const mainOp = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
-    if (mainOp?.specialStack) {
-        const ts = getTargetState();
-        const specStacks = ts.getSpecialStack ? ts.getSpecialStack() : (state.mainOp.specialStack || {});
-        (Array.isArray(mainOp.specialStack) ? mainOp.specialStack : [mainOp.specialStack]).forEach(s => {
-            const stackId = s.id || 'default';
-            document.getElementById(`debuff-icon-special-${stackId}`)
-                && applyDebuffIconState(document.getElementById(`debuff-icon-special-${stackId}`), specStacks[stackId] || 0);
-        });
-    }
-
     updateUIStateVisuals();
 }
+
+/** 사용 아이템 설명 데이터 */
+const USABLE_DESCS = {
+    '혼란의 약제': {
+        name: '혼란의 약제 (Perplexing Medication)',
+        desc: '사용 시 궁극기 충전 효율이 24% 증가하며, 300초 동안 지속됩니다.'
+    },
+    '아츠가 부여된 금속 병': {
+        name: '아츠가 부여된 금속 병 (Kunst Tube)',
+        desc: '사용 시 주는 모든 피해가 25% 증가하며, 300초 동안 지속됩니다.'
+    },
+    '제이콥의 유산': {
+        name: '제이콥의 유산',
+        desc: '사용 시 공격력이 27% 증가하며, 300초 동안 지속됩니다.'
+    },
+    '푹 삶은 갈비 미삼탕': {
+        name: '푹 삶은 갈비 미삼탕 (Ginseng Meat Stew)',
+        desc: '사용 시 공격력이 180, 치명타 확률이 11% 증가하며, 300초 동안 지속됩니다.'
+    },
+    '원기 회복 탕약': {
+        name: '원기 회복 탕약 (Fortifying Infusion)',
+        desc: '사용 시 치명타 확률이 9%, 주는 모든 피해가 18% 증가하며, 300초 동안 지속됩니다.'
+    }
+};
+
+/**
+ * 사용 아이템 툴팁 표시
+ * @param {HTMLElement} el
+ * @param {MouseEvent} event
+ */
+function showUsableTooltip(el, event) {
+    const type = el.dataset.usable;
+    const data = USABLE_DESCS[type];
+    if (!data || !AppTooltip) return;
+
+    const html = `
+        <div class="tooltip-header">
+            <div class="tooltip-title-group">
+                <div class="tooltip-name">${data.name}</div>
+            </div>
+        </div>
+        <div class="tooltip-section">
+            <div class="tooltip-desc">${AppTooltip.colorizeText(data.desc)}</div>
+        </div>
+    `;
+    AppTooltip.showCustom(html, event);
+}
+
+
 
 // ============================================================
 // 스킬 사이클 보드 제어 및 드래그 앤 드롭
