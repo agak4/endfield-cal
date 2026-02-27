@@ -30,6 +30,7 @@
     --skill-element-nature: #9EDC23;
 
     --img-size: 100px;
+    --gear-img-size: 80px;
     --transition-speed: 0.2s;
 }
 
@@ -571,8 +572,8 @@ input[type="range"]::-webkit-slider-thumb {
     }
 
     .gear-image-container {
-        width: 80px;
-        height: 80px !important;
+        width: var(--gear-img-size);
+        height: var(--gear-img-size) !important;
     }
 
     .gear-flex-row {

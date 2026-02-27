@@ -18,7 +18,8 @@
 
 .gear-image-container {
     aspect-ratio: 1/1;
-    height: auto;
+    height: var(--gear-img-size);
+    width: var(--gear-img-size);
     cursor: pointer;
     transition: all 0.2s ease;
     border: 2px solid var(--border);
