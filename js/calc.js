@@ -599,14 +599,14 @@ const LEVEL_COEFF_ARTS = 89 / 196; // ≈ 45.41%
 
 function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, activeEffects) {
     const baseAtk = opData.baseAtk + wepData.baseAtk;
-    let atkInc = 0, critRate = 5, critDmg = 50, dmgInc = 0, amp = 0, multiHit = 1.0, unbalanceDmg = 0, originiumArts = 0, ultRecharge = 0, ultCostReduction = 0, skillMults = { all: { mult: 0, add: 0 } }, dmgIncMap = { all: 0, skill: 0, normal: 0, battle: 0, combo: 0, ult: 0, phys: 0, heat: 0, elec: 0, cryo: 0, nature: 0 };
+    let atkInc = 0, fixedAtk = 0, critRate = 5, critDmg = 50, dmgInc = 0, amp = 0, multiHit = 1.0, unbalanceDmg = 0, originiumArts = 0, ultRecharge = 0, ultCostReduction = 0, skillMults = { all: { mult: 0, add: 0 } }, dmgIncMap = { all: 0, skill: 0, normal: 0, battle: 0, combo: 0, ult: 0, phys: 0, heat: 0, elec: 0, cryo: 0, nature: 0 };
     let takenDmgMap = { all: 0, phys: 0, heat: 0, elec: 0, cryo: 0, nature: 0, arts: 0 };
     const vulnMap = { '물리 취약': 0, '아츠 취약': 0, '열기 취약': 0, '전기 취약': 0, '냉기 취약': 0, '자연 취약': 0, '취약': 0 };
     const vulnAmpEffects = [];
     const skillCritData = { rate: { all: 0 }, dmg: { all: 0 } };
     const skillAtkIncData = { all: 0 };
     const logs = {
-        atk: [], atkBuffs: [], dmgInc: [], amp: [], vuln: [],
+        atk: [], atkBuffs: [], fixedAtk: [], dmgInc: [], amp: [], vuln: [],
         taken: [], unbal: [], multihit: [], crit: [], arts: [], res: [], ultRecharge: []
     };
     let resIgnore = 0;
@@ -615,34 +615,56 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
     const tsUsables = state.skillSequence?.find(s => s.id === state.selectedSeqId)?.customState?.usables || state.usables;
     if (tsUsables) {
         if (tsUsables['혼란의 약제']) {
-            ultRecharge += 24;
-            logs.ultRecharge.push({ txt: `궁극기 충전 효율 +24% (혼란의 약제)`, uid: 'usable_1', tag: 'recharge' });
+            const uid = 'usable_1';
+            logs.ultRecharge.push({ txt: `궁극기 충전 효율 +24% (혼란의 약제)`, uid: uid, tag: 'recharge' });
+            if (!state.disabledEffects.includes(uid)) {
+                ultRecharge += 24;
+            }
         }
         if (tsUsables['아츠가 부여된 금속 병']) {
-            dmgInc += 25;
-            dmgIncMap.all += 25;
-            logs.dmgInc.push({ txt: `주는 모든 피해 +25% (아츠가 부여된 금속 병)`, uid: 'usable_2', tag: 'all' });
+            const uid = 'usable_2';
+            logs.dmgInc.push({ txt: `주는 모든 피해 +25% (아츠가 부여된 금속 병)`, uid: uid, tag: 'all' });
+            if (!state.disabledEffects.includes(uid)) {
+                dmgInc += 25;
+                dmgIncMap.all += 25;
+            }
         }
         if (tsUsables['제이콥의 유산']) {
-            atkInc += 27;
-            logs.atkBuffs.push({ txt: `공격력 증가 +27% (제이콥의 유산)`, uid: 'usable_3' });
+            const uid = 'usable_3';
+            logs.atkBuffs.push({ txt: `공격력 증가 +27% (제이콥의 유산)`, uid: uid });
+            if (!state.disabledEffects.includes(uid)) {
+                atkInc += 27;
+            }
         }
         if (tsUsables['푹 삶은 갈비 미삼탕']) {
             const val = 180;
-            // atk 에 평정스탯으로 추가 (공격력 증가가 아님)
-            logs.atk.push({ txt: `공격력 +${val} (푹 삶은 갈비 미삼탕)`, uid: 'usable_4_atk' });
-            stats.str += val;
+            const uidAtk = 'usable_4_atk';
+            const uidCrit = 'usable_4_crit';
 
-            critRate += 11;
-            logs.crit.push({ txt: `치명타 확률 +11% (푹 삶은 갈비 미삼탕)`, uid: 'usable_4_crit', type: 'rate' });
+            logs.fixedAtk.push({ txt: `고정 공격력: +${val} (푹 삶은 갈비 미삼탕)`, uid: uidAtk });
+            if (!state.disabledEffects.includes(uidAtk)) {
+                fixedAtk += val;
+            }
+
+            logs.crit.push({ txt: `치명타 확률 +11% (푹 삶은 갈비 미삼탕)`, uid: uidCrit, type: 'rate' });
+            if (!state.disabledEffects.includes(uidCrit)) {
+                critRate += 11;
+            }
         }
         if (tsUsables['원기 회복 탕약']) {
-            critRate += 9;
-            logs.crit.push({ txt: `치명타 확률 +9% (원기 회복 탕약)`, uid: 'usable_5_crit', type: 'rate' });
+            const uidCrit = 'usable_5_crit';
+            const uidDmg = 'usable_5_dmgInc';
 
-            dmgInc += 18;
-            dmgIncMap.all += 18;
-            logs.dmgInc.push({ txt: `주는 모든 피해 +18% (원기 회복 탕약)`, uid: 'usable_5_dmgInc', tag: 'all' });
+            logs.crit.push({ txt: `치명타 확률 +9% (원기 회복 탕약)`, uid: uidCrit, type: 'rate' });
+            if (!state.disabledEffects.includes(uidCrit)) {
+                critRate += 9;
+            }
+
+            logs.dmgInc.push({ txt: `주는 모든 피해 +18% (원기 회복 탕약)`, uid: uidDmg, tag: 'all' });
+            if (!state.disabledEffects.includes(uidDmg)) {
+                dmgInc += 18;
+                dmgIncMap.all += 18;
+            }
         }
     }
 
@@ -949,14 +971,15 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
     }
 
     const statBonusPct = (stats[opData.mainStat] * 0.005) + (stats[opData.subStat] * 0.002);
-    const finalAtk = baseAtk * (1 + atkInc / 100) * (1 + statBonusPct);
+    const finalAtk = (baseAtk * (1 + atkInc / 100) + fixedAtk) * (1 + statBonusPct);
 
     logs.atk = [
         atkBaseLogs[0],
         atkBaseLogs[1],
-        { txt: `스탯 공격보너스: +${(statBonusPct * 100).toFixed(2)}%`, uid: 'stat_bonus_atk' },
         ...logs.atkBuffs,
-        ...statLogs
+        ...logs.fixedAtk,
+        ...statLogs,
+        { txt: `스탯 공격보너스: +${(statBonusPct * 100).toFixed(2)}%`, uid: 'stat_bonus_atk' }
     ];
 
     const finalCritRate = Math.min(Math.max(critRate, 0), 100);

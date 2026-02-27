@@ -439,8 +439,8 @@ function updateUIStateVisuals() {
 
             wrap.innerHTML = useSingleCircle ? `
                 <svg class="debuff-ring-svg single-ring-svg" viewBox="0 0 100 100">
-                    <circle class="ring-bg"   cx="50" cy="50" r="42" />
-                    <circle class="ring-fill" cx="50" cy="50" r="42" transform="rotate(-90 50 50)" />
+                    <path class="ring-bg"   d="M 50, 8 A 42, 42 0 1, 1 50, 92 A 42, 42 0 1, 1 50, 8" />
+                    <path class="ring-fill" d="M 50, 8 A 42, 42 0 1, 1 50, 92 A 42, 42 0 1, 1 50, 8" />
                 </svg>
                 <div class="debuff-icon-img-wrap special-stack-bg" style="background-image:url('images/operators/${mainOp.name}.webp')">
                     <img src="" alt="${s.name}" style="display:none">
@@ -616,11 +616,11 @@ function applyDebuffStateToUI() {
 /** 사용 아이템 설명 데이터 */
 const USABLE_DESCS = {
     '혼란의 약제': {
-        name: '혼란의 약제 (Perplexing Medication)',
+        name: '혼란의 약제',
         desc: '사용 시 궁극기 충전 효율이 24% 증가하며, 300초 동안 지속됩니다.'
     },
     '아츠가 부여된 금속 병': {
-        name: '아츠가 부여된 금속 병 (Kunst Tube)',
+        name: '아츠가 부여된 금속 병',
         desc: '사용 시 주는 모든 피해가 25% 증가하며, 300초 동안 지속됩니다.'
     },
     '제이콥의 유산': {
@@ -628,11 +628,11 @@ const USABLE_DESCS = {
         desc: '사용 시 공격력이 27% 증가하며, 300초 동안 지속됩니다.'
     },
     '푹 삶은 갈비 미삼탕': {
-        name: '푹 삶은 갈비 미삼탕 (Ginseng Meat Stew)',
+        name: '푹 삶은 갈비 미삼탕',
         desc: '사용 시 공격력이 180, 치명타 확률이 11% 증가하며, 300초 동안 지속됩니다.'
     },
     '원기 회복 탕약': {
-        name: '원기 회복 탕약 (Fortifying Infusion)',
+        name: '원기 회복 탕약',
         desc: '사용 시 치명타 확률이 9%, 주는 모든 피해가 18% 증가하며, 300초 동안 지속됩니다.'
     }
 };

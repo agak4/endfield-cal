@@ -776,15 +776,25 @@ h4.has-drag-handle {
     pointer-events: none;
 }
 
-.ring-seg {
+.ring-seg,
+.ring-bg,
+.ring-fill {
     fill: none;
-    stroke: rgba(255, 255, 255, 0.15);
     stroke-width: 4;
     stroke-linecap: round;
     transition: stroke 0.18s ease;
 }
 
-.ring-seg.active {
+.ring-seg {
+    stroke: rgba(255, 255, 255, 0.15);
+}
+
+.ring-bg {
+    stroke: rgba(255, 255, 255, 0.1);
+}
+
+.ring-seg.active,
+.ring-fill {
     stroke: rgba(200, 200, 200, 0.9);
     filter: drop-shadow(0 0 2px rgba(200, 200, 200, 0.5));
 }
@@ -848,18 +858,7 @@ h4.has-drag-handle {
     display: none;
 }
 
-.single-ring-svg .ring-bg {
-    fill: none;
-    stroke: rgba(255, 255, 255, 0.1);
-    stroke-width: 4;
-}
-
 .single-ring-svg .ring-fill {
-    fill: none;
-    stroke: rgba(200, 200, 200, 0.9);
-    stroke-width: 4;
-    stroke-linecap: round;
-    filter: drop-shadow(0 0 2px rgba(200, 200, 200, 0.5));
     display: none;
 }
 
@@ -1057,7 +1056,8 @@ h4.has-drag-handle {
     font-weight: bold;
 }
 
-.debuff-icon-wrap[data-debuff="specialStack"] .ring-seg.active {
+.debuff-icon-wrap[data-debuff="specialStack"] .ring-seg.active,
+.debuff-icon-wrap[data-debuff="specialStack"] .ring-fill {
     stroke: var(--text-gold);
     filter: drop-shadow(0 0 3px rgba(255, 215, 0, 0.6));
 }
