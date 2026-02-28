@@ -799,16 +799,6 @@ h4.has-drag-handle {
     margin-bottom: 4px;
 }
 
-.active-set-badge .set-status {
-    font-size: 0.7rem;
-    color: var(--text-secondary);
-    font-weight: 800;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    display: block;
-    margin-bottom: 8px;
-}
-
 .active-set-badge .set-desc {
     font-size: 0.8rem;
     line-height: 1.6;
@@ -1321,4 +1311,73 @@ h4.has-drag-handle {
     transform: scale(1.02);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
     z-index: 200;
+}
+
+/* ============ 서브 오퍼레이터 장비 슬롯 ============ */
+.sub-gear-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.sub-gear-slots {
+    display: flex;
+    gap: 6px;
+    flex: 1;
+}
+
+.sub-gear-slot {
+    width: 48px;
+    height: 48px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.3);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sub-gear-slot:hover {
+    border-color: rgba(0, 217, 255, 0.5);
+    box-shadow: 0 0 6px rgba(0, 217, 255, 0.2);
+}
+
+.sub-gear-slot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+}
+
+.sub-gear-slot img[src]:not([src=""]) {
+    display: block;
+}
+
+/* ============ 서브 오퍼레이터 스왑 버튼 ============ */
+.sub-swap-btn {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    background: linear-gradient(135deg, rgba(255, 186, 3, 0.15), rgba(255, 186, 3, 0.05));
+    border: 1px solid rgba(255, 186, 3, 0.4);
+    border-radius: 6px;
+    color: var(--text-gold, #FFBA03);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.sub-swap-btn:hover {
+    background: linear-gradient(135deg, rgba(255, 186, 3, 0.3), rgba(255, 186, 3, 0.15));
+    border-color: rgba(255, 186, 3, 0.8);
+    box-shadow: 0 0 8px rgba(255, 186, 3, 0.2);
+    transform: translateY(-1px);
+}
+
+.sub-swap-btn:active {
+    transform: translateY(0);
 }

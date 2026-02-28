@@ -120,12 +120,10 @@
                     </div>
                 </div>
             </div>
-            <div class="u-flex-row u-gap-15">
-                <div id="main-active-set" class="active-set-container u-flex-1"></div>
-                <div class="control-group u-flex-1" id="main-forge-wrapper">
-                    <input type="checkbox" id="main-gear-forge" class="hidden-checkbox">
-                </div>
+            <div id="main-forge-wrapper">
+                <input type="checkbox" id="main-gear-forge" class="hidden-checkbox">
             </div>
+            <div id="main-active-set" class="active-set-container u-flex-1"></div>
             <!-- 서브 오퍼레이터 -->
             <div style="margin-top: 20px;">
                 <h2>서브 오퍼레이터</h2>
@@ -180,11 +178,27 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="sub-set-row" style="margin-top:10px">
-                            <label>장비 세트</label>
-                            <select id="sub-0-set" class="visual-select-btn btn-select">
-                                <option value="">(세트 없음)</option>
-                            </select>
+                        <div class="sub-gear-row" style="margin-top:10px">
+                            <div class="sub-gear-slots">
+                                <div class="sub-gear-slot"
+                                    onclick="openSubGearSidebar(0, 'sub-0-gear-gloves', 'gloves')">
+                                    <img id="sub-0-gear-gloves-image" src="" alt="글러브">
+                                    <input type="hidden" id="sub-0-gear-gloves" value="">
+                                </div>
+                                <div class="sub-gear-slot" onclick="openSubGearSidebar(0, 'sub-0-gear-armor', 'armor')">
+                                    <img id="sub-0-gear-armor-image" src="" alt="방어구">
+                                    <input type="hidden" id="sub-0-gear-armor" value="">
+                                </div>
+                                <div class="sub-gear-slot" onclick="openSubGearSidebar(0, 'sub-0-gear-kit1', 'kit')">
+                                    <img id="sub-0-gear-kit1-image" src="" alt="부품">
+                                    <input type="hidden" id="sub-0-gear-kit1" value="">
+                                </div>
+                                <div class="sub-gear-slot" onclick="openSubGearSidebar(0, 'sub-0-gear-kit2', 'kit')">
+                                    <img id="sub-0-gear-kit2-image" src="" alt="부품">
+                                    <input type="hidden" id="sub-0-gear-kit2" value="">
+                                </div>
+                            </div>
+                            <button class="sub-swap-btn" id="sub-0-swap-btn" onclick="swapMainSub(0)">메인으로 선택</button>
                         </div>
                     </div>
                 </div>
@@ -237,11 +251,27 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="sub-set-row u-mt-10">
-                            <label>장비 세트</label>
-                            <select id="sub-1-set" class="visual-select-btn btn-select">
-                                <option value="">(세트 없음)</option>
-                            </select>
+                        <div class="sub-gear-row" style="margin-top:10px">
+                            <div class="sub-gear-slots">
+                                <div class="sub-gear-slot"
+                                    onclick="openSubGearSidebar(1, 'sub-1-gear-gloves', 'gloves')">
+                                    <img id="sub-1-gear-gloves-image" src="" alt="글러브">
+                                    <input type="hidden" id="sub-1-gear-gloves" value="">
+                                </div>
+                                <div class="sub-gear-slot" onclick="openSubGearSidebar(1, 'sub-1-gear-armor', 'armor')">
+                                    <img id="sub-1-gear-armor-image" src="" alt="방어구">
+                                    <input type="hidden" id="sub-1-gear-armor" value="">
+                                </div>
+                                <div class="sub-gear-slot" onclick="openSubGearSidebar(1, 'sub-1-gear-kit1', 'kit')">
+                                    <img id="sub-1-gear-kit1-image" src="" alt="부품">
+                                    <input type="hidden" id="sub-1-gear-kit1" value="">
+                                </div>
+                                <div class="sub-gear-slot" onclick="openSubGearSidebar(1, 'sub-1-gear-kit2', 'kit')">
+                                    <img id="sub-1-gear-kit2-image" src="" alt="부품">
+                                    <input type="hidden" id="sub-1-gear-kit2" value="">
+                                </div>
+                            </div>
+                            <button class="sub-swap-btn" id="sub-1-swap-btn" onclick="swapMainSub(1)">메인으로 선택</button>
                         </div>
                     </div>
                 </div>
@@ -294,11 +324,27 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="sub-set-row u-mt-10">
-                            <label>장비 세트</label>
-                            <select id="sub-2-set" class="visual-select-btn btn-select">
-                                <option value="">(세트 없음)</option>
-                            </select>
+                        <div class="sub-gear-row" style="margin-top:10px">
+                            <div class="sub-gear-slots">
+                                <div class="sub-gear-slot"
+                                    onclick="openSubGearSidebar(2, 'sub-2-gear-gloves', 'gloves')">
+                                    <img id="sub-2-gear-gloves-image" src="" alt="글러브">
+                                    <input type="hidden" id="sub-2-gear-gloves" value="">
+                                </div>
+                                <div class="sub-gear-slot" onclick="openSubGearSidebar(2, 'sub-2-gear-armor', 'armor')">
+                                    <img id="sub-2-gear-armor-image" src="" alt="방어구">
+                                    <input type="hidden" id="sub-2-gear-armor" value="">
+                                </div>
+                                <div class="sub-gear-slot" onclick="openSubGearSidebar(2, 'sub-2-gear-kit1', 'kit')">
+                                    <img id="sub-2-gear-kit1-image" src="" alt="부품">
+                                    <input type="hidden" id="sub-2-gear-kit1" value="">
+                                </div>
+                                <div class="sub-gear-slot" onclick="openSubGearSidebar(2, 'sub-2-gear-kit2', 'kit')">
+                                    <img id="sub-2-gear-kit2-image" src="" alt="부품">
+                                    <input type="hidden" id="sub-2-gear-kit2" value="">
+                                </div>
+                            </div>
+                            <button class="sub-swap-btn" id="sub-2-swap-btn" onclick="swapMainSub(2)">메인으로 선택</button>
                         </div>
                     </div>
                 </div>

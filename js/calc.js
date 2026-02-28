@@ -387,45 +387,59 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
         });
     };
 
-    // 1. 장비
-    state.mainOp.gears.forEach((gId, i) => {
-        if (!gId) return;
-        const gear = DATA_GEAR.find(g => g.id === gId);
-        if (!gear) return;
-        const isForged = state.mainOp.gearForged[i];
+    // 1. 장비 (메인 + 서브)
+    const gearsToProcess = [
+        { isMain: true, opData: opData, gears: state.mainOp.gears, gearForged: state.mainOp.gearForged, name: opData.name },
+        ...state.subOps.map((sub, idx) => {
+            const sOpData = DATA_OPERATORS.find(o => o.id === sub.id);
+            return { isMain: false, opData: sOpData, gears: sub.gears || [], gearForged: sub.gearForged || [], name: sOpData ? sOpData.name : `서브${idx + 1}` };
+        })
+    ];
 
-        [1, 2].forEach(num => {
-            const statKey = gear[`stat${num}`];
-            if (!statKey) return;
-            const val = isForged && gear[`val${num}_f`] !== undefined
-                ? gear[`val${num}_f`]
-                : gear[`val${num}`];
-            const key = resolveStatKey(statKey, stats);
-            if (stats[key] !== undefined) stats[key] += val;
+    gearsToProcess.forEach(entry => {
+        if (!entry.opData) return;
+        entry.gears.forEach((gId, i) => {
+            if (!gId) return;
+            const gear = DATA_GEAR.find(g => g.id === gId);
+            if (!gear) return;
+            const isForged = entry.gearForged[i];
+
+            // 글로벌 스탯 추가는 메인 오퍼레이터의 장비에만 적용
+            if (entry.isMain) {
+                [1, 2].forEach(num => {
+                    const statKey = gear[`stat${num}`];
+                    if (!statKey) return;
+                    const val = isForged && gear[`val${num}_f`] !== undefined
+                        ? gear[`val${num}_f`]
+                        : gear[`val${num}`];
+                    const key = resolveStatKey(statKey, stats);
+                    if (stats[key] !== undefined) stats[key] += val;
+                });
+            }
+
+            if (gear.trait) {
+                const processGearTrait = (t) => {
+                    // val은 원본 값을 유지하고, 계산 시 parseFloat 적용
+                    const val = isForged && t.val_f !== undefined ? t.val_f : t.val;
+                    let type = t.type;
+                    let stat = t.stat;
+                    const types = Array.isArray(t.type) ? t.type : [t.type];
+                    if (types.includes('스탯')) {
+                        // 값에 % 포함 여부로 결정
+                        const isPercent = (typeof val === 'string' && val.includes('%'));
+                        type = isPercent ? '스탯%' : '스탯';
+                        stat = t.stat === '주스탯' ? entry.opData.mainStat
+                            : t.stat === '부스탯' ? entry.opData.subStat
+                                : t.stat;
+                    }
+                    return { ...t, type, stat, val };
+                };
+
+                const traits = gear.trait.map(processGearTrait);
+                const gearUniqueName = entry.isMain ? `${gear.name}_s${i}` : `${entry.name} ${gear.name}_s${i}`;
+                addEffect(traits, gearUniqueName, 1.0, !entry.isMain, false, false, entry.opData);
+            }
         });
-
-        if (gear.trait) {
-            const processGearTrait = (t) => {
-                // val은 원본 값을 유지하고, 계산 시 parseFloat 적용
-                const val = isForged && t.val_f !== undefined ? t.val_f : t.val;
-                let type = t.type;
-                let stat = t.stat;
-                const types = Array.isArray(t.type) ? t.type : [t.type];
-                if (types.includes('스탯')) {
-                    // 값에 % 포함 여부로 결정
-                    const isPercent = (typeof val === 'string' && val.includes('%'));
-                    type = isPercent ? '스탯%' : '스탯';
-                    stat = t.stat === '주스탯' ? opData.mainStat
-                        : t.stat === '부스탯' ? opData.subStat
-                            : t.stat;
-                }
-                return { ...t, type, stat, val };
-            };
-
-            const traits = gear.trait.map(processGearTrait);
-            const gearUniqueName = `${gear.name}_s${i}`;
-            addEffect(traits, gearUniqueName, 1.0, false, false, false, opData);
-        }
     });
 
     // 2. 무기 (메인 + 서브)
@@ -579,7 +593,7 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
         { opData, setId: getActiveSetID(state.mainOp.gears), name: opData.name },
         ...state.subOps.map((sub, idx) => {
             const sData = DATA_OPERATORS.find(o => o.id === sub.id);
-            return { opData: sData, setId: sub.equipSet, name: sData ? sData.name : `서브${idx + 1}` };
+            return { opData: sData, setId: getActiveSetID(sub.gears || []), name: sData ? sData.name : `서브${idx + 1}` };
         })
     ];
 
@@ -1222,7 +1236,7 @@ function getSetEffects(setId, opData, isSelf = true) {
         if (eff.triggers && !eff.triggers.some(matchTrigger)) return false;
         if (eff.cond === 'phys_only' && opData.type !== 'phys') return false;
         if (eff.cond === 'arts_only' && opData.type !== 'arts') return false;
-        if (isSelf && eff.target === '팀_외') return false;
+        if (isSelf && (eff.target === '팀_외' || eff.targetFilter === '자신 제외')) return false;
         return true;
     }).map(eff => eff.type === '검술사_추가피해'
         ? { ...eff, setId: 'set_swordsman', triggered: true }

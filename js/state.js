@@ -77,9 +77,9 @@ let state = {
         skillLevels: { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' },
     },
     subOps: [
-        { id: null, pot: 0, wepId: null, wepPot: 0, wepState: false, equipSet: null, skillLevels: { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' } },
-        { id: null, pot: 0, wepId: null, wepPot: 0, wepState: false, equipSet: null, skillLevels: { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' } },
-        { id: null, pot: 0, wepId: null, wepPot: 0, wepState: false, equipSet: null, skillLevels: { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' } },
+        { id: null, pot: 0, wepId: null, wepPot: 0, wepState: false, gears: [null, null, null, null], gearForged: [false, false, false, false], skillLevels: { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' } },
+        { id: null, pot: 0, wepId: null, wepPot: 0, wepState: false, gears: [null, null, null, null], gearForged: [false, false, false, false], skillLevels: { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' } },
+        { id: null, pot: 0, wepId: null, wepPot: 0, wepState: false, gears: [null, null, null, null], gearForged: [false, false, false, false], skillLevels: { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' } },
     ],
     subOpsCollapsed: [false, true, true], // 기본값: 첫 번째만 펼침
     enemyUnbalanced: false,
@@ -212,7 +212,13 @@ function updateState() {
         sub.wepId = document.getElementById(`sub-${i}-wep`)?.value || null;
         sub.wepPot = Number(document.getElementById(`sub-${i}-wep-pot`)?.value) || 0;
         sub.wepState = document.getElementById(`sub-${i}-wep-state`)?.checked || false;
-        sub.equipSet = document.getElementById(`sub-${i}-set`)?.value || null;
+        GEAR_SLOT_KEYS.forEach((k, j) => {
+            const newVal = document.getElementById(`sub-${i}-gear-${k}`)?.value || null;
+            if (sub.gears[j] !== newVal) {
+                sub.gears[j] = newVal;
+                sub.gearForged[j] = false; // 장비 변경 시 단조 초기화
+            }
+        });
 
         const content = document.getElementById(`sub-op-content-${i}`);
         if (content) state.subOpsCollapsed[i] = content.classList.contains('collapsed');
@@ -250,7 +256,7 @@ function updateState() {
         if (sub.id) saveOpSettings(sub.id, {
             pot: sub.pot,
             wepId: sub.wepId, wepPot: sub.wepPot, wepState: sub.wepState,
-            equipSet: sub.equipSet,
+            gears: sub.gears, gearForged: sub.gearForged,
             skillLevels: sub.skillLevels
         });
     }
@@ -386,6 +392,10 @@ function loadState() {
         if (!sub.skillLevels) {
             sub.skillLevels = { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' };
         }
+        if (!Array.isArray(sub.gears)) sub.gears = [null, null, null, null];
+        if (!Array.isArray(sub.gearForged)) sub.gearForged = [false, false, false, false];
+        // 구버전 equipSet 필드 제거
+        delete sub.equipSet;
     });
     if (!state.usables) {
         state.usables = DEFAULT_USABLES();

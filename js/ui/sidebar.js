@@ -116,7 +116,10 @@ function selectGear(gearId) {
     const input = document.getElementById(currentGearInputId);
     if (input) {
         input.value = gearId;
-        updateEntityImage(gearId, currentGearInputId.replace('-select', '-image'), 'gears');
+        const imgId = currentGearInputId.includes('-select')
+            ? currentGearInputId.replace('-select', '-image')
+            : currentGearInputId + '-image';
+        updateEntityImage(gearId, imgId, 'gears');
         updateState();
     }
     closeGearSidebar();

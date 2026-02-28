@@ -280,14 +280,6 @@ function setupSubOperatorEvents(i) {
         setupWeaponSelect(`sub-${i}-wep`, `sub-${i}-wep-btn`, () => document.getElementById(`sub-${i}-op`)?.value);
     }
 
-    const setSel = document.getElementById(`sub-${i}-set`);
-    if (setSel) {
-        setSel.classList.add('visual-select-btn', 'btn-select');
-        setSel.innerHTML = '<option value="">== 선택 해제 ==</option>';
-        DATA_SETS.forEach(s => { if (s.id !== 'set_crisis') setSel.add(new Option(s.name, s.id)); });
-        setSel.onchange = updateState;
-    }
-
     setupOperatorSelect(`sub-${i}-op`, `sub-${i}-op-btn`, (opId) => {
         updateSubWeaponList(i, opId);
         applyOpSettingsToUI(opId, 'sub', i);
@@ -325,8 +317,10 @@ function setupSubOperatorEvents(i) {
                 setupPotencyButtons(`sub-${i}-wep-pot`, `sub-${i}-wep-pot-group`);
             }
 
-            const sSel = document.getElementById(`sub-${i}-set`);
-            if (sSel) sSel.value = '';
+            GEAR_SLOT_KEYS.forEach(k => {
+                document.getElementById(`sub-${i}-gear-${k}`).value = '';
+                updateEntityImage('', `sub-${i}-gear-${k}-image`, 'gears');
+            });
 
             updateState();
         };
@@ -641,8 +635,12 @@ function restoreSubOps() {
         setupPotencyButtons(`sub-${i}-wep-pot`, `sub-${i}-wep-pot-group`);
         applyToggle(`sub-${i}-wep-state`, `sub-${i}-wep-toggle`, '기질', s.wepState);
 
-        const setSel = document.getElementById(`sub-${i}-set`);
-        if (setSel) setSel.value = s.equipSet || '';
+        GEAR_SLOT_KEYS.forEach((k, j) => {
+            const gearId = s.gears?.[j] || null;
+            const inp = document.getElementById(`sub-${i}-gear-${k}`);
+            if (inp) inp.value = gearId || '';
+            updateEntityImage(gearId, `sub-${i}-gear-${k}-image`, 'gears');
+        });
 
         const content = document.getElementById(`sub-op-content-${i}`);
         if (content && state.subOpsCollapsed) {
@@ -748,8 +746,12 @@ function applyOpSettingsToUI(opId, type, subIdx) {
             state.subOps[subIdx].skillLevels = { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' };
         }
 
-        const setSel = document.getElementById(`sub-${subIdx}-set`);
-        if (setSel) setSel.value = s?.equipSet || '';
+        GEAR_SLOT_KEYS.forEach((k, j) => {
+            const gearId = s?.gears?.[j] || null;
+            const inp = document.getElementById(`sub-${subIdx}-gear-${k}`);
+            if (inp) inp.value = gearId || '';
+            updateEntityImage(gearId, `sub-${subIdx}-gear-${k}-image`, 'gears');
+        });
     }
 }
 
@@ -825,3 +827,121 @@ function preloadAllImages() {
     }
     setTimeout(loadNextChunk, 300);
 }
+
+// ============================================================
+// 서브 오퍼레이터 기어 사이드바
+// ============================================================
+
+/**
+ * 서브 오퍼레이터 장비 슬롯 클릭 시 사이드바를 연다.
+ * 기존 openGearSidebar와 동일하게 currentGearInputId를 설정하고 사이드바를 렌더링한다.
+ * @param {number} subIdx  - 서브 오퍼레이터 인덱스 (0~2)
+ * @param {string} inputId - 장비 hidden input 요소의 ID
+ * @param {string} partType - 장비 파트 타입 ('gloves' | 'armor' | 'kit')
+ */
+window.openSubGearSidebar = function (subIdx, inputId, partType) {
+    openGearSidebar(inputId, partType);
+};
+
+// ============================================================
+// 메인/서브 오퍼레이터 스왑
+// ============================================================
+
+/**
+ * 서브 오퍼레이터 i를 메인 오퍼레이터로 올리고, 기존 메인을 해당 서브 슬롯으로 내린다.
+ * - 서브 오퍼레이터 선택 해제 → 메인에서 기존 메인 선택 해제 → 메인에서 서브 오퍼레이터 선택
+ *   → 서브 슬롯에 기존 메인 오퍼레이터 선택 과 동일한 동작이다.
+ * @param {number} i - 서브 오퍼레이터 인덱스 (0~2)
+ */
+window.swapMainSub = function (i) {
+    const sub = state.subOps[i];
+    const subId = sub.id;
+    if (!subId) return;
+
+    // 현재 메인 정보 저장
+    const prevMainId = state.mainOp.id;
+    const prevMainPot = state.mainOp.pot;
+    const prevMainWepId = state.mainOp.wepId;
+    const prevMainWepPot = state.mainOp.wepPot;
+    const prevMainWepState = state.mainOp.wepState;
+    const prevMainGears = [...state.mainOp.gears];
+    const prevMainGearForged = [...state.mainOp.gearForged];
+    const prevMainGearForge = state.mainOp.gearForge;
+    const prevMainSkillLevels = { ...state.mainOp.skillLevels };
+    const prevMainSpecialStack = { ...state.mainOp.specialStack };
+    const prevMainSkillSequence = state.skillSequence ? [...state.skillSequence] : [];
+    const prevMainDebuffState = deepClone(state.debuffState);
+    const prevMainUsables = deepClone(state.usables);
+
+    // --- 1. 메인 오퍼레이터를 새 오퍼레이터로 교체 ---
+    const mainOpSel = document.getElementById('main-op-select');
+    const subOpData = DATA_OPERATORS.find(o => o.id === subId);
+
+    mainOpSel.value = subId;
+    setSelectBtnText('main-op-select-btn', subOpData);
+    updateMainWeaponList(subId);
+    applyOpSettingsToUI(subId, 'main');
+    updateEntityImage(subId, 'main-op-image', 'operators');
+    updateEnhancedSkillButtons?.(subId);
+    updateStaticCycleButtonsElementColor?.(subId);
+
+    // --- 2. 서브 슬롯 i에 기존 메인 오퍼레이터 배치 ---
+    const subOpSel = document.getElementById(`sub-${i}-op`);
+    const prevMainOpData = DATA_OPERATORS.find(o => o.id === prevMainId);
+
+    subOpSel.value = prevMainId || '';
+    setSelectBtnText(`sub-${i}-op-btn`, prevMainOpData || null);
+    document.getElementById(`sub-${i}-summary`).innerText = prevMainOpData?.name || '';
+    updateEntityImage(prevMainId, `sub-${i}-image`, 'operators');
+
+    if (prevMainId) {
+        updateSubWeaponList(i, prevMainId);
+        // 무기 복원
+        const wepSel = document.getElementById(`sub-${i}-wep`);
+        if (prevMainWepId && wepSel?.querySelector(`option[value="${prevMainWepId}"]`)) {
+            setSubWepUI(i, prevMainWepId);
+        } else {
+            setSubWepUI(i, '');
+        }
+        // 잠재 복원
+        document.getElementById(`sub-${i}-pot`).value = prevMainPot;
+        setupPotencyButtons(`sub-${i}-pot`, `sub-${i}-pot-group`);
+        document.getElementById(`sub-${i}-wep-pot`).value = prevMainWepPot;
+        setupPotencyButtons(`sub-${i}-wep-pot`, `sub-${i}-wep-pot-group`);
+        applyToggle(`sub-${i}-wep-state`, `sub-${i}-wep-toggle`, '기질', prevMainWepState);
+        // 장비 복원
+        GEAR_SLOT_KEYS.forEach((k, j) => {
+            const gearId = prevMainGears[j] || null;
+            const inp = document.getElementById(`sub-${i}-gear-${k}`);
+            if (inp) inp.value = gearId || '';
+            updateEntityImage(gearId, `sub-${i}-gear-${k}-image`, 'gears');
+        });
+        // 스킬 레벨 복원
+        state.subOps[i].skillLevels = { ...prevMainSkillLevels };
+    } else {
+        // 기존 메인이 없었으면 슬롯 초기화
+        setSubWepUI(i, '');
+        document.getElementById(`sub-${i}-pot`).value = 0;
+        setupPotencyButtons(`sub-${i}-pot`, `sub-${i}-pot-group`);
+        document.getElementById(`sub-${i}-wep-pot`).value = 0;
+        setupPotencyButtons(`sub-${i}-wep-pot`, `sub-${i}-wep-pot-group`);
+        applyToggle(`sub-${i}-wep-state`, `sub-${i}-wep-toggle`, '기질', false);
+        GEAR_SLOT_KEYS.forEach(k => {
+            const inp = document.getElementById(`sub-${i}-gear-${k}`);
+            if (inp) inp.value = '';
+            updateEntityImage('', `sub-${i}-gear-${k}-image`, 'gears');
+        });
+        state.subOps[i].skillLevels = { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' };
+    }
+
+    // state 즉시 반영
+    state.subOps[i].id = prevMainId;
+    state.subOps[i].pot = prevMainPot;
+    state.subOps[i].wepId = prevMainWepId;
+    state.subOps[i].wepPot = prevMainWepPot;
+    state.subOps[i].wepState = prevMainWepState;
+    state.subOps[i].gears = [...prevMainGears];
+    state.subOps[i].gearForged = [...prevMainGearForged];
+
+    updateState();
+};
