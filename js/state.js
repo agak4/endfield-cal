@@ -291,6 +291,7 @@ function getTargetState() {
                 setUnbalanced: (val) => { cs.enemyUnbalanced = val; },
                 getSpecialStack: () => cs.specialStack,
                 setSpecialStack: (val) => { cs.specialStack = val; },
+                mainOp: { ...state.mainOp, specialStack: cs.specialStack }
             };
         }
     }
@@ -303,6 +304,7 @@ function getTargetState() {
         setUnbalanced: (val) => { state.enemyUnbalanced = val; },
         getSpecialStack: () => state.mainOp.specialStack,
         setSpecialStack: (val) => { state.mainOp.specialStack = val; },
+        mainOp: state.mainOp
     };
 }
 

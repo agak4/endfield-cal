@@ -245,7 +245,7 @@ function initUI() {
             const skillDef = opData?.skill?.find(s => s?.skillType?.includes(type));
             if (skillDef) {
                 const content = AppTooltip.renderSkillTooltip(type, skillDef, opData, '', window.lastCalcResult?.activeEffects || [], state);
-                AppTooltip.showCustom(content, e, { width: '260px' });
+                AppTooltip.showCustom(content, e, { width: '350px' });
             }
         };
         btn.onmouseleave = () => AppTooltip.hide();
@@ -483,7 +483,9 @@ window.updateSkillLevelButtonsUI = function () {
     document.querySelectorAll('.cycle-btn').forEach(btn => {
         let type = btn.dataset.type;
         if (!type) return;
-        let baseType = type.startsWith('강화 ') ? type.substring(3) : type;
+        const opData = DATA_OPERATORS.find(o => o.id === (typeof state !== 'undefined' && state.mainOp ? state.mainOp.id : null));
+        const skillDef = opData?.skill?.find(s => s?.skillType?.includes(type));
+        let baseType = skillDef?.masterySource || (type.startsWith('강화 ') ? type.substring(3) : type);
 
         let container = btn.querySelector('.skill-level-container');
         if (!container) {
@@ -526,7 +528,7 @@ window.updateSkillLevelButtonsUI = function () {
                     const opData = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
                     const skillDef = opData?.skill?.find(s => s?.skillType?.includes(type));
                     if (skillDef) {
-                        const tooltipWidth = btn.classList.contains('cycle-btn-enhanced') ? '350px' : '260px';
+                        const tooltipWidth = '350px';
                         const content = AppTooltip.renderSkillTooltip(type, skillDef, opData, '', window.lastCalcResult?.activeEffects || [], state, lvl);
                         AppTooltip.showCustom(content, e, { width: tooltipWidth });
                     }

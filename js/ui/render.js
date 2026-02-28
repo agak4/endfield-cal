@@ -646,8 +646,8 @@ function renderCyclePerSkill(cycleRes) {
         const abnormals = allItems.filter(i => i.type === 'abnormal');
 
         abnormals.sort((a, b) => {
-            const isAProc = a.key.startsWith('무기') || a.key.startsWith('재능') || a.key.startsWith('잠재');
-            const isBProc = b.key.startsWith('무기') || b.key.startsWith('재능') || b.key.startsWith('잠재');
+            const isAProc = a.key.includes('무기') || a.key.includes('재능') || a.key.includes('잠재');
+            const isBProc = b.key.includes('무기') || b.key.includes('재능') || b.key.includes('잠재');
             if (isAProc && !isBProc) return 1;
             if (!isAProc && isBProc) return -1;
             return 0; // 나머지는 원래 순서(계산 순서) 유지

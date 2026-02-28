@@ -347,7 +347,7 @@ const AppTooltip = {
                 ...t,
                 _typeStr: typeStr,
                 _isUnbalanced: typeIncludes('불균형 목표에 주는 피해'),
-                sourceLabel: isPotential ? `잠재${potLevel}` : sourceArr.join('/'),
+                sourceLabel: isPotential ? `${potLevel}잠재` : sourceArr.join('/'),
                 active: !isPotential || currentPot >= potLevel,
                 isPotential,
                 sortWeight,
@@ -370,8 +370,20 @@ const AppTooltip = {
         };
 
         // 스킬 / 재능 / 잠재 데이터를 분류
-        op.skill?.forEach(s => processData([[s]], s?.skillType || '스킬', 0));
-        op.talents?.forEach((t, i) => processData([t], `재능${i + 1}`, 1));
+        op.skill?.forEach(s => {
+            let skillDef = { ...s };
+            let level = 'M3';
+            if (typeof state !== 'undefined' && state.mainOp && state.mainOp.id === op.id) {
+                const skillNameForLvl = Array.isArray(s.skillType) ? s.skillType[0] : (s.skillType || '');
+                const baseType = s.masterySource || (skillNameForLvl.startsWith('강화 ') ? skillNameForLvl.substring(3) : skillNameForLvl);
+                level = state.mainOp.skillLevels?.[baseType] || 'M3';
+            }
+            if (s.levels && s.levels[level]) {
+                Object.assign(skillDef, s.levels[level]);
+            }
+            processData([[skillDef]], skillDef.skillType || '스킬', 0);
+        });
+        op.talents?.forEach((t, i) => processData([t], `${i + 1}재능`, 1));
         op.potential?.forEach((p, i) => processData([p], '잠재', 2, i + 1));
 
         /**
@@ -392,7 +404,7 @@ const AppTooltip = {
         const extractDescs = (pool, labelPrefix) =>
             (pool || []).map((t, i) => {
                 const entry = t.find(e => e.desc);
-                return entry ? `[${labelPrefix}${i + 1}] ${this.colorizeText(entry.desc)}` : null;
+                return entry ? `[${i + 1}${labelPrefix}] ${this.colorizeText(entry.desc)}` : null;
             }).filter(Boolean);
 
         const descHtml = [...extractDescs(op.talents, '재능'), ...extractDescs(op.potential, '잠재')].join('<br>');
@@ -538,7 +550,7 @@ const AppTooltip = {
         if (!skillDataOriginal) return '';
 
         let skillData = { ...skillDataOriginal };
-        const baseTypeForLvl = skillType.startsWith('강화 ') ? skillType.substring(3) : skillType;
+        const baseTypeForLvl = skillDataOriginal.masterySource || (skillType.startsWith('강화 ') ? skillType.substring(3) : skillType);
         const selectedLevel = overrideLevel || st?.mainOp?.skillLevels?.[baseTypeForLvl] || 'M3';
         if (skillDataOriginal.levels && skillDataOriginal.levels[selectedLevel]) {
             const lvlData = skillDataOriginal.levels[selectedLevel];
@@ -697,21 +709,31 @@ const AppTooltip = {
         // 스킬 bonus 트리거 발동 여부 확인 후 표시
         const opDataLocal = opData || DATA_OPERATORS?.find(o => o.id === st?.mainOp?.id);
         if (st && skillType && opDataLocal) {
-            const skillDef = opDataLocal.skill?.find(s => s.skillType?.includes(skillType));
-            (Array.isArray(skillDef?.bonus) ? skillDef.bonus : []).forEach(b => {
-                const opTrMet = !b.trigger || evaluateTrigger(b.trigger, st, opDataLocal, null, false, null, true);
-                const tgTrMet = !b.triggerTarget || evaluateTrigger(b.triggerTarget, st, opDataLocal, null, true, null, true);
-                if ((b.trigger || b.triggerTarget) && opTrMet && tgTrMet) {
-                    const triggers = [
-                        ...(Array.isArray(b.trigger) ? b.trigger : (b.trigger ? [b.trigger] : [])),
-                        ...(Array.isArray(b.triggerTarget) ? b.triggerTarget : (b.triggerTarget ? [b.triggerTarget] : []))
-                    ];
-                    const triggerTxt = triggers.join(', ');
-                    if (!extraEffects.some(ee => ee.includes(triggerTxt))) {
-                        extraEffects.push(`${triggerTxt} (보너스 발동)`);
-                    }
+            const rawSkill = opDataLocal.skill?.find(s => s.skillType?.includes(skillType));
+            if (rawSkill) {
+                let skillDef = { ...rawSkill };
+                const skillNameForLvl = Array.isArray(rawSkill.skillType) ? rawSkill.skillType[0] : (rawSkill.skillType || '');
+                const baseType = rawSkill.masterySource || (skillNameForLvl.startsWith('강화 ') ? skillNameForLvl.substring(3) : skillNameForLvl);
+                const level = st?.mainOp?.skillLevels?.[baseType] || 'M3';
+                if (rawSkill.levels && rawSkill.levels[level]) {
+                    Object.assign(skillDef, rawSkill.levels[level]);
                 }
-            });
+
+                (Array.isArray(skillDef.bonus) ? skillDef.bonus : []).forEach(b => {
+                    const opTrMet = !b.trigger || evaluateTrigger(b.trigger, st, opDataLocal, null, false, null, true);
+                    const tgTrMet = !b.triggerTarget || evaluateTrigger(b.triggerTarget, st, opDataLocal, null, true, null, true);
+                    if ((b.trigger || b.triggerTarget) && opTrMet && tgTrMet) {
+                        const triggers = [
+                            ...(Array.isArray(b.trigger) ? b.trigger : (b.trigger ? [b.trigger] : [])),
+                            ...(Array.isArray(b.triggerTarget) ? b.triggerTarget : (b.triggerTarget ? [b.triggerTarget] : []))
+                        ];
+                        const triggerTxt = triggers.join(', ');
+                        if (!extraEffects.some(ee => ee.includes(triggerTxt))) {
+                            extraEffects.push(`${triggerTxt} (보너스 발동)`);
+                        }
+                    }
+                });
+            }
         }
 
         if (filteredEffects.length === 0 && extraEffects.length === 0) return '';

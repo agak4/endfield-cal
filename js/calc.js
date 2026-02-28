@@ -257,6 +257,8 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
                 const sourceElem = effectiveOpData.element || effectiveOpData.type;
                 const targetElem = opData.element || opData.type;
                 if (sourceElem === targetElem) baseTriggerMet = false;
+            } else if (eff.targetFilter === '자신 제외') {
+                if (effectiveOpData.id === opData.id) baseTriggerMet = false;
             }
 
             const typeArr = eff.type ? (Array.isArray(eff.type) ? eff.type : [eff.type]).map(item => typeof item === 'string' ? { type: item } : item) : [];
@@ -476,14 +478,25 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
     if (opData.skill) {
         opData.skill.forEach((s, i) => {
             const skName = (s.skillType && Array.isArray(s.skillType)) ? s.skillType.join('/') : `스킬${i + 1}`;
-            addEffect([s], `${opData.name} ${skName}`, 1.0, false, true, false, opData);
+
+            // 마스터리 레벨에 따른 스킬 데이터 병합
+            let skillDef = { ...s };
+            const skillNameForLvl = Array.isArray(s.skillType) ? s.skillType[0] : (s.skillType || '');
+            const baseType = s.masterySource || (skillNameForLvl.startsWith('강화 ') ? skillNameForLvl.substring(3) : skillNameForLvl);
+            const level = state.mainOp?.skillLevels?.[baseType] || 'M3';
+
+            if (s.levels && s.levels[level]) {
+                Object.assign(skillDef, s.levels[level]);
+            }
+
+            addEffect([skillDef], `${opData.name} ${skName}`, 1.0, false, true, false, opData);
         });
     }
     if (opData.talents) {
         opData.talents.forEach((t, i) => {
             if (!t || t.length === 0) return;
             const merged = mergeEffects(t);
-            addEffect(merged, `${opData.name} 재능${i + 1}`, 1.0, false, false, false, opData, `${opData.id}_talent${i}`);
+            addEffect(merged, `${opData.name} ${i + 1}재능`, 1.0, false, false, false, opData, `${opData.id}_talent${i}`);
         });
     }
 
@@ -492,7 +505,20 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
         const pot = opData.potential?.[p];
         if (!pot || pot.length === 0) continue;
         const merged = mergeEffects(pot);
-        addEffect(merged, `${opData.name} 잠재${p + 1}`, 1.0, false, false, false, opData, `${opData.id}_pot${p}`);
+
+        const processedPot = merged.map(eff => {
+            if (eff.levels) {
+                const skillNameForLvl = Array.isArray(eff.skillType) ? eff.skillType[0] : (eff.skillType || '');
+                const baseType = eff.masterySource || (skillNameForLvl.startsWith('강화 ') ? skillNameForLvl.substring(3) : skillNameForLvl);
+                const level = state.mainOp?.skillLevels?.[baseType] || 'M3';
+                if (eff.levels[level]) {
+                    return { ...eff, ...eff.levels[level] };
+                }
+            }
+            return eff;
+        });
+
+        addEffect(processedPot, `${opData.name} ${p + 1}잠재`, 1.0, false, false, false, opData, `${opData.id}_pot${p}`);
     }
 
     // 4. 서브 오퍼레이터 시너지
@@ -505,14 +531,21 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
         if (subOpData.skill) {
             subOpData.skill.forEach((s, i) => {
                 const skName = (s.skillType && Array.isArray(s.skillType)) ? s.skillType.join('/') : `스킬${i + 1}`;
-                addEffect([s], `${prefix} ${skName}`, 1.0, true, true, false, subOpData);
+
+                // 서브 오퍼레이터는 현재 UI상 레벨 조절 불가하므로 M3 고정
+                let skillDef = { ...s };
+                if (s.levels && s.levels['M3']) {
+                    Object.assign(skillDef, s.levels['M3']);
+                }
+
+                addEffect([skillDef], `${prefix} ${skName}`, 1.0, true, true, false, subOpData);
             });
         }
         if (subOpData.talents) {
             subOpData.talents.forEach((t, ti) => {
                 if (!t || t.length === 0) return;
                 const merged = mergeEffects(t);
-                addEffect(merged, `${prefix} 재능${ti + 1}`, 1.0, true, false, false, subOpData, `${subOpData.id}_talent${ti}`);
+                addEffect(merged, `${prefix} ${ti + 1}재능`, 1.0, true, false, false, subOpData, `${subOpData.id}_talent${ti}`);
             });
         }
 
@@ -521,7 +554,18 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
             const pot = subOpData.potential?.[sp];
             if (!pot || pot.length === 0) continue;
             const merged = mergeEffects(pot);
-            addEffect(merged, `${prefix} 잠재${sp + 1}`, 1.0, true, false, false, subOpData, `${subOpData.id}_pot${sp}`);
+
+            const processedPot = merged.map(eff => {
+                if (eff.levels) {
+                    const level = 'M3';
+                    if (eff.levels[level]) {
+                        return { ...eff, ...eff.levels[level] };
+                    }
+                }
+                return eff;
+            });
+
+            addEffect(processedPot, `${prefix} ${sp + 1}잠재`, 1.0, true, false, false, subOpData, `${subOpData.id}_pot${sp}`);
         }
     });
 
@@ -1280,8 +1324,10 @@ function evaluateTrigger(trigger, state, opData, triggerType, isTargetOnly = fal
                 if (t === '넘어뜨리기') checkTypes.push('강제 넘어뜨리기');
 
                 const hasInSkill = skillPool.some(s => {
-                    if (!s.type) return false;
-                    const typeItems = Array.isArray(s.type) ? s.type : [s.type];
+                    // 마스터리 레벨 데이터 고려 (기본 M3 참조)
+                    const skillData = (s.levels && s.levels.M3) ? { ...s, ...s.levels.M3 } : s;
+                    if (!skillData.type) return false;
+                    const typeItems = Array.isArray(skillData.type) ? skillData.type : [skillData.type];
                     return typeItems.some(item => {
                         const tName = (typeof item === 'object' && item !== null) ? item.type : item;
                         return Array.isArray(tName) ? tName.some(tn => checkTypes.includes(tn)) : checkTypes.includes(tName);
@@ -1338,7 +1384,7 @@ function calcSingleSkillDamage(type, state, res) {
 
     let skillDef = { ...originalSkillDef };
     const skillNameForLvl = Array.isArray(type) ? type[0] : type;
-    const baseTypeForLvl = skillNameForLvl.startsWith('강화 ') ? skillNameForLvl.substring(3) : skillNameForLvl;
+    const baseTypeForLvl = originalSkillDef.masterySource || (skillNameForLvl.startsWith('강화 ') ? skillNameForLvl.substring(3) : skillNameForLvl);
     const selectedLevel = state.mainOp?.skillLevels?.[baseTypeForLvl] || 'M3';
 
     if (originalSkillDef.levels && originalSkillDef.levels[selectedLevel]) {
@@ -1348,6 +1394,7 @@ function calcSingleSkillDamage(type, state, res) {
         if (lvlData.bonus !== undefined) skillDef.bonus = lvlData.bonus;
         if (lvlData.cost !== undefined) skillDef.cost = lvlData.cost;
         if (lvlData.target !== undefined) skillDef.target = lvlData.target;
+        if (lvlData.element !== undefined) skillDef.element = lvlData.element;
         if (lvlData.desc !== undefined) skillDef.desc = lvlData.desc;
     }
 
@@ -1479,7 +1526,9 @@ function calcSingleSkillDamage(type, state, res) {
         let nextAttachType = null;
         let isForcedAbnormal = false;
 
-        if (typeName.includes('부착')) {
+        if (typeName.includes('소모')) {
+            nextAttachType = null;
+        } else if (typeName.includes('부착')) {
             nextAttachType = typeName;
         } else if (typeName.includes('부여')) {
             const base = typeName.replace(' 부여', '');
@@ -1908,7 +1957,7 @@ function calculateCycleDamage(currentState, baseRes, forceMaxStack = false) {
 
         let skillDef = { ...originalSkillDef };
         const skillNameForLvl = Array.isArray(type) ? type[0] : type;
-        const baseTypeForLvl = skillNameForLvl.startsWith('강화 ') ? skillNameForLvl.substring(3) : skillNameForLvl;
+        const baseTypeForLvl = originalSkillDef.masterySource || (skillNameForLvl.startsWith('강화 ') ? skillNameForLvl.substring(3) : skillNameForLvl);
         const selectedLevel = currentState.mainOp?.skillLevels?.[baseTypeForLvl] || 'M3';
         if (originalSkillDef.levels && originalSkillDef.levels[selectedLevel]) {
             const lvlData = originalSkillDef.levels[selectedLevel];
@@ -1953,7 +2002,7 @@ function calculateCycleDamage(currentState, baseRes, forceMaxStack = false) {
 
         let skillDef = { ...originalSkillDef };
         const skillNameForLvl = Array.isArray(type) ? type[0] : type;
-        const baseTypeForLvl = skillNameForLvl.startsWith('강화 ') ? skillNameForLvl.substring(3) : skillNameForLvl;
+        const baseTypeForLvl = originalSkillDef.masterySource || (skillNameForLvl.startsWith('강화 ') ? skillNameForLvl.substring(3) : skillNameForLvl);
         const selectedLevel = currentState.mainOp?.skillLevels?.[baseTypeForLvl] || 'M3';
         if (originalSkillDef.levels && originalSkillDef.levels[selectedLevel]) {
             const lvlData = originalSkillDef.levels[selectedLevel];
@@ -2058,11 +2107,6 @@ function calculateCycleDamage(currentState, baseRes, forceMaxStack = false) {
 
         if (skillData.abnormalDmgs) {
             Object.entries(skillData.abnormalDmgs).forEach(([aName, aDmg]) => {
-                // [Fix] '아츠 소모' 종류는 사이클 합계 및 리스트에서 제외 (데미지 0 취급)
-                if (aName.includes('소모(이상)')) {
-                    skillTotal -= aDmg; // skillTotal에서 해당 데미지 차감
-                    return;
-                }
                 if (!perAbnormal[aName]) perAbnormal[aName] = { dmg: 0, count: 0, elements: [] };
                 perAbnormal[aName].dmg += aDmg;
                 perAbnormal[aName].count += 1;
