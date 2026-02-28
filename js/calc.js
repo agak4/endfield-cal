@@ -1236,7 +1236,7 @@ function getSetEffects(setId, opData, isSelf = true) {
         if (eff.triggers && !eff.triggers.some(matchTrigger)) return false;
         if (eff.cond === 'phys_only' && opData.type !== 'phys') return false;
         if (eff.cond === 'arts_only' && opData.type !== 'arts') return false;
-        if (isSelf && (eff.target === '팀_외' || eff.targetFilter === '자신 제외')) return false;
+        if (isSelf && eff.targetFilter === '자신 제외') return false;
         return true;
     }).map(eff => eff.type === '검술사_추가피해'
         ? { ...eff, setId: 'set_swordsman', triggered: true }

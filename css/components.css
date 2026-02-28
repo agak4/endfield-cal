@@ -271,8 +271,8 @@
 }
 
 .potency-btn {
-    width: 35px;
-    height: 35px;
+    width: 30px;
+    height: 30px;
     border: 1px solid rgba(0, 217, 255, 0.3);
     background: rgba(0, 0, 0, 0.4);
     color: var(--text-primary);
