@@ -144,6 +144,7 @@
 
 .cycle-btn span {
     font-size: 0.85rem;
+    margin-bottom: 10px;
 }
 
 .skill-level-container {
@@ -189,51 +190,58 @@
     font-weight: bold;
 }
 
-.mastery-svg {
-    width: 14px;
-    height: 14px;
+.cycle-btn .mastery-svg {
+    width: 20px;
+    height: 20px;
+    display: block;
 }
 
 .mastery-svg polygon {
-    fill: rgba(255, 255, 255, 0.25);
-    transition: fill 0.15s;
+    fill: rgba(255, 255, 255, 0.15);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Default state: white polygons based on M level */
-.skill-lvl-btn[data-level="M1"] .mastery-svg polygon.m1-on {
-    fill: #fff;
+.skill-lvl-btn[data-level="M1"] .m1-on {
+    fill: rgba(255, 255, 255, 0.7);
 }
 
-.skill-lvl-btn[data-level="M2"] .mastery-svg polygon.m1-on,
-.skill-lvl-btn[data-level="M2"] .mastery-svg polygon.m2-on {
-    fill: #fff;
+.skill-lvl-btn[data-level="M2"] .m1-on,
+.skill-lvl-btn[data-level="M2"] .m2-on {
+    fill: rgba(255, 255, 255, 0.7);
 }
 
-.skill-lvl-btn[data-level="M3"] .mastery-svg polygon.m1-on,
-.skill-lvl-btn[data-level="M3"] .mastery-svg polygon.m2-on,
-.skill-lvl-btn[data-level="M3"] .mastery-svg polygon.m3-on {
-    fill: #fff;
+.skill-lvl-btn[data-level="M3"] .m1-on,
+.skill-lvl-btn[data-level="M3"] .m2-on,
+.skill-lvl-btn[data-level="M3"] .m3-on {
+    fill: rgba(255, 255, 255, 0.7);
 }
 
-/* Active state: background is accent (yellow), dark polygons become semi-transparent black */
+/* Hover state improvement */
+.skill-lvl-btn:hover .mastery-svg polygon {
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.3));
+}
+
+/* Active state: background is accent (yellow), polygons become more distinct */
 .skill-lvl-btn.active .mastery-svg polygon {
-    fill: rgba(0, 0, 0, 0.4);
+    fill: rgba(0, 0, 0, 0.2);
 }
 
-.skill-lvl-btn.active[data-level="M1"] .mastery-svg polygon.m1-on {
-    fill: #fff;
+.skill-lvl-btn.active[data-level="M1"] .m1-on {
+    fill: rgba(255, 255, 255, 0.7);
 }
 
-.skill-lvl-btn.active[data-level="M2"] .mastery-svg polygon.m1-on,
-.skill-lvl-btn.active[data-level="M2"] .mastery-svg polygon.m2-on {
-    fill: #fff;
+.skill-lvl-btn.active[data-level="M2"] .m1-on,
+.skill-lvl-btn.active[data-level="M2"] .m2-on {
+    fill: rgba(255, 255, 255, 0.7);
 }
 
-.skill-lvl-btn.active[data-level="M3"] .mastery-svg polygon.m1-on,
-.skill-lvl-btn.active[data-level="M3"] .mastery-svg polygon.m2-on,
-.skill-lvl-btn.active[data-level="M3"] .mastery-svg polygon.m3-on {
-    fill: #fff;
+.skill-lvl-btn.active[data-level="M3"] .m1-on,
+.skill-lvl-btn.active[data-level="M3"] .m2-on,
+.skill-lvl-btn.active[data-level="M3"] .m3-on {
+    fill: rgba(255, 255, 255, 0.7);
 }
+
 
 .cycle-sequence-display {
     display: flex;
@@ -495,10 +503,9 @@
     color: var(--accent);
 }
 
-/* tile h4 and dmg-inc-box h4 unified */
 .tile h4,
 .dmg-inc-box h4 {
-    font-size: 0.8rem;
+    font-size: 1rem;
     margin-bottom: 10px;
     color: var(--text-muted);
     letter-spacing: 0.3px;
@@ -579,7 +586,7 @@ h4.has-drag-handle {
 }
 
 .sub-stat-item span {
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 600;
     color: var(--text-primary);
 }
@@ -1096,7 +1103,7 @@ h4.has-drag-handle {
 }
 
 .dmg-inc-col-header label {
-    font-size: 0.75rem;
+    font-size: 0.9rem;
     color: var(--text-muted);
     text-align: center;
 }

@@ -245,7 +245,7 @@ function initUI() {
             const skillDef = opData?.skill?.find(s => s?.skillType?.includes(type));
             if (skillDef) {
                 const content = AppTooltip.renderSkillTooltip(type, skillDef, opData, '', window.lastCalcResult?.activeEffects || [], state);
-                AppTooltip.showCustom(content, e, { width: '260px' });
+                AppTooltip.showCustom(content, e, { width: '350px' });
             }
         };
         btn.onmouseleave = () => AppTooltip.hide();
@@ -483,7 +483,9 @@ window.updateSkillLevelButtonsUI = function () {
     document.querySelectorAll('.cycle-btn').forEach(btn => {
         let type = btn.dataset.type;
         if (!type) return;
-        let baseType = type.startsWith('강화 ') ? type.substring(3) : type;
+        const opData = DATA_OPERATORS.find(o => o.id === (typeof state !== 'undefined' && state.mainOp ? state.mainOp.id : null));
+        const skillDef = opData?.skill?.find(s => s?.skillType?.includes(type));
+        let baseType = skillDef?.masterySource || (type.startsWith('강화 ') ? type.substring(3) : type);
 
         let container = btn.querySelector('.skill-level-container');
         if (!container) {
@@ -496,10 +498,13 @@ window.updateSkillLevelButtonsUI = function () {
                 lvlBtn.className = 'skill-lvl-btn';
                 lvlBtn.dataset.level = lvl;
                 lvlBtn.innerHTML = `
-                    <svg viewBox="0 0 100 100" class="mastery-svg">
-                        <polygon class="m1-on" points="10,50 21,31 43,31 54,50 43,69 21,69" />
-                        <polygon class="m3-on" points="46,29 57,10 79,10 90,29 79,48 57,48" />
-                        <polygon class="m2-on" points="46,71 57,52 79,52 90,71 79,90 57,90" />
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="mastery-svg">
+                        <!-- M1: Left center -->
+                        <polygon class="m1-on" points="5,50 17.5,28.4 42.5,28.4 55,50 42.5,71.6 17.5,71.6" />
+                        <!-- M3: Top right -->
+                        <polygon class="m3-on" points="45,29.1 57.5,7.5 82.5,7.5 95,29.1 82.5,50.7 57.5,50.7" />
+                        <!-- M2: Bottom right -->
+                        <polygon class="m2-on" points="45,70.9 57.5,49.3 82.5,49.3 95,70.9 82.5,92.5 57.5,92.5" />
                     </svg>
                 `;
                 lvlBtn.onclick = (e) => {
@@ -523,7 +528,7 @@ window.updateSkillLevelButtonsUI = function () {
                     const opData = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
                     const skillDef = opData?.skill?.find(s => s?.skillType?.includes(type));
                     if (skillDef) {
-                        const tooltipWidth = btn.classList.contains('cycle-btn-enhanced') ? '350px' : '260px';
+                        const tooltipWidth = '350px';
                         const content = AppTooltip.renderSkillTooltip(type, skillDef, opData, '', window.lastCalcResult?.activeEffects || [], state, lvl);
                         AppTooltip.showCustom(content, e, { width: tooltipWidth });
                     }
@@ -706,6 +711,12 @@ function applyOpSettingsToUI(opId, type, subIdx) {
             : ['일반 공격', '배틀 스킬', '연계 스킬', '궁극기'].map((type, idx) =>
                 ({ id: `seq_def_${Date.now()}_${idx}`, type, customState: null }));
 
+        if (s?.skillLevels) {
+            state.mainOp.skillLevels = { ...s.skillLevels };
+        } else {
+            state.mainOp.skillLevels = { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' };
+        }
+
         state.mainOp.specialStack = s?.specialStack ? { ...s.specialStack } : {};
         state.selectedSeqId = null;
 
@@ -728,6 +739,12 @@ function applyOpSettingsToUI(opId, type, subIdx) {
         document.getElementById(`sub-${subIdx}-wep-pot`).value = s?.wepPot || 0;
         setupPotencyButtons(`sub-${subIdx}-wep-pot`, `sub-${subIdx}-wep-pot-group`);
         applyToggle(`sub-${subIdx}-wep-state`, `sub-${subIdx}-wep-toggle`, '기질', s?.wepState || false);
+
+        if (s?.skillLevels) {
+            state.subOps[subIdx].skillLevels = { ...s.skillLevels };
+        } else {
+            state.subOps[subIdx].skillLevels = { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' };
+        }
 
         const setSel = document.getElementById(`sub-${subIdx}-set`);
         if (setSel) setSel.value = s?.equipSet || '';

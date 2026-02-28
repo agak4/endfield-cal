@@ -69,9 +69,9 @@ let state = {
         skillLevels: { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' },
     },
     subOps: [
-        { id: null, pot: 0, wepId: null, wepPot: 0, wepState: false, equipSet: null },
-        { id: null, pot: 0, wepId: null, wepPot: 0, wepState: false, equipSet: null },
-        { id: null, pot: 0, wepId: null, wepPot: 0, wepState: false, equipSet: null },
+        { id: null, pot: 0, wepId: null, wepPot: 0, wepState: false, equipSet: null, skillLevels: { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' } },
+        { id: null, pot: 0, wepId: null, wepPot: 0, wepState: false, equipSet: null, skillLevels: { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' } },
+        { id: null, pot: 0, wepId: null, wepPot: 0, wepState: false, equipSet: null, skillLevels: { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' } },
     ],
     subOpsCollapsed: [false, true, true], // 기본값: 첫 번째만 펼침
     enemyUnbalanced: false,
@@ -243,7 +243,12 @@ function updateState() {
 
     for (let i = 0; i < 3; i++) {
         const sub = state.subOps[i];
-        if (sub.id) saveOpSettings(sub.id, { pot: sub.pot, wepId: sub.wepId, wepPot: sub.wepPot, wepState: sub.wepState, equipSet: sub.equipSet });
+        if (sub.id) saveOpSettings(sub.id, {
+            pot: sub.pot,
+            wepId: sub.wepId, wepPot: sub.wepPot, wepState: sub.wepState,
+            equipSet: sub.equipSet,
+            skillLevels: sub.skillLevels
+        });
     }
 }
 
@@ -291,6 +296,7 @@ function getTargetState() {
                 setUnbalanced: (val) => { cs.enemyUnbalanced = val; },
                 getSpecialStack: () => cs.specialStack,
                 setSpecialStack: (val) => { cs.specialStack = val; },
+                mainOp: { ...state.mainOp, specialStack: cs.specialStack }
             };
         }
     }
@@ -303,6 +309,7 @@ function getTargetState() {
         setUnbalanced: (val) => { state.enemyUnbalanced = val; },
         getSpecialStack: () => state.mainOp.specialStack,
         setSpecialStack: (val) => { state.mainOp.specialStack = val; },
+        mainOp: state.mainOp
     };
 }
 
@@ -371,6 +378,11 @@ function loadState() {
     if (!state.mainOp.skillLevels) {
         state.mainOp.skillLevels = { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' };
     }
+    state.subOps.forEach(sub => {
+        if (!sub.skillLevels) {
+            sub.skillLevels = { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' };
+        }
+    });
     if (!state.usables) {
         state.usables = {
             '혼란의 약제': false,
