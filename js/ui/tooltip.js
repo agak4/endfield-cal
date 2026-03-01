@@ -326,22 +326,33 @@ const AppTooltip = {
             const typeArr = this.normalizeTypeArr(t.type).map(obj => ({ val: t.val, ...obj }));
             const sourceArr = Array.isArray(source) ? source : [source];
 
-            const filteredTypeArr = typeArr.filter(e => {
-                if (e.skillType) return false;
-                if (t.skillType && !t.skillType.some(st => sourceArr.includes(st))) return false;
-                return true;
-            }).filter(e => !this.EXCLUDE_TYPES.includes(e.type) && e.type !== '스탯');
+            const filteredTypeArr = typeArr
+                .filter(e => {
+                    if (e.skillType) return false;
+                    if (t.skillType && !t.skillType.some(st => sourceArr.includes(st))) return false;
+                    return !this.EXCLUDE_TYPES.includes(e.type) && e.type !== '스탯';
+                });
 
             if (filteredTypeArr.length === 0) return;
 
             const typeIncludes = (kw) => filteredTypeArr.some(e => e.type.includes(kw));
-            const typeStr = filteredTypeArr.map(e => {
-                const st = e.skillType || t.skillType;
-                const suffix = (['스킬 치명타 확률', '스킬 치명타 피해', '스킬 배율 증가'].includes(e.type) && st)
-                    ? ` (${Array.isArray(st) ? st.join(', ') : st})` : '';
-                const scalingSuffix = e.scaling ? ` (<span class="tooltip-muted">+${getStatName(e.scaling.stat)} 비례</span>)` : '';
-                return e.val !== undefined ? `${e.type}${suffix} +${e.val}${scalingSuffix}` : `${e.type}${suffix}${scalingSuffix}`;
-            }).join(' / ');
+
+            const typeStr = filteredTypeArr
+                .map(e => {
+                    const st = e.skillType || t.skillType;
+                    const suffix = (['스킬 치명타 확률', '스킬 치명타 피해', '스킬 배율 증가'].includes(e.type) && st)
+                        ? ` (${Array.isArray(st) ? st.join(', ') : st})` : '';
+
+                    // [New] val이 0%이고 scaling이 있으면 리스트 항목에 직접 공식을 표시
+                    if ((e.val === '0%' || t.val === '0%') && (e.scaling || t.scaling)) {
+                        const sc = e.scaling || t.scaling;
+                        const ratioDisp = (typeof sc.ratio === 'string') ? sc.ratio : `${sc.ratio}%`;
+                        return `${getStatName(sc.stat)} 1포인트당 ${e.type}${suffix} +${ratioDisp}`;
+                    }
+
+                    const scalingSuffix = e.scaling ? ` (<span class="tooltip-muted">+${getStatName(e.scaling.stat)} 비례</span>)` : '';
+                    return e.val !== undefined ? `${e.type}${suffix} +${e.val}${scalingSuffix}` : `${e.type}${suffix}${scalingSuffix}`;
+                }).join(' / ');
 
             const isPotential = potLevel !== null;
             const item = {
@@ -585,6 +596,10 @@ const AppTooltip = {
                     if (t.skillType) return null;
                     const tName = Array.isArray(t.type) ? t.type[0] : t.type;
                     const scalingSuffix = t.scaling ? ` (<span class="tooltip-muted">+${getStatName(t.scaling.stat)} 비례</span>)` : '';
+                    if (t.val === '0%' && t.scaling) {
+                        const ratioDisp = (typeof t.scaling.ratio === 'string') ? t.scaling.ratio : `${t.scaling.ratio}%`;
+                        return `${getStatName(t.scaling.stat)} 1포인트당 ${tName}${suffix} +${ratioDisp}${scalingSuffix}`;
+                    }
                     return t.val ? `${tName} +${t.val}${scalingSuffix}` : `${tName}${scalingSuffix}`;
                 }
                 return typeof t === 'string' ? t : '';

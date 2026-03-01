@@ -41,6 +41,14 @@
     filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.7));
     position: relative;
     z-index: 1;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.op-image-container img.loaded,
+.wep-image-container img.loaded,
+.gear-image-container img.loaded {
+    opacity: 1;
 }
 
 /* ============ 모달 ============ */
@@ -257,10 +265,6 @@
 
 .potency-row {
     margin-top: 5px;
-}
-
-.u-flex-1 {
-    flex: 1;
 }
 
 .potency-group {

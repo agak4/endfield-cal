@@ -1162,33 +1162,18 @@ function resolveVal(val, stats, scaling, sourceOpId = null, state = null) {
 
     // [New] 데이터 기반 스탯 비례 처리 (scaling 객체)
     if (scaling && activeStats) {
-        const sVal = activeStats[scaling.stat] || 0;
+        const statsToSum = Array.isArray(scaling.stat) ? scaling.stat : [scaling.stat];
+        let sVal = 0;
+        statsToSum.forEach(s => {
+            sVal += (activeStats[s] || 0);
+        });
+
         const ratio = (typeof scaling.ratio === 'string') ? parseFloat(scaling.ratio) : (scaling.ratio || 0);
         const max = (typeof scaling.max === 'string') ? parseFloat(scaling.max) : (scaling.max || 999999);
         const bonus = Math.min(max, sVal * ratio);
         result += bonus;
     }
 
-    if (typeof val === 'string' && activeStats) {
-        let statSum = 0;
-        let foundStat = false;
-
-        ['str', 'agi', 'int', 'wil'].forEach(k => {
-            if (val.includes(STAT_NAME_MAP[k])) {
-                statSum += (activeStats[k] || 0);
-                foundStat = true;
-            }
-        });
-
-        if (foundStat) {
-            // "1포인트당 X%" 또는 "X%" 패턴 추출 -> 스탯 총합에 곱함
-            const match = val.match(/([\d.]+)%/);
-            if (match) {
-                const perPoint = parseFloat(match[1]);
-                return statSum * perPoint;
-            }
-        }
-    }
     return result;
 }
 

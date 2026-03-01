@@ -115,8 +115,11 @@ let state = {
 // 공통 유틸리티
 // ============================================================
 
-/** @param {string} key @returns {string} 한글 스탯 이름 또는 원본 키 */
-function getStatName(key) { return STAT_NAME_MAP[key] || key; }
+/** @param {string|string[]} key @returns {string} 한글 스탯 이름 또는 원본 키 */
+function getStatName(key) {
+    if (Array.isArray(key)) return key.map(k => STAT_NAME_MAP[k] || k).join(', ');
+    return STAT_NAME_MAP[key] || key;
+}
 
 /**
  * JSON 직렬화를 이용한 깊은 복사 (Date·함수 등 제외한 순수 데이터용).

@@ -238,11 +238,14 @@ function toggleSubOp(idx) {
 // 엔티티 이미지 업데이트
 // ============================================================
 
+/** 투명한 1x1 픽셀 이미지 (Base64) */
+const TRANSPARENT_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
 /**
  * 엔티티(오퍼레이터/무기/장비) 이미지를 업데이트하고 툴팁 속성을 동기화한다.
  *
  * - entityId가 없으면 이미지를 숨기고 툴팁 속성을 제거한다.
- * - 이미지 로드 실패(onerror) 시 자동으로 숨긴다.
+ * - 이미지 로드 완료 시 .loaded 클래스를 추가하여 페이드인 효과를 준다.
  * - 오퍼레이터/무기는 희귀도 클래스(rarity-N)를 컨테이너에 적용한다.
  *
  * @param {string|null} entityId     - 엔티티 ID
@@ -255,10 +258,13 @@ function updateEntityImage(entityId, imgElementId, folder) {
 
     const container = imgElement.parentElement;
     container?.classList.remove('rarity-6', 'rarity-5', 'rarity-4');
+    imgElement.classList.remove('loaded');
 
     if (!entityId) {
-        imgElement.src = '';
+        imgElement.src = TRANSPARENT_PIXEL;
         imgElement.style.display = 'none';
+        imgElement.removeAttribute('data-tooltip-id');
+        imgElement.removeAttribute('data-tooltip-type');
         return;
     }
 
@@ -274,7 +280,7 @@ function updateEntityImage(entityId, imgElementId, folder) {
     }
 
     if (!fileName) {
-        imgElement.src = '';
+        imgElement.src = TRANSPARENT_PIXEL;
         imgElement.style.display = 'none';
         imgElement.removeAttribute('data-tooltip-id');
         imgElement.removeAttribute('data-tooltip-type');
@@ -282,6 +288,13 @@ function updateEntityImage(entityId, imgElementId, folder) {
     }
 
     if (rarity && container) container.classList.add(`rarity-${rarity}`);
+
+    imgElement.onload = () => imgElement.classList.add('loaded');
+    imgElement.onerror = () => {
+        imgElement.style.display = 'none';
+        imgElement.classList.remove('loaded');
+    };
+
     imgElement.src = `images/${folder}/${fileName}.webp?v=${APP_VERSION}`;
     imgElement.loading = 'eager';
     imgElement.style.display = 'block';
@@ -303,8 +316,6 @@ function updateEntityImage(entityId, imgElementId, folder) {
         imgElement.setAttribute('data-tooltip-forged',
             document.getElementById(`gear-${slot}-forge`)?.checked || false);
     }
-
-    imgElement.onerror = function () { this.style.display = 'none'; };
 }
 
 // ============================================================
