@@ -297,9 +297,9 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
             // [추가] 오퍼레이터 속성과 일치하는 무기 효과인지 확인 (트리거 미충족 시 표시용)
             const isMatchOpType = typeArr.some(ta => {
                 const t = ta.type;
-                const opTypeK = effectiveOpData.type === 'phys' ? '물리' : '아츠';
                 const elMap = { heat: '열기', elec: '전기', cryo: '냉기', nature: '자연' };
                 const opElK = elMap[effectiveOpData.element];
+                const opTypeK = effectiveOpData.type === 'phys' ? '물리' : '아츠';
                 return (t && (t.includes(opTypeK) || (opElK && t.includes(opElK)) || t.includes('취약') || t.includes('증폭') || t.includes('불균형')));
             });
             const isWeaponSource = !!eff.sourceId;
@@ -766,6 +766,7 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
     let abVal = 0;
     let busikVal = 0;
     let gamsunVal = 0;
+    let abnormalMults = { '갑옷 파괴': [], '감전': [], '부식': [], '연소': [], '동결': [] };
 
     const atkBaseLogs = [
         { txt: `오퍼레이터 공격력: ${opData.baseAtk.toLocaleString()}`, uid: 'base_op_atk' },
@@ -861,7 +862,10 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
             }
         };
 
-        if (t === '공격력 증가') {
+        if (t === '상태 이상 배율' && eff.targetAbnormal) {
+            if (!abnormalMults[eff.targetAbnormal]) abnormalMults[eff.targetAbnormal] = [];
+            abnormalMults[eff.targetAbnormal].push({ name: displayName, val: parseFloat(val) || 0, uid: eff.uid, disabled: checkDisabled('common') });
+        } else if (t === '공격력 증가') {
             if (eff.skillType) {
                 eff.skillType.forEach(st => { if (!checkDisabled(getCat(st))) skillAtkIncData[st] = (skillAtkIncData[st] || 0) + val; });
             } else {
@@ -921,7 +925,7 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
                 dmgInc += val;
                 dmgIncMap.all += val;
             }
-            logs.dmgInc.push({ txt: `[${displayName}] ${valDisplay}${eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : ''} (불균형 목표에 주는 피해)`, uid: eff.uid, unbalancedOff: !state.enemyUnbalanced, tag: 'all', stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
+            logs.dmgInc.push({ txt: `[${displayName}] 불균형 목표에 주는 피해 ${valDisplay}${eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : ''}`, uid: eff.uid, unbalancedOff: !state.enemyUnbalanced, tag: 'all', stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
         } else if (t.includes('받는')) {
             if (!checkDisabled('common')) {
                 let foundMatch = false;
@@ -1080,22 +1084,28 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
     });
     // [추가] calc.js 내부 로컬 변수로 연산된 아츠 강도를 stats 본체에 저장 (서브오퍼레이터 계산/캐시 시 활용)
     stats.originiumArts = originiumArts;
+    stats.abnormalMults = abnormalMults;
 
     // [디버프 직접 적용 및 부가 효과 증강 계산]
     const getSecondaryAmpRaw = (opId) => {
-        if (!opId) return { ampRaw: 0, opName: null };
+        if (!opId) return { ampRaw: 0, abnormalMults: {}, opName: null };
         let arts = 0;
         let pName = null;
+        let abnM = {};
         if (state.mainOp.id === opId) {
             arts = originiumArts;
             pName = opData.name;
+            abnM = abnormalMults;
         } else {
             const cached = state._subStatsCache?.[opId];
-            if (cached) arts = cached.originiumArts || 0;
+            if (cached) {
+                arts = cached.originiumArts || 0;
+                abnM = cached.abnormalMults || {};
+            }
             const subOpData = typeof DATA_OPERATORS !== 'undefined' ? DATA_OPERATORS.find(o => o.id === opId) : null;
             if (subOpData) pName = subOpData.name;
         }
-        return { ampRaw: (2 * arts) / (300 + arts), opName: pName };
+        return { ampRaw: (2 * arts) / (300 + arts), abnormalMults: abnM, opName: pName };
     };
 
     const attr = state.debuffState.attribution || {};
@@ -1103,37 +1113,64 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
     const ARMOR_BREAK_BONUS = [0, 12, 16, 20, 24];
     const abStacks = state.debuffState.physDebuff?.armorBreak || 0;
     if (abStacks > 0) {
-        const { ampRaw, opName } = getSecondaryAmpRaw(attr['갑옷 파괴']);
+        const { ampRaw, abnormalMults, opName } = getSecondaryAmpRaw(attr['갑옷 파괴']);
+        let customMultTotal = 0;
+        const multList = abnormalMults['갑옷 파괴'] || [];
+        multList.forEach(m => { if (!m.disabled) customMultTotal += m.val; });
         const amp = 1 + ampRaw;
-        abVal = parseFloat((ARMOR_BREAK_BONUS[abStacks] * amp).toFixed(1));
+        const baseAbValFloat = ARMOR_BREAK_BONUS[abStacks] * amp;
+        const baseAbVal = parseFloat(baseAbValFloat.toFixed(1));
+        abVal = parseFloat((baseAbValFloat * (1 + customMultTotal / 100)).toFixed(1));
         const abDisabled = state.disabledEffects.includes('debuff_armorBreak');
         if (!abDisabled) takenDmgMap.phys += abVal;
-        const msgSuffix = amp > 1 && opName ? ` (${opName})` : '';
-        logs.taken.push({ txt: `[갑옷 파괴 ${abStacks}단계] 받는 물리 피해 +${abVal}%${msgSuffix}`, uid: 'debuff_armorBreak', tag: 'phys' });
+        const msgSuffix = amp > 1 && opName ? ` <span class="tooltip-highlight">(${opName})</span>` : '';
+        logs.taken.push({ txt: `[갑옷 파괴 ${abStacks}단계] 받는 물리 피해 +${baseAbVal}%${msgSuffix}`, uid: 'debuff_armorBreak', tag: 'phys', _triggerFailed: abDisabled });
+        multList.forEach(m => {
+            const extraVal = parseFloat((baseAbValFloat * (m.val / 100)).toFixed(1));
+            if (extraVal > 0 || m.disabled) logs.taken.push({ txt: `[${m.name}] 받는 물리 피해 +${extraVal}%`, uid: m.uid, tag: 'phys', _triggerFailed: m.disabled || abDisabled });
+        });
     }
 
     const BUSIK_RED = [0, 12, 16, 20, 24];
     const busikStacks = state.debuffState.artsAbnormal['부식'] || 0;
     if (busikStacks > 0) {
-        const { ampRaw, opName } = getSecondaryAmpRaw(attr['부식']);
+        const { ampRaw, abnormalMults, opName } = getSecondaryAmpRaw(attr['부식']);
+        let customMultTotal = 0;
+        const multList = abnormalMults['부식'] || [];
+        multList.forEach(m => { if (!m.disabled) customMultTotal += m.val; });
         const amp = 1 + ampRaw;
-        busikVal = parseFloat((BUSIK_RED[busikStacks] * amp).toFixed(1));
+        const baseBusikValFloat = BUSIK_RED[busikStacks] * amp;
+        const baseBusikVal = parseFloat(baseBusikValFloat.toFixed(1));
+        busikVal = parseFloat((baseBusikValFloat * (1 + customMultTotal / 100)).toFixed(1));
         const busikDisabled = state.disabledEffects.includes('debuff_busik');
         if (!busikDisabled) ALL_RES_KEYS.forEach(k => resistance[k] -= busikVal);
-        const msgSuffix = amp > 1 && opName ? ` (${opName})` : '';
-        logs.res.push({ txt: `[부식 ${busikStacks}단계] 모든 저항 -${busikVal}${msgSuffix}`, uid: 'debuff_busik' });
+        const msgSuffix = amp > 1 && opName ? ` <span class="tooltip-highlight">(${opName})</span>` : '';
+        logs.res.push({ txt: `[부식 ${busikStacks}단계] 모든 저항 -${baseBusikVal}${msgSuffix}`, uid: 'debuff_busik', _triggerFailed: busikDisabled });
+        multList.forEach(m => {
+            const extraVal = parseFloat((baseBusikValFloat * (m.val / 100)).toFixed(1));
+            if (extraVal > 0 || m.disabled) logs.res.push({ txt: `[${m.name}] 모든 저항 -${extraVal}`, uid: m.uid, _triggerFailed: m.disabled || busikDisabled });
+        });
     }
 
     const GAMSUN_BONUS = [0, 12, 16, 20, 24];
     const gamsunStacks = state.debuffState.artsAbnormal['감전'] || 0;
     if (gamsunStacks > 0) {
-        const { ampRaw, opName } = getSecondaryAmpRaw(attr['감전']);
+        const { ampRaw, abnormalMults, opName } = getSecondaryAmpRaw(attr['감전']);
+        let customMultTotal = 0;
+        const multList = abnormalMults['감전'] || [];
+        multList.forEach(m => { if (!m.disabled) customMultTotal += m.val; });
         const amp = 1 + ampRaw;
-        gamsunVal = parseFloat((GAMSUN_BONUS[gamsunStacks] * amp).toFixed(1));
+        const baseGamsunValFloat = GAMSUN_BONUS[gamsunStacks] * amp;
+        const baseGamsunVal = parseFloat(baseGamsunValFloat.toFixed(1));
+        gamsunVal = parseFloat((baseGamsunValFloat * (1 + customMultTotal / 100)).toFixed(1));
         const gamsunDisabled = state.disabledEffects.includes('debuff_gamsun');
         if (!gamsunDisabled) takenDmgMap.arts += gamsunVal;
-        const msgSuffix = amp > 1 && opName ? ` (${opName})` : '';
-        logs.taken.push({ txt: `[감전 ${gamsunStacks}단계] 받는 아츠 피해 +${gamsunVal}%${msgSuffix}`, uid: 'debuff_gamsun', tag: 'arts' });
+        const msgSuffix = amp > 1 && opName ? ` <span class="tooltip-highlight">(${opName})</span>` : '';
+        logs.taken.push({ txt: `[감전 ${gamsunStacks}단계] 받는 아츠 피해 +${baseGamsunVal}%${msgSuffix}`, uid: 'debuff_gamsun', tag: 'arts', _triggerFailed: gamsunDisabled });
+        multList.forEach(m => {
+            const extraVal = parseFloat((baseGamsunValFloat * (m.val / 100)).toFixed(1));
+            if (extraVal > 0 || m.disabled) logs.taken.push({ txt: `[${m.name}] 받는 아츠 피해 +${extraVal}%`, uid: m.uid, tag: 'arts', _triggerFailed: m.disabled || gamsunDisabled });
+        });
     }
 
     const statBonusPct = (stats[opData.mainStat] * 0.005) + (stats[opData.subStat] * 0.002);
@@ -1213,7 +1250,7 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
             critExp, finalCritRate, critDmg, dmgInc, amp, vuln: opVuln, takenDmg: opTakenDmg, unbalanceDmg: finalUnbal, originiumArts, skillMults, dmgIncData: dmgIncMap,
             skillCritData, resistance: activeResVal, resMult, defMult, enemyDefense: defVal, ultRecharge, finalUltCost, vulnMap, takenDmgMap, vulnAmpEffects,
             allRes: resistance, armorBreakVal: abVal, gamsunVal: gamsunVal, baseTakenDmg: takenDmgMap.all,
-            resIgnore: resIgnore, levelCoeffPhys: LEVEL_COEFF_PHYS, levelCoeffArts: LEVEL_COEFF_ARTS, artsSecondary
+            resIgnore: resIgnore, levelCoeffPhys: LEVEL_COEFF_PHYS, levelCoeffArts: LEVEL_COEFF_ARTS, artsSecondary, abnormalMults
         },
         logs
     };
@@ -1280,7 +1317,7 @@ function isApplicableEffect(opData, effectType, effectName) {
         '공격력 증가', '치명타 확률', '치명타 피해', '최대 생명력', '궁극기 충전 효율', '궁극기 에너지 감소', '치유 효율', '연타',
         '주는 피해', '스탯', '스탯%', '스킬 피해', '궁극기 피해', '연계 스킬 피해', '배틀 스킬 피해',
         '일반 공격 피해', '오리지늄 아츠', '오리지늄 아츠 강도', '모든 스킬 피해', '스킬 배율 증가',
-        '스킬 치명타 확률', '스킬 치명타 피해'
+        '스킬 치명타 확률', '스킬 치명타 피해', '상태 이상 배율'
     ];
     if (ALWAYS_ON.includes(type) || type === '불균형 목표에 주는 피해') return true;
 

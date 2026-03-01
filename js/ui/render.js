@@ -81,8 +81,6 @@ function createEffectListItem(log, options = {}) {
     const li = document.createElement('li');
     li.innerHTML = log.txt;
 
-    const isUnbalancedOff = log.unbalancedOff;
-    if (isUnbalancedOff) li.classList.add('unbalanced-off');
     if (log._triggerFailed) li.classList.add('triggerFail-effect');
 
     if (!uid) return li;

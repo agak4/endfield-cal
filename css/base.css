@@ -433,6 +433,10 @@ input[type="range"]::-webkit-slider-thumb {
     font-size: 0.75rem;
 }
 
+.u-ml-auto {
+    margin-left: auto;
+}
+
 .u-text-muted {
     color: var(--text-muted);
 }

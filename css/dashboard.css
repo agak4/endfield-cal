@@ -591,13 +591,6 @@ h4.has-drag-handle {
     color: var(--text-primary);
 }
 
-.tile-header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
 .tile-ctrl-group {
     display: flex;
     gap: 4px;
@@ -643,21 +636,11 @@ h4.has-drag-handle {
     color: #888 !important;
 }
 
-.detail-list li.unbalanced-off {
-    color: var(--text-muted) !important;
-    opacity: 0.45;
-    font-weight: normal !important;
-}
-
 .detail-list li::before {
     content: '▸';
     color: var(--accent);
     opacity: 0.8;
     font-size: 0.7rem;
-}
-
-.detail-list li.unbalanced-off::before {
-    color: var(--text-muted);
 }
 
 .skill-dmg-row {
