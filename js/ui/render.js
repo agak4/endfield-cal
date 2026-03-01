@@ -542,8 +542,8 @@ function renderCycleSequence(cycleRes) {
                 // 보너스 항목 (이본 등)
                 if (item.bonusList && item.bonusList.length > 0) {
                     item.bonusList.forEach(b => {
-                        const stackStr = b.stack ? ` ${b.stack}스택` : '';
-                        rateHtml += ` + ${b.name}${stackStr} ${(b.val * 100).toFixed(0)}%`;
+                        const stackStr = b.stack ? ` (${b.stack}스택)` : '';
+                        rateHtml += ` + ${b.name} ${(b.val * 100).toFixed(0)}%${stackStr}`;
                     });
                 }
 
@@ -1136,8 +1136,8 @@ function renderLevelCoeff(res) {
     const hasArts = (elem1Key && elem1Key !== 'phys') || (elem2Key && elem2Key !== 'phys');
 
     const cats = [
-        ...(hasPhys ? [{ id: 'phys', title: '물리 레벨 계수', uid: 'level_coeff_phys' }] : []),
-        ...(hasArts ? [{ id: 'arts', title: '아츠 레벨 계수', uid: 'level_coeff_arts' }] : [])
+        ...(hasPhys ? [{ id: 'phys', title: '물리 이상 피해', uid: 'level_coeff_phys' }] : []),
+        ...(hasArts ? [{ id: 'arts', title: '아츠 이상/폭발 피해', uid: 'level_coeff_arts' }] : [])
     ];
 
     if (cats.length === 0) return;

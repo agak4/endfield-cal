@@ -65,8 +65,9 @@ function extractElemTag(typeStr, opData) {
 // extra: 추가 필드 객체 (tag, skillType, unbalancedOff 등)
 function buildLogEntry(eff, displayName, label, extra = {}) {
     const stackSuffix = eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : '';
+    // [변경] 순서: [출처] 스탯명 +수치 (중첩) (추가조건)
     return {
-        txt: `[${displayName}] ${extra.valDisplay ?? ''} ${stackSuffix} (${label})`.replace(/\s+/g, ' ').trim(),
+        txt: `[${displayName}] ${label} ${extra.valDisplay ?? ''} ${stackSuffix}`.replace(/\s+/g, ' ').trim(),
         uid: eff.uid,
         stack: eff.stack,
         stackCount: eff._stackCount,
@@ -299,7 +300,7 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
                 const opTypeK = effectiveOpData.type === 'phys' ? '물리' : '아츠';
                 const elMap = { heat: '열기', elec: '전기', cryo: '냉기', nature: '자연' };
                 const opElK = elMap[effectiveOpData.element];
-                return (t && (t.includes(opTypeK) || (opElK && t.includes(opElK)) || t.includes('취약') || t.includes('증폭')));
+                return (t && (t.includes(opTypeK) || (opElK && t.includes(opElK)) || t.includes('취약') || t.includes('증폭') || t.includes('불균형')));
             });
             const isWeaponSource = !!eff.sourceId;
             const showEvenIfFailed = !baseTriggerMet && (isWeaponSource || isMatchOpType);
@@ -312,7 +313,6 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
 
                     let currentVal = typeItem.val !== undefined ? typeItem.val : eff.val;
 
-                    // perStack 처리 (주 효과 아이템에 대해서도 지원)
                     const ps = typeItem.perStack || eff.perStack;
                     const tr = typeItem.trigger || eff.trigger;
                     const bs = typeItem.base !== undefined ? typeItem.base : (eff.base !== undefined ? eff.base : (typeItem.val !== undefined ? typeItem.val : eff.val));
@@ -792,7 +792,9 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
 
         if (eff.type === '스탯' || eff.type === '스탯%') {
             const tgt = getStatName(eff.stat || eff.stats);
-            const line = `[${displayName}] ${valDisplay}${eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : ''} (${tgt})`;
+            const stackSuffix = eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : '';
+            // [변경] 순서: [출처] 스탯명 +수치 (중첩)
+            const line = `[${displayName}] ${tgt} ${valDisplay}${stackSuffix}`;
             statLogs.push({ txt: line, uid: eff.uid, stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
             return;
         }
@@ -828,6 +830,7 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
 
         // 스킬타입 한정 효과의 수치 반영 + 로그 공통 처리
         const applySkillTypedEffect = (dataObj, logArr, label, extra = {}) => {
+            const stackSuffix = eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : '';
             if (eff.skillType) {
                 const skTypes = eff.skillType;
                 skTypes.forEach(st => {
@@ -836,9 +839,25 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
                         dataObj[st] = (dataObj[st] || 0) + val;
                     }
                 });
-                logArr.push({ txt: `[${displayName}] ${valDisplay}${eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : ''} (${label} / <span class="tooltip-highlight">${skTypes.join(', ')}</span>)`, uid: eff.uid, skillType: eff.skillType, stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed, ...extra });
+                // [변경] 순서: [출처] 스탯명 +수치 (중첩) (조건)
+                logArr.push({
+                    txt: `[${displayName}] ${label} ${valDisplay}${stackSuffix} (<span class="tooltip-highlight">${skTypes.join(', ')}</span>)`,
+                    uid: eff.uid,
+                    skillType: eff.skillType,
+                    stack: eff.stack,
+                    stackCount: eff._stackCount,
+                    _triggerFailed: eff._triggerFailed,
+                    ...extra
+                });
             } else {
-                logArr.push({ txt: `[${displayName}] ${valDisplay}${eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : ''} (${label})`, uid: eff.uid, stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed, ...extra });
+                logArr.push({
+                    txt: `[${displayName}] ${label} ${valDisplay}${stackSuffix}`,
+                    uid: eff.uid,
+                    stack: eff.stack,
+                    stackCount: eff._stackCount,
+                    _triggerFailed: eff._triggerFailed,
+                    ...extra
+                });
             }
         };
 
@@ -851,13 +870,16 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
             applySkillTypedEffect(null, logs.atkBuffs, t, { tag: eff.skillType ? 'skillAtkInc' : undefined });
         } else if (t === '오리지늄 아츠 강도') {
             if (!checkDisabled('common')) originiumArts += val;
-            logs.arts.push({ txt: `[${displayName}] ${valDisplay}${eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : ''} (${t})`, uid: eff.uid, stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
+            const stackSuffix = eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : '';
+            logs.arts.push({ txt: `[${displayName}] ${t} ${valDisplay}${stackSuffix}`, uid: eff.uid, stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
         } else if (t === '궁극기 충전 효율') {
             if (!checkDisabled('common')) ultRecharge += val;
-            logs.ultRecharge.push({ txt: `[${displayName}] ${valDisplay}${eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : ''} (${t})`, uid: eff.uid, tag: 'recharge', stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
+            const stackSuffix = eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : '';
+            logs.ultRecharge.push({ txt: `[${displayName}] ${t} ${valDisplay}${stackSuffix}`, uid: eff.uid, tag: 'recharge', stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
         } else if (t === '궁극기 에너지 감소') {
             if (!checkDisabled('common')) ultCostReduction += val;
-            logs.ultRecharge.push({ txt: `[${displayName}] ${valDisplay}${eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : ''} (${t})`, uid: eff.uid, tag: 'reduction', stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
+            const stackSuffix = eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : '';
+            logs.ultRecharge.push({ txt: `[${displayName}] ${t} ${valDisplay}${stackSuffix}`, uid: eff.uid, tag: 'reduction', stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
         } else if (t === '치명타 확률') {
             if (eff.skillType) {
                 eff.skillType.forEach(st => { if (!checkDisabled(getCat(st))) skillCritData.rate[st] = (skillCritData.rate[st] || 0) + val; });
@@ -879,18 +901,21 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
             vulnAmpEffects.push(eff);
             const ampFactor = (1 + val).toFixed(1);
             const targetLabel = (eff.targetEffect && Array.isArray(eff.targetEffect)) ? eff.targetEffect.join(', ') : (t === '냉기 취약 증폭' ? '냉기 취약' : '취약');
-            logs.vuln.push({ txt: `[${displayName}] *${ampFactor} (${targetLabel})`, uid: eff.uid, target: '적', _triggerFailed: eff._triggerFailed });
+            // [변경] 순서 보정
+            logs.vuln.push({ txt: `[${displayName}] ${targetLabel} *${ampFactor}`, uid: eff.uid, target: '적', _triggerFailed: eff._triggerFailed });
         } else if (t.endsWith('증폭')) {
             if (!checkDisabled('common')) amp += val;
             const ampElemTag = extractElemTag(t, opData);
-            logs.amp.push({ txt: `[${displayName}] ${valDisplay}${eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : ''} (${t})`, uid: eff.uid, tag: ampElemTag || 'all', stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
+            const stackSuffix = eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : '';
+            logs.amp.push({ txt: `[${displayName}] ${t} ${valDisplay}${stackSuffix}`, uid: eff.uid, tag: ampElemTag || 'all', stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
         } else if (t.endsWith('취약')) {
             if (!checkDisabled('common')) {
                 if (vulnMap[t] !== undefined) vulnMap[t] += val;
                 else vulnMap['취약'] += val;
             }
             const vulnElemTag = extractElemTag(t, opData);
-            logs.vuln.push({ txt: `[${displayName}] ${valDisplay}${eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : ''} (${t})`, uid: eff.uid, tag: vulnElemTag || 'all', stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
+            const stackSuffix = eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : '';
+            logs.vuln.push({ txt: `[${displayName}] ${t} ${valDisplay}${stackSuffix}`, uid: eff.uid, tag: vulnElemTag || 'all', stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
         } else if (t === '불균형 목표에 주는 피해') {
             if (state.enemyUnbalanced && !checkDisabled('common')) {
                 dmgInc += val;
@@ -910,7 +935,8 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
                 if (!foundMatch) takenDmgMap.all += val;
             }
             const takenElemTag = extractElemTag(t, opData);
-            logs.taken.push({ txt: `[${displayName}] ${valDisplay}${eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : ''} (${t})`, uid: eff.uid, tag: takenElemTag || 'all', stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
+            const stackSuffix = eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : '';
+            logs.taken.push({ txt: `[${displayName}] ${t} ${valDisplay}${stackSuffix}`, uid: eff.uid, tag: takenElemTag || 'all', stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
         } else if (t === '스킬 치명타 확률' || t === '스킬 치명타 피해') {
             const isRate = (t === '스킬 치명타 확률');
             const targetObj = isRate ? skillCritData.rate : skillCritData.dmg;
@@ -922,8 +948,12 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
                 }
             }
             let typeLabel = t;
-            if (eff.skillType) typeLabel += ` (<span class="tooltip-highlight">${eff.skillType.join(', ')}</span>)`;
-            logs.crit.push({ txt: `[${displayName}] ${valDisplay}${eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : ''} (${typeLabel})`, uid: eff.uid, tag: 'skillCrit', skillType: eff.skillType, stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed, type: isRate ? 'rate' : 'dmg' });
+            const stackSuffix = eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : '';
+            if (eff.skillType) {
+                logs.crit.push({ txt: `[${displayName}] ${t} ${valDisplay}${stackSuffix} (<span class="tooltip-highlight">${eff.skillType.join(', ')}</span>)`, uid: eff.uid, tag: 'skillCrit', skillType: eff.skillType, stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed, type: isRate ? 'rate' : 'dmg' });
+            } else {
+                logs.crit.push({ txt: `[${displayName}] ${t} ${valDisplay}${stackSuffix}`, uid: eff.uid, tag: 'skillCrit', skillType: eff.skillType, stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed, type: isRate ? 'rate' : 'dmg' });
+            }
         } else if (t === '스킬 배율 증가') {
             const addVal = eff.dmg ? resolveVal(eff.dmg, stats, eff.dmgScaling || eff.scaling, eff._sourceOpId, state) * (eff.forgeMult || 1.0) : 0;
             const addSkillMult = (st) => {
@@ -954,8 +984,11 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
                 multDisplay = `*${(1 + nVal / 100).toFixed(2)}`;
             }
 
+            const stackSuffix = eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : '';
+            const skillTypeHtml = eff.skillType ? ` (<span class="tooltip-highlight">${eff.skillType.join(', ')}</span>)` : '';
+
             logs.dmgInc.push({
-                txt: `[${displayName}] ${multDisplay}${eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : ''} (${typeLabel})`,
+                txt: `[${displayName}] ${t} ${multDisplay}${stackSuffix}${skillTypeHtml}`,
                 uid: eff.uid,
                 tag: 'skillMult',
                 skillType: eff.skillType,
@@ -1028,12 +1061,21 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
             else if (t.includes('연계 스킬')) tag = 'combo';
             else if (t.includes('궁극기')) tag = 'ult';
 
-            let label = t;
-            if (skillTypes) label += ` (<span class="tooltip-highlight">${skillTypes.join(', ')}</span>)`;
-            logs.dmgInc.push({ txt: `[${displayName}] ${valDisplay}${eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : ''} (${label})`, uid: eff.uid, tag, skillType: skillTypes, stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
+            const stackSuffix = eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : '';
+            const skillTypeHtml = skillTypes ? ` (<span class="tooltip-highlight">${skillTypes.join(', ')}</span>)` : '';
+            logs.dmgInc.push({
+                txt: `[${displayName}] ${t} ${valDisplay}${stackSuffix}${skillTypeHtml}`,
+                uid: eff.uid,
+                tag,
+                skillType: skillTypes,
+                stack: eff.stack,
+                stackCount: eff._stackCount,
+                _triggerFailed: eff._triggerFailed
+            });
         } else if (t.endsWith('저항 무시')) {
             if (!checkDisabled('common')) resIgnore += val;
-            logs.res.push({ txt: `[${displayName}] ${t} ${val.toFixed(1)}${eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : ''}`, uid: eff.uid, stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
+            const stackSuffix = eff.stack ? ` <span class="tooltip-highlight">(${eff._stackCount}중첩)</span>` : '';
+            logs.res.push({ txt: `[${displayName}] ${t} ${val.toFixed(1)}${stackSuffix}`, uid: eff.uid, stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed });
         }
     });
     // [추가] calc.js 내부 로컬 변수로 연산된 아츠 강도를 stats 본체에 저장 (서브오퍼레이터 계산/캐시 시 활용)
@@ -1109,7 +1151,7 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
     const finalCritRate = Math.min(Math.max(critRate, 0), 100);
     const critExp = ((finalCritRate / 100) * (critDmg / 100)) + 1;
     let finalUnbal = unbalanceDmg + (state.enemyUnbalanced ? 30 : 0);
-    if (state.enemyUnbalanced) logs.unbal.push({ txt: `[불균형 기본] +30.0%`, uid: 'unbalance_base' });
+    logs.unbal.push({ txt: `[불균형 기본] +30.0%`, uid: 'unbalance_base', _triggerFailed: !state.enemyUnbalanced });
 
     // 적용할 저항 (오퍼레이터 속성에 매핑)
     const resKeyMap = { heat: '열기', elec: '전기', cryo: '냉기', nature: '자연' };
@@ -1157,8 +1199,8 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
     const artsSecondary = (2 * originiumArts) / (300 + originiumArts) * 100;
 
     // 레벨 계수 고정 로그 (항상 추가, PROTECTED)
-    logs.dmgInc.push({ txt: `[물리 이상] +${(LEVEL_COEFF_PHYS * 100).toFixed(1)}% (레벨 계수)`, uid: 'level_coeff_phys', tag: 'phys' });
-    logs.dmgInc.push({ txt: `[아츠 이상/폭발] +${(LEVEL_COEFF_ARTS * 100).toFixed(1)}% (레벨 계수)`, uid: 'level_coeff_arts', tag: 'arts' });
+    logs.dmgInc.push({ txt: `[레벨 계수] 물리 이상 +${(LEVEL_COEFF_PHYS * 100).toFixed(1)}%`, uid: 'level_coeff_phys', tag: 'phys' });
+    logs.dmgInc.push({ txt: `[레벨 계수] 아츠 이상/폭발 +${(LEVEL_COEFF_ARTS * 100).toFixed(1)}%`, uid: 'level_coeff_arts', tag: 'arts' });
 
     return {
         finalDmg,
@@ -1375,7 +1417,8 @@ function evaluateTrigger(trigger, state, opData, triggerType, isTargetOnly = fal
             '열기 취약': () => state.triggerActive?.['열기 취약'],
             '냉기 취약': () => state.triggerActive?.['냉기 취약'],
             '전기 취약': () => state.triggerActive?.['전기 취약'],
-            '자연 취약': () => state.triggerActive?.['자연 취약']
+            '자연 취약': () => state.triggerActive?.['자연 취약'],
+            '불균형': () => !!state.enemyUnbalanced
         };
 
         const evalFn = TRIGGER_MAP[t];
