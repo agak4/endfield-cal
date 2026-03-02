@@ -244,6 +244,11 @@ function renderResult(res) {
     renderDmgInc(displayRes, cycleRes);
     renderLevelCoeff(displayRes);
 
+    // 오퍼레이터별 사이클 딜 지분 (전역 결과 기반)
+    if (typeof renderDamageContribution === 'function') {
+        renderDamageContribution(cycleRes);
+    }
+
     // 증폭/받는피해/취약 속성 분리 렌더링
     renderElemSplit('amp-container', displayRes.logs.amp, '증폭');
     renderElemSplit('taken-container', displayRes.logs.taken, '적이 받는 피해');

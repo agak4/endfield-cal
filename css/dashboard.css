@@ -388,6 +388,88 @@
     gap: 3px;
 }
 
+/* ============ 오퍼레이터 사이클 딜 지분 ============ */
+.dmg-contrib-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.dmg-contrib-item {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+
+.dmg-contrib-item.active {
+    display: flex;
+}
+
+.dmg-contrib-img-box {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dmg-contrib-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.dmg-contrib-info-col {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-grow: 1;
+}
+
+.dmg-contrib-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.dmg-contrib-val-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.dmg-contrib-val {
+    font-size: 1.1rem;
+    color: var(--accent);
+}
+
+.dmg-contrib-pct {
+    font-weight: bold;
+    min-width: 55px;
+    text-align: right;
+}
+
+.dmg-contrib-bar-track {
+    height: 6px;
+    margin-top: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.dmg-contrib-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease, background 0.3s ease;
+}
+
+.dmg-contrib-name.is-main-text {
+    color: var(--text-main);
+}
+
+
 .cycle-row {
     display: flex;
     justify-content: space-between;
@@ -1041,7 +1123,6 @@ h4.has-drag-handle {
 
 .skill-dmg {
     font-size: 1.1rem;
-    font-weight: 700;
     color: var(--accent);
 }
 

@@ -480,9 +480,20 @@ window.updateSkillLevelButtonsUI = function () {
     document.querySelectorAll('.cycle-btn').forEach(btn => {
         let type = btn.dataset.type;
         if (!type) return;
-        const opData = DATA_OPERATORS.find(o => o.id === (typeof state !== 'undefined' && state.mainOp ? state.mainOp.id : null));
+        const opData = DATA_OPERATORS.find(o => o.id === (state?.mainOp?.id || null));
         const skillDef = opData?.skill?.find(s => s?.skillType?.includes(type));
-        let baseType = skillDef?.masterySource || (type.startsWith('강화 ') ? type.substring(3) : type);
+
+        // 마스터리 동기화 기준 타입 결정
+        let baseType = type;
+        if (skillDef?.masterySource) {
+            baseType = skillDef.masterySource;
+        } else {
+            if (type === '연계 스킬') {
+                baseType = '배틀 스킬';
+            } else if (type.startsWith('강화 ')) {
+                baseType = type.substring(3);
+            }
+        }
 
         let container = btn.querySelector('.skill-level-container');
         if (!container) {

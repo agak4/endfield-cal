@@ -9,12 +9,12 @@
     <!-- 리소스 우선순위 최적화 (Preload) -->
     <link rel="preload" href="css/base.css" as="style">
     <link rel="preload" href="css/components.css" as="style">
-    <link rel="preload" href="css/dashboard.css" as="style">
+    <link rel="preload" href="css/dashboard.css?v=2" as="style">
     <link rel="preload" href="js/data/data_operators.js" as="script">
     <link rel="preload" href="js/state.js" as="script">
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/dashboard.css?v=2">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js"></script>
     <script src="js/ui/sortable-grid.js" defer></script>
 </head>
@@ -883,6 +883,78 @@
                     <span id="cycle-dmg-total" class="cycle-val cycle-total-val">0</span>
                 </div>
             </div>
+
+            <!-- 오퍼레이터 사이클 딜 지분 -->
+            <div class="result-box cycle-dmg-box" id="damage-contribution-box" style="display: none;">
+                <h3 style="margin-top: 0; margin-bottom: 12px;">오퍼레이터 사이클 딜 지분</h3>
+                <div id="damage-contribution-list" class="dmg-contrib-list">
+                    <!-- 4 pre-defined slots for Main + up to 3 Sub operators -->
+                    <div class="dmg-contrib-item" id="contrib-item-0" style="order: 0;">
+                        <div class="op-image-container dmg-contrib-img-box">
+                            <img id="contrib-img-0" src="" class="dmg-contrib-img">
+                        </div>
+                        <div class="dmg-contrib-info-col">
+                            <div class="dmg-contrib-header">
+                                <span id="contrib-name-0" class="dmg-contrib-name"></span>
+                                <div class="dmg-contrib-val-wrap"><span id="contrib-val-0"
+                                        class="dmg-contrib-val"></span><span id="contrib-pct-0"
+                                        class="dmg-contrib-pct"></span></div>
+                            </div>
+                            <div class="skill-card dmg-contrib-bar-track">
+                                <div id="contrib-bar-0" class="skill-dmg-bar dmg-contrib-bar-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dmg-contrib-item" id="contrib-item-1" style="order: 1;">
+                        <div class="op-image-container dmg-contrib-img-box">
+                            <img id="contrib-img-1" src="" class="dmg-contrib-img">
+                        </div>
+                        <div class="dmg-contrib-info-col">
+                            <div class="dmg-contrib-header">
+                                <span id="contrib-name-1" class="dmg-contrib-name"></span>
+                                <div class="dmg-contrib-val-wrap"><span id="contrib-val-1"
+                                        class="dmg-contrib-val"></span><span id="contrib-pct-1"
+                                        class="dmg-contrib-pct"></span></div>
+                            </div>
+                            <div class="skill-card dmg-contrib-bar-track">
+                                <div id="contrib-bar-1" class="skill-dmg-bar dmg-contrib-bar-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dmg-contrib-item" id="contrib-item-2" style="order: 2;">
+                        <div class="op-image-container dmg-contrib-img-box">
+                            <img id="contrib-img-2" src="" class="dmg-contrib-img">
+                        </div>
+                        <div class="dmg-contrib-info-col">
+                            <div class="dmg-contrib-header">
+                                <span id="contrib-name-2" class="dmg-contrib-name"></span>
+                                <div class="dmg-contrib-val-wrap"><span id="contrib-val-2"
+                                        class="dmg-contrib-val"></span><span id="contrib-pct-2"
+                                        class="dmg-contrib-pct"></span></div>
+                            </div>
+                            <div class="skill-card dmg-contrib-bar-track">
+                                <div id="contrib-bar-2" class="skill-dmg-bar dmg-contrib-bar-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dmg-contrib-item" id="contrib-item-3" style="order: 3;">
+                        <div class="op-image-container dmg-contrib-img-box">
+                            <img id="contrib-img-3" src="" class="dmg-contrib-img">
+                        </div>
+                        <div class="dmg-contrib-info-col">
+                            <div class="dmg-contrib-header">
+                                <span id="contrib-name-3" class="dmg-contrib-name"></span>
+                                <div class="dmg-contrib-val-wrap"><span id="contrib-val-3"
+                                        class="dmg-contrib-val"></span><span id="contrib-pct-3"
+                                        class="dmg-contrib-pct"></span></div>
+                            </div>
+                            <div class="skill-card dmg-contrib-bar-track">
+                                <div id="contrib-bar-3" class="skill-dmg-bar dmg-contrib-bar-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <h3>무기 비교</h3>
             <div class="comparison-settings comp-settings-panel">
                 <div class="comp-settings-header">
@@ -990,6 +1062,7 @@
     <script src="js/ui/controls.js" defer></script>
     <script src="js/ui/sidebar.js" defer></script>
     <script src="js/ui/modal.js" defer></script>
+    <!-- <script src="js/ui/damage_contribution.js" defer></script> -->
     <script src="js/ui/render.js" defer></script>
     <script src="js/ui/tooltip.js" defer></script>
     <script src="js/ui/init.js" defer></script>
