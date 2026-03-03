@@ -172,11 +172,11 @@ function renderDamageContribution(cycleRes) {
             imgEl.classList.remove('loaded');
             if (imgEl.complete) imgEl.classList.add('loaded');
 
-            imgEl.onerror = () => { imgEl.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; };
+            imgEl.onerror = () => { imgEl.src = TRANSPARENT_PIXEL; };
         }
 
         if (nameEl) {
-            nameEl.innerText = item.isMain ? `${item.opName} (현재)` : item.opName;
+            nameEl.innerText = item.isMain ? `${item.opName} (메인)` : item.opName;
             if (item.isMain) {
                 nameEl.classList.add('is-main-text');
             } else {

@@ -43,6 +43,18 @@ function buildTargetState(customState) {
     };
 }
 
+/**
+ * uid가 disabledEffects에 포함되어 있거나 트리거 실패 상태인지 확인한다.
+ * renderDmgInc, renderElemSplit 내 반복 체크를 공통화한다.
+ * @param {string[]} disabledEffects - 비활성화된 효과 uid 배열
+ * @param {string}   uid             - 확인할 uid
+ * @param {boolean}  triggerFailed   - 트리거 실패 여부
+ * @returns {boolean}
+ */
+function isEffectDisabled(disabledEffects, uid, triggerFailed) {
+    return !!(disabledEffects?.includes(uid) || triggerFailed);
+}
+
 // FLIP 애니메이션을 컨테이너에 적용한다.
 // firstPositions: Map<key, DOMRect>, attrName: data-* 속성 이름
 function applyFlipAnimation(container, firstPositions, attrName) {
@@ -505,25 +517,13 @@ function renderCycleSequence(cycleRes) {
 
         // 강화 스킬인 경우 오퍼레이터 이미지를 백그라운드로 사용
         if (type.startsWith('강화')) {
-            const opData = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
-            if (opData && opData.name) {
-                cardContainer.style.position = 'relative';
-                cardContainer.style.overflow = 'hidden';
+            const opDataEnhanced = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
+            if (opDataEnhanced?.name) {
+                cardContainer.classList.add('seq-has-enhanced-bg');
 
                 const bgLayer = document.createElement('div');
-                bgLayer.style.position = 'absolute';
-                bgLayer.style.top = '0';
-                bgLayer.style.left = '0';
-                bgLayer.style.width = '100%';
-                bgLayer.style.height = '100%';
-                bgLayer.style.backgroundImage = `url('images/operators/${opData.name}.webp')`;
-                bgLayer.style.backgroundSize = 'cover';
-                bgLayer.style.backgroundPosition = 'center';
-                bgLayer.style.maskImage = 'linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)';
-                bgLayer.style.WebkitMaskImage = 'linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)';
-                bgLayer.style.pointerEvents = 'none';
-                bgLayer.style.zIndex = '0';
-
+                bgLayer.className = 'seq-enhanced-bg-layer';
+                bgLayer.style.backgroundImage = `url('images/operators/${opDataEnhanced.name}.webp')`;
                 cardContainer.appendChild(bgLayer);
             }
         }
@@ -535,8 +535,6 @@ function renderCycleSequence(cycleRes) {
         const delBtn = document.createElement('button');
         delBtn.className = 'seq-delete-btn';
         delBtn.innerHTML = '&times;';
-        delBtn.style.position = 'relative';
-        delBtn.style.zIndex = '1';
         delBtn.onclick = (e) => {
             e.stopPropagation();
             removeCycleItem(index);
@@ -701,9 +699,6 @@ function renderCyclePerSkill(cycleRes) {
             row = document.createElement('div');
             row.className = 'cycle-dmg-row';
             row.setAttribute('data-item-key', name);
-            row.style.display = 'flex';
-            row.style.alignItems = 'center';
-            row.style.gap = '8px';
             row.style.opacity = '0'; // 신규 항목은 투명하게 시작
         } else {
             // 기존 노드 재사용 시 스타일 초기화 (혹시 모를 잔여 스타일 제거)
@@ -726,18 +721,10 @@ function renderCyclePerSkill(cycleRes) {
         const countDiv = document.createElement('div');
         countDiv.className = 'skill-count-badge';
         countDiv.innerText = `${count}회`;
-        countDiv.style.minWidth = '40px';
-        countDiv.style.textAlign = 'center';
-        countDiv.style.color = 'var(--text-secondary)';
-        countDiv.style.fontSize = '0.8rem';
-        countDiv.style.background = 'rgba(255, 255, 255, 0.05)';
-        countDiv.style.padding = '4px';
-        countDiv.style.borderRadius = '4px';
 
         // 2. 스킬 카드 (가운데)
         const card = document.createElement('div');
         card.className = 'skill-card';
-        card.style.flex = '1';
 
         // 딜 지분 바 (배경)
         const bar = document.createElement('div');
@@ -864,7 +851,7 @@ function renderWeaponComparison(res, cycleRes, skipAnimation = false) {
             // [Fix] 전역 state 직접 수정 방지: 깊은 복사하여 독립적으로 계산
             // state에는 저항, 디버프, 비활성화된 효과(disabledEffects) 등 현재 설정이 모두 포함되어 있음
             // 따라서 현재 옵션 상태 그대로 무기만 변경하여 비교함
-            const tempState = JSON.parse(JSON.stringify(state));
+            const tempState = deepClone(state);
 
             // [Fix] 서브 무기 등의 특성 설정은 유지하고, 비교 대상 무기(w)의 특성만 강제로 활성화(기본값)한다.
             if (tempState.disabledEffects) {
@@ -1050,8 +1037,7 @@ function renderDmgInc(res, cycleRes) {
         if (tag === 'normal' || tag === 'battle' || tag === 'combo' || tag === 'ult') {
             const uiLog = { ...log, _uiUid: `${log.uid}#${tag}` };
             catLogs[tag].push(uiLog);
-            const isUiDisabled = (targetState.disabledEffects && targetState.disabledEffects.includes(uiLog._uiUid)) || !!uiLog._triggerFailed;
-            if (!isUiDisabled) catSums[tag] += val;
+            if (!isEffectDisabled(targetState.disabledEffects, uiLog._uiUid, uiLog._triggerFailed)) catSums[tag] += val;
         } else if (tag === 'skill' || tag === 'skillMult') {
             if (skillTypes && skillTypes.length > 0) {
                 skillTypes.forEach(stName => {
@@ -1059,22 +1045,20 @@ function renderDmgInc(res, cycleRes) {
                     if (k) {
                         const uiLog = { ...log, _uiUid: `${log.uid}#${k}` };
                         catLogs[k].push(uiLog);
-                        const isUiDisabled = (targetState.disabledEffects && targetState.disabledEffects.includes(uiLog._uiUid)) || !!uiLog._triggerFailed;
-                        if (!isUiDisabled && !isMult) catSums[k] += val;
+                        if (!isEffectDisabled(targetState.disabledEffects, uiLog._uiUid, uiLog._triggerFailed) && !isMult) catSums[k] += val;
                     }
                 });
             } else {
                 ['battle', 'combo', 'ult'].forEach(k => {
                     const uiLog = { ...log, _uiUid: `${log.uid}#${k}` };
                     catLogs[k].push(uiLog);
-                    const isUiDisabled = (targetState.disabledEffects && targetState.disabledEffects.includes(uiLog._uiUid)) || !!uiLog._triggerFailed;
-                    if (!isUiDisabled && !isMult) catSums[k] += val;
+                    if (!isEffectDisabled(targetState.disabledEffects, uiLog._uiUid, uiLog._triggerFailed) && !isMult) catSums[k] += val;
                 });
             }
         } else if (tag === 'all') {
             // 전역 피해 → elem1, elem2 모두에 복사 (공유 uid로 동시 토글)
             const uiLog = { ...log, _uiUid: log.uid };
-            const isUiDisabled = (targetState.disabledEffects && targetState.disabledEffects.includes(log.uid)) || !!uiLog._triggerFailed;
+            const isUiDisabled = isEffectDisabled(targetState.disabledEffects, log.uid, uiLog._triggerFailed);
             topCats.forEach(tc => {
                 catLogs[tc.id].push(uiLog);
                 if (!isUiDisabled) catSums[tc.id] += val;
@@ -1082,13 +1066,11 @@ function renderDmgInc(res, cycleRes) {
         } else if (elem1Key && tag === elem1Key) {
             const uiLog = { ...log, _uiUid: log.uid };
             catLogs.elem1.push(uiLog);
-            const isUiDisabled = (targetState.disabledEffects && targetState.disabledEffects.includes(log.uid)) || !!uiLog._triggerFailed;
-            if (!isUiDisabled) catSums.elem1 += val;
+            if (!isEffectDisabled(targetState.disabledEffects, log.uid, uiLog._triggerFailed)) catSums.elem1 += val;
         } else if (elem2Key && tag === elem2Key) {
             const uiLog = { ...log, _uiUid: log.uid };
             catLogs.elem2.push(uiLog);
-            const isUiDisabled = (targetState.disabledEffects && targetState.disabledEffects.includes(log.uid)) || !!uiLog._triggerFailed;
-            if (!isUiDisabled) catSums.elem2 += val;
+            if (!isEffectDisabled(targetState.disabledEffects, log.uid, uiLog._triggerFailed)) catSums.elem2 += val;
         } else {
             // 매핑되지 않은 속성 피해 → 비활성으로 deal에 표시
             const uiLog = { ...log, _uiUid: log.uid, _inactiveElement: true };
@@ -1132,9 +1114,8 @@ function renderDmgInc(res, cycleRes) {
             const li = createEffectListItem(log, { uid: log.uid, uiUid });
 
             if (log._inactiveElement) {
-                li.classList.add('disabled-effect');
+                li.classList.add('disabled-effect', 'effect-no-click');
                 li.title = '오퍼레이터 속성과 일치하지 않아 적용되지 않습니다.';
-                li.style.cursor = 'default';
                 li.onclick = (e) => e.stopPropagation();
             }
 

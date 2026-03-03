@@ -137,6 +137,11 @@
     z-index: 1;
 }
 
+/* X 버튼 (슬롯 초기화) */
+.potency-btn-remove {
+    color: #ff4d4d;
+}
+
 /* ============ 서브 오퍼레이터 카드 ============ */
 .sub-op-card {
     background: var(--sidebar-bg);

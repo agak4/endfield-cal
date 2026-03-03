@@ -133,6 +133,7 @@
 
 .modal-item.disabled {
     filter: grayscale(100%);
+    opacity: 0.4;
     cursor: not-allowed;
     border-color: transparent;
 }
@@ -777,6 +778,8 @@
 
 /* ============ 디버프 버블 팝업 ============ */
 .debuff-bubble-popup {
+    position: absolute;
+    z-index: 1000;
     background: rgba(15, 15, 15, 0.95);
     border: 1px solid rgba(0, 217, 255, 0.4);
     border-radius: 8px;

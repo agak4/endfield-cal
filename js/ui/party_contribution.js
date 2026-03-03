@@ -106,9 +106,9 @@ function renderPartyContribution() {
     // 렌더링 HTML 생성
     let html = `
         <div class="analysis-tab-inner">
-            <div class="tile" data-tile-id="party-total" data-full-row="true" style="margin-bottom: 20px;">
+            <div class="tile party-total-tile" data-tile-id="party-total" data-full-row="true">
                 <h3>파티 총합 데미지</h3>
-                <div style="font-size: 1.8rem; font-weight: bold; color: var(--accent);">${Math.floor(totalPartyDmg).toLocaleString()}</div>
+                <div class="party-total-dmg-value">${Math.floor(totalPartyDmg).toLocaleString()}</div>
             </div>
             
             <div class="tile" data-tile-id="party-contrib-list" data-full-row="true">
@@ -121,7 +121,7 @@ function renderPartyContribution() {
         const mainBadge = item.isMain ? ' (메인)' : '';
 
         html += `
-            <div class="dmg-contrib-item active" style="order: ${idx};">
+            <div class="dmg-contrib-item active">
                 <div class="op-image-container dmg-contrib-img-box">
                     <img src="images/operators/${item.name}.webp" class="dmg-contrib-img loaded" alt="${item.name}" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'">
                 </div>

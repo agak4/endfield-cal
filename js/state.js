@@ -36,6 +36,12 @@ const GEAR_SELECT_IDS = GEAR_SLOT_KEYS.map(k => `gear-${k}-select`);
 const GEAR_FORGE_IDS = GEAR_SLOT_KEYS.map(k => `gear-${k}-forge`);
 const GEAR_IMAGE_IDS = GEAR_SLOT_KEYS.map(k => `gear-${k}-image`);
 
+/**
+ * 스킬 레벨 기본값 팩토리 — 스킬 레벨을 전부 M3로 초기화한다.
+ * init.js, state.js 등 여러 곳에서 공통 사용한다.
+ */
+const DEFAULT_SKILL_LEVELS = () => ({ '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' });
+
 /** debuffState 기본값 팩토리 — loadState 마이그레이션과 초기화에서 공통 사용 */
 const DEFAULT_DEBUFF_STATE = () => ({
     physDebuff: { defenseless: 0, armorBreak: 0, combo: 0 },
@@ -75,12 +81,12 @@ let state = {
         gears: [null, null, null, null],
         gearForged: [false, false, false, false],
         specialStack: {},
-        skillLevels: { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' },
+        skillLevels: DEFAULT_SKILL_LEVELS(),
     },
     subOps: [
-        { id: null, pot: 0, wepId: null, wepPot: 0, wepState: false, gears: [null, null, null, null], gearForged: [false, false, false, false], skillLevels: { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' } },
-        { id: null, pot: 0, wepId: null, wepPot: 0, wepState: false, gears: [null, null, null, null], gearForged: [false, false, false, false], skillLevels: { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' } },
-        { id: null, pot: 0, wepId: null, wepPot: 0, wepState: false, gears: [null, null, null, null], gearForged: [false, false, false, false], skillLevels: { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' } },
+        { id: null, pot: 0, wepId: null, wepPot: 0, wepState: false, gears: [null, null, null, null], gearForged: [false, false, false, false], skillLevels: DEFAULT_SKILL_LEVELS() },
+        { id: null, pot: 0, wepId: null, wepPot: 0, wepState: false, gears: [null, null, null, null], gearForged: [false, false, false, false], skillLevels: DEFAULT_SKILL_LEVELS() },
+        { id: null, pot: 0, wepId: null, wepPot: 0, wepState: false, gears: [null, null, null, null], gearForged: [false, false, false, false], skillLevels: DEFAULT_SKILL_LEVELS() },
     ],
     subOpsCollapsed: [false, true, true], // 기본값: 첫 번째만 펼침
     enemyUnbalanced: false,
@@ -395,11 +401,11 @@ function loadState() {
         state.mainOp.specialStack = {};
     }
     if (!state.mainOp.skillLevels) {
-        state.mainOp.skillLevels = { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' };
+        state.mainOp.skillLevels = DEFAULT_SKILL_LEVELS();
     }
     state.subOps.forEach(sub => {
         if (!sub.skillLevels) {
-            sub.skillLevels = { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' };
+            sub.skillLevels = DEFAULT_SKILL_LEVELS();
         }
         if (!Array.isArray(sub.gears)) sub.gears = [null, null, null, null];
         if (!Array.isArray(sub.gearForged)) sub.gearForged = [false, false, false, false];

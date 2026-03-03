@@ -71,7 +71,7 @@ function openOperatorModal(onSelect, excludedIds = [], selectId = null) {
         if (op.id === currentVal) item.classList.add('selected');
         if (op.rarity) item.classList.add(`rarity-${op.rarity}`);
         // 다른 슬롯에서 선택 중인 오퍼레이터는 클릭 불가
-        if (isExcluded) { item.classList.add('disabled'); item.style.opacity = '0.4'; }
+        if (isExcluded) item.classList.add('disabled');
 
         item.setAttribute('data-tooltip-id', op.id);
         item.setAttribute('data-tooltip-type', 'operator');

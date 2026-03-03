@@ -332,10 +332,71 @@
     line-height: 1;
     padding: 0 4px;
     transition: color 0.15s;
+    position: relative;
+    z-index: 1;
 }
 
 .seq-delete-btn:hover {
     color: #ff4d4d;
+}
+
+/* 강화 스킬 카드 배경 레이어 */
+.seq-has-enhanced-bg {
+    position: relative;
+    overflow: hidden;
+}
+
+.seq-enhanced-bg-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 100%);
+    -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 100%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* 시퀀스 아이콘 포지션 */
+.seq-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+}
+
+/* ============ 사이클 딜 행 ============ */
+.cycle-dmg-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 횟수 배지 */
+.skill-count-badge {
+    min-width: 40px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 4px;
+    border-radius: 4px;
+}
+
+/* ============ 공통 유틸리티 ============ */
+
+/* JS에서 display: none/block 토글 대신 클래스 토글로 처리 */
+.hidden {
+    display: none !important;
+}
+
+/* 클릭 불가 커서 */
+.effect-no-click {
+    cursor: default;
 }
 
 /* ============ 디버프 아이콘 섹션 ============ */

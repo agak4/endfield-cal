@@ -470,7 +470,7 @@ function updateUIStateVisuals() {
     if (!specGroup) return;
 
     if (mainOp?.specialStack) {
-        specGroup.style.display = 'block';
+        specGroup.classList.remove('hidden');
         specGroup.innerHTML = '';
 
         const stacks = Array.isArray(mainOp.specialStack) ? mainOp.specialStack : [mainOp.specialStack];
@@ -521,7 +521,7 @@ function updateUIStateVisuals() {
         });
         specGroup.appendChild(row);
     } else {
-        specGroup.style.display = 'none';
+        specGroup.classList.add('hidden');
     }
 }
 
@@ -601,10 +601,8 @@ function showDebuffOperatorBubble(el, debuffName) {
     bubble.className = 'debuff-bubble-popup';
 
     const rect = el.getBoundingClientRect();
-    bubble.style.position = 'absolute';
     bubble.style.top = `${rect.bottom + window.scrollY + 5}px`;
     bubble.style.left = `${rect.left + window.scrollX}px`;
-    bubble.style.zIndex = '1000';
 
     const validOps = getValidOperatorsForDebuff(debuffName);
 

@@ -330,9 +330,8 @@ function setupSubOperatorEvents(i) {
     const potGroup = document.getElementById(`sub-${i}-pot-group`);
     if (potGroup?.parentNode) {
         const removeBtn = document.createElement('button');
-        removeBtn.className = 'potency-btn';
+        removeBtn.className = 'potency-btn potency-btn-remove';
         removeBtn.innerText = 'X';
-        removeBtn.style.color = '#ff4d4d';
         removeBtn.title = '선택 해제';
         removeBtn.onclick = () => {
             document.getElementById(`sub-${i}-op`).value = '';
@@ -750,18 +749,16 @@ function applyOpSettingsToUI(opId, type, subIdx) {
         applyToggle('main-gear-forge', 'main-forge-toggle', '전체 단조', allOn);
 
         // 스킬 시퀀스 복원 (없으면 기본 4종 세팅)
-        state.skillSequence = s?.skillSequence
-            ? s.skillSequence.map((item, idx) =>
-                typeof item === 'string'
-                    ? { id: `seq_mig_op_${Date.now()}_${idx}`, type: item, customState: null }
-                    : item)
+        const rawSeq = s?.skillSequence;
+        state.skillSequence = rawSeq
+            ? migrateSkillSequence({ skillSequence: rawSeq })
             : ['일반 공격', '배틀 스킬', '연계 스킬', '궁극기'].map((type, idx) =>
                 ({ id: `seq_def_${Date.now()}_${idx}`, type, customState: null }));
 
         if (s?.skillLevels) {
             state.mainOp.skillLevels = { ...s.skillLevels };
         } else {
-            state.mainOp.skillLevels = { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' };
+            state.mainOp.skillLevels = DEFAULT_SKILL_LEVELS();
         }
 
         state.mainOp.specialStack = s?.specialStack ? { ...s.specialStack } : {};
@@ -794,7 +791,7 @@ function applyOpSettingsToUI(opId, type, subIdx) {
         if (s?.skillLevels) {
             state.subOps[subIdx].skillLevels = { ...s.skillLevels };
         } else {
-            state.subOps[subIdx].skillLevels = { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' };
+            state.subOps[subIdx].skillLevels = DEFAULT_SKILL_LEVELS();
         }
 
         GEAR_SLOT_KEYS.forEach((k, j) => {
@@ -988,7 +985,7 @@ window.swapMainSub = function (i) {
             if (inp) inp.value = '';
             updateEntityImage('', `sub-${i}-gear-${k}-image`, 'gears');
         });
-        state.subOps[i].skillLevels = { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' };
+        state.subOps[i].skillLevels = DEFAULT_SKILL_LEVELS();
     }
 
     // state 즉시 반영
