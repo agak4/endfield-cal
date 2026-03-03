@@ -761,6 +761,8 @@ function applyOpSettingsToUI(opId, type, subIdx) {
         state.debuffState = s?.debuffState ? migrateDebuffState(s.debuffState) : DEFAULT_DEBUFF_STATE();
         state.usables = s?.usables ? { ...s.usables } : DEFAULT_USABLES();
         state.selectedSeqId = null;
+        state.disabledEffects = [];
+        state.effectStacks = {};
 
         updateUIStateVisuals?.();
         updateEnhancedSkillButtons?.(opId);

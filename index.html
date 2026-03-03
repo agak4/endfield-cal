@@ -918,8 +918,8 @@
                                             class="dmg-contrib-val"></span><span id="contrib-pct-0"
                                             class="dmg-contrib-pct"></span></div>
                                 </div>
-                                <div class="skill-card dmg-contrib-bar-track">
-                                    <div id="contrib-bar-0" class="skill-dmg-bar dmg-contrib-bar-fill"></div>
+                                <div class="dmg-contrib-bar-track">
+                                    <div id="contrib-bar-0" class="dmg-contrib-bar-fill"></div>
                                 </div>
                             </div>
                         </div>
@@ -934,8 +934,8 @@
                                             class="dmg-contrib-val"></span><span id="contrib-pct-1"
                                             class="dmg-contrib-pct"></span></div>
                                 </div>
-                                <div class="skill-card dmg-contrib-bar-track">
-                                    <div id="contrib-bar-1" class="skill-dmg-bar dmg-contrib-bar-fill"></div>
+                                <div class="dmg-contrib-bar-track">
+                                    <div id="contrib-bar-1" class="dmg-contrib-bar-fill"></div>
                                 </div>
                             </div>
                         </div>
@@ -950,8 +950,8 @@
                                             class="dmg-contrib-val"></span><span id="contrib-pct-2"
                                             class="dmg-contrib-pct"></span></div>
                                 </div>
-                                <div class="skill-card dmg-contrib-bar-track">
-                                    <div id="contrib-bar-2" class="skill-dmg-bar dmg-contrib-bar-fill"></div>
+                                <div class="dmg-contrib-bar-track">
+                                    <div id="contrib-bar-2" class="dmg-contrib-bar-fill"></div>
                                 </div>
                             </div>
                         </div>
@@ -966,32 +966,34 @@
                                             class="dmg-contrib-val"></span><span id="contrib-pct-3"
                                             class="dmg-contrib-pct"></span></div>
                                 </div>
-                                <div class="skill-card dmg-contrib-bar-track">
-                                    <div id="contrib-bar-3" class="skill-dmg-bar dmg-contrib-bar-fill"></div>
+                                <div class="dmg-contrib-bar-track">
+                                    <div id="contrib-bar-3" class="dmg-contrib-bar-fill"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <h3>무기 비교</h3>
-                <div class="comparison-settings comp-settings-panel">
-                    <div class="comp-settings-header">
-                        <span class="comp-settings-indicator"></span>
-                        비교 대상 설정 (일괄 적용)
-                    </div>
-                    <div class="comp-settings-body">
-                        <div class="control-row potency-row">
-                            <label class="u-font-xsmall">무기 잠재</label>
-                            <div class="potency-group" id="comp-wep-pot-group"></div>
-                            <input type="hidden" id="comp-wep-pot" value="0">
+                <div class="tile" data-tile-id="weapon-comp" data-full-row="true">
+                    <h4>무기 비교</h4>
+                    <div class="comparison-settings comp-settings-panel">
+                        <div class="comp-settings-header">
+                            <span class="comp-settings-indicator"></span>
+                            비교 대상 설정 (일괄 적용)
                         </div>
-                        <div class="u-flex-column-center">
-                            <label class="u-font-xsmall">기질 여부</label>
-                            <input type="checkbox" id="comp-wep-state" class="hidden-checkbox">
+                        <div class="comp-settings-body">
+                            <div class="control-row potency-row">
+                                <label class="u-font-xsmall">무기 잠재</label>
+                                <div class="potency-group" id="comp-wep-pot-group"></div>
+                                <input type="hidden" id="comp-wep-pot" value="0">
+                            </div>
+                            <div class="u-flex-column-center">
+                                <label class="u-font-xsmall">기질 여부</label>
+                                <input type="checkbox" id="comp-wep-state" class="hidden-checkbox">
+                            </div>
                         </div>
                     </div>
+                    <div id="weapon-comparison" class="comparison-list"></div>
                 </div>
-                <div id="weapon-comparison" class="comparison-list"></div>
             </div>
 
             <!-- 파티 분석 컨텐츠 -->

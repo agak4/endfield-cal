@@ -364,15 +364,22 @@
 
 .dmg-contrib-bar-track {
     height: 6px;
-    margin-top: 0;
+    margin-top: 4px;
     padding: 0;
     overflow: hidden;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
 }
 
 .dmg-contrib-bar-fill {
     height: 100%;
     border-radius: 3px;
+    background: rgba(88, 155, 255, 0.8);
     transition: width 0.3s ease, background 0.3s ease;
+}
+
+.dmg-contrib-bar-fill.main-op {
+    background: var(--accent);
 }
 
 .dmg-contrib-name.is-main-text {

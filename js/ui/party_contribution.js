@@ -31,6 +31,7 @@ function renderPartyContribution() {
 
         // 해당 오퍼레이터를 메인으로 하는 가상 상태(virtual state) 생성
         let virtualState = deepClone(state);
+        virtualState._subStatsCache = null; // 캐시 무효화 (기존 mainOp이 sub가 되므로 갱신 필요)
 
         // 메인/서브 위치에 따른 데이터 교체
         if (member.type === 'sub') {
@@ -80,6 +81,13 @@ function renderPartyContribution() {
             virtualState.mainOp.skillLevels = settings.skillLevels;
         }
 
+        // 3. 오퍼레이터별 개별 전역 설정 적용 (디버프, 소모품 등)
+        virtualState.debuffState = settings.debuffState ? migrateDebuffState(settings.debuffState) : DEFAULT_DEBUFF_STATE();
+        virtualState.usables = settings.usables ? { ...settings.usables } : DEFAULT_USABLES();
+        virtualState.disabledEffects = [];
+        virtualState.effectStacks = {};
+        virtualState.selectedSeqId = null;
+
         // 데미지 계산
         const res = calculateDamage(virtualState);
         const cycleRes = res ? calculateCycleDamage(virtualState, res) : null;
@@ -98,12 +106,14 @@ function renderPartyContribution() {
     // 렌더링 HTML 생성
     let html = `
         <div class="analysis-tab-inner">
-            <div class="result-box" style="margin-bottom: 20px;">
-                <h3 style="margin-top: 0; margin-bottom: 5px;">파티 총합 데미지 (사이클)</h3>
+            <div class="tile" data-tile-id="party-total" data-full-row="true" style="margin-bottom: 20px;">
+                <h4>파티 총합 데미지 (사이클)</h4>
                 <div style="font-size: 1.8rem; font-weight: bold; color: var(--accent);">${Math.floor(totalPartyDmg).toLocaleString()}</div>
             </div>
             
-            <div class="dmg-contrib-list">
+            <div class="tile" data-tile-id="party-contrib-list" data-full-row="true">
+                <h4>오퍼레이터별 데미지 기여도</h4>
+                <div class="dmg-contrib-list">
     `;
 
     results.sort((a, b) => b.damage - a.damage).forEach((item, idx) => {
@@ -123,8 +133,8 @@ function renderPartyContribution() {
                             <span class="dmg-contrib-pct">${sharePct.toFixed(1)}%</span>
                         </div>
                     </div>
-                    <div class="skill-card dmg-contrib-bar-track">
-                        <div class="skill-dmg-bar dmg-contrib-bar-fill ${item.isMain ? 'main-op' : ''}" style="width: ${sharePct.toFixed(1)}%;"></div>
+                    <div class="dmg-contrib-bar-track">
+                        <div class="dmg-contrib-bar-fill ${item.isMain ? 'main-op' : ''}" style="width: ${sharePct.toFixed(1)}%;"></div>
                     </div>
                 </div>
             </div>
@@ -132,13 +142,12 @@ function renderPartyContribution() {
     });
 
     html += `
+                </div>
             </div>
         </div>
     `;
 
     container.innerHTML = html;
 }
-
-window.renderPartyContribution = renderPartyContribution;
 
 window.renderPartyContribution = renderPartyContribution;

@@ -351,7 +351,8 @@ const AppTooltip = {
                     }
 
                     const scalingSuffix = e.scaling ? ` (<span class="tooltip-muted">+${getStatName(e.scaling.stat)} 비례</span>)` : '';
-                    return e.val !== undefined ? `${e.type}${suffix} +${e.val}${scalingSuffix}` : `${e.type}${suffix}${scalingSuffix}`;
+                    const stackSuffix = t.stack ? ` (최대 ${t.stack}중첩)` : '';
+                    return e.val !== undefined ? `${e.type}${suffix} +${e.val}${scalingSuffix}${stackSuffix}` : `${e.type}${suffix}${scalingSuffix}${stackSuffix}`;
                 }).join(' / ');
 
             const isPotential = potLevel !== null;
@@ -536,9 +537,10 @@ const AppTooltip = {
                 }
                 const isUnbalanced = types.includes('불균형 목표에 주는 피해') && !state?.enemyUnbalanced;
                 const label = types.includes('스탯') ? getStatName(t.stat) : types[0];
+                const stackSuffix = t.stack ? ` (최대 ${t.stack}중첩)` : '';
                 const accentColor = isUnbalanced ? 'inherit' : 'var(--accent)';
                 const spanStyle = (!isUnbalanced && forged) ? `style="color:var(--accent);font-weight:bold;"` : '';
-                return `<div style="margin-bottom:2px;${isUnbalanced ? 'color:inherit;' : ''}"><span style="color:${accentColor}">•</span> ${label}<span ${spanStyle}>${valStr}</span></div>`;
+                return `<div style="margin-bottom:2px;${isUnbalanced ? 'color:inherit;' : ''}"><span style="color:${accentColor}">•</span> ${label}<span ${spanStyle}>${valStr}</span>${stackSuffix}</div>`;
             }).join('');
             traitHtml = this.makeSection('장비 특성', `<div class="tooltip-desc">${traitLines}</div>`);
         }
@@ -600,7 +602,8 @@ const AppTooltip = {
                         const ratioDisp = (typeof t.scaling.ratio === 'string') ? t.scaling.ratio : `${t.scaling.ratio}%`;
                         return `${getStatName(t.scaling.stat)} 1포인트당 ${tName}${suffix} +${ratioDisp}${scalingSuffix}`;
                     }
-                    return t.val ? `${tName} +${t.val}${scalingSuffix}` : `${tName}${scalingSuffix}`;
+                    const stackSuffix = t.stack ? ` (최대 ${t.stack}중첩)` : '';
+                    return t.val ? `${tName} +${t.val}${scalingSuffix}${stackSuffix}` : `${tName}${scalingSuffix}${stackSuffix}`;
                 }
                 return typeof t === 'string' ? t : '';
             }).filter(Boolean);

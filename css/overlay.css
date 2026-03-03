@@ -727,6 +727,7 @@
     padding: 10px;
     border-radius: 8px;
     white-space: pre-line;
+    word-break: keep-all;
 }
 
 .tooltip-traits {
@@ -736,6 +737,7 @@
     padding: 10px;
     border-radius: 8px;
     white-space: pre-line;
+    word-break: keep-all;
 }
 
 .tooltip-set-info {
