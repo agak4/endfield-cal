@@ -22,6 +22,12 @@
  */
 
 // ============ 결과 렌더링 ============
+const SKILL_CAT_MAP = {
+    '일반 공격': 'normal', '강화 일반 공격': 'normal',
+    '배틀 스킬': 'battle', '강화 배틀 스킬': 'battle',
+    '연계 스킬': 'combo',
+    '궁극기': 'ult'
+};
 
 // ---- 공통 헬퍼 ----
 
@@ -111,9 +117,23 @@ function createEffectListItem(log, options = {}) {
             ts2.effectStacks[uid] = cur;
         } else {
             if (!ts2.disabledEffects) ts2.disabledEffects = [];
-            const idx = ts2.disabledEffects.indexOf(uiUid);
-            if (idx > -1) ts2.disabledEffects.splice(idx, 1);
-            else ts2.disabledEffects.push(uiUid);
+            const uidsToToggle = [uiUid];
+            // [New] skillType이 여러 개인 경우(잠재 등), 모든 카테고리 태그(#cat)를 함께 토글
+            if (log.skillType && log.uid && uiUid.includes('#')) {
+                log.skillType.forEach(st => {
+                    const cat = SKILL_CAT_MAP[st];
+                    if (cat) {
+                        const otherUid = `${log.uid}#${cat}`;
+                        if (!uidsToToggle.includes(otherUid)) uidsToToggle.push(otherUid);
+                    }
+                });
+            }
+
+            uidsToToggle.forEach(u => {
+                const idx = ts2.disabledEffects.indexOf(u);
+                if (idx > -1) ts2.disabledEffects.splice(idx, 1);
+                else ts2.disabledEffects.push(u);
+            });
         }
         if (!state.selectedSeqId) propagateGlobalStateToCustom('effects');
         updateState();
@@ -951,7 +971,6 @@ function renderDmgInc(res, cycleRes) {
     const SKILL_TYPE_NAMES = ['일반 공격', '배틀 스킬', '연계 스킬', '궁극기'];
     const SKILL_CAT_NAMES = ['normal', 'battle', 'combo', 'ult'];
     const skillTypeElems = { normal: null, battle: null, combo: null, ult: null };
-    const SKILL_CAT_MAP = { '일반 공격': 'normal', '배틀 스킬': 'battle', '연계 스킬': 'combo', '궁극기': 'ult' };
     if (opData && opData.skill) {
         opData.skill.forEach(s => {
             const cat = SKILL_CAT_MAP[s.skillType?.[0]];
@@ -1077,8 +1096,10 @@ function renderDmgInc(res, cycleRes) {
             const isAllSkillB = b.txt.includes('모든 스킬 피해');
             if (isAllSkillA && !isAllSkillB) return -1;
             if (!isAllSkillA && isAllSkillB) return 1;
-            if (a.tag === 'skillMult' && b.tag !== 'skillMult') return 1;
-            if (a.tag !== 'skillMult' && b.tag === 'skillMult') return -1;
+            const isMultA = a.tag === 'skillMult' || a.txt.includes('*');
+            const isMultB = b.tag === 'skillMult' || b.txt.includes('*');
+            if (isMultA && !isMultB) return 1;
+            if (!isMultA && isMultB) return -1;
             return 0;
         });
 

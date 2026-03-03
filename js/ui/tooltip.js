@@ -340,7 +340,7 @@ const AppTooltip = {
             const typeStr = filteredTypeArr
                 .map(e => {
                     const st = e.skillType || t.skillType;
-                    const suffix = (['스킬 치명타 확률', '스킬 치명타 피해', '스킬 배율 증가'].includes(e.type) && st)
+                    const suffix = (['스킬 치명타 확률', '스킬 치명타 피해', '스킬 배율 증가', '추가 공격 피해 배율 증가'].includes(e.type) && st)
                         ? ` (${Array.isArray(st) ? st.join(', ') : st})` : '';
 
                     // [New] val이 0%이고 scaling이 있으면 리스트 항목에 직접 공식을 표시
@@ -697,7 +697,7 @@ const AppTooltip = {
             if (isBattle && t === '배틀 스킬 피해') return true;
             if (isCombo && t === '연계 스킬 피해') return true;
             if (isUlt && t === '궁극기 피해') return true;
-            if ((isBattle || isCombo || isUlt) && (t === '모든 스킬 피해' || t === '스킬 배율 증가')) {
+            if ((isBattle || isCombo || isUlt) && (t === '모든 스킬 피해' || t === '스킬 배율 증가' || t === '추가 공격 피해 배율 증가')) {
                 return stTypes.length === 0 || stTypes.includes(skillType) || stTypes.includes(baseSkillType);
             }
             return false;
@@ -706,8 +706,11 @@ const AppTooltip = {
             const tb = Array.isArray(b.type) ? b.type[0] : b.type;
             if (ta === '모든 스킬 피해' && tb !== '모든 스킬 피해') return -1;
             if (ta !== '모든 스킬 피해' && tb === '모든 스킬 피해') return 1;
-            if (ta === '스킬 배율 증가' && tb !== '스킬 배율 증가') return 1;
-            if (ta !== '스킬 배율 증가' && tb === '스킬 배율 증가') return -1;
+            const isScaleTa = ta === '스킬 배율 증가' || ta === '추가 공격 피해 배율 증가';
+            const isScaleTb = tb === '스킬 배율 증가' || tb === '추가 공격 피해 배율 증가';
+            if (isScaleTa && !isScaleTb) return 1;
+            if (!isScaleTa && isScaleTb) return -1;
+            if (isScaleTa && isScaleTb) return ta.localeCompare(tb);
             return 0;
         });
 
@@ -770,7 +773,7 @@ const AppTooltip = {
         filteredEffects.forEach(eff => {
             const t = Array.isArray(eff.type) ? eff.type[0] : eff.type;
             let valStr = '';
-            if (t === '스킬 배율 증가') {
+            if (t === '스킬 배율 증가' || t === '추가 공격 피해 배율 증가') {
                 valStr = eff.dmg !== undefined ? ` +${eff.dmg}` : ` *${(1 + (parseFloat(eff.val) || 0) / 100).toFixed(2)}`;
             } else if (eff.val !== undefined) {
                 valStr = ` +${eff.val}`;

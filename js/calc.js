@@ -688,7 +688,7 @@ const LEVEL_COEFF_ARTS = 89 / 196; // ≈ 45.41%
 
 function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, activeEffects) {
     const baseAtk = opData.baseAtk + wepData.baseAtk;
-    let atkInc = 0, fixedAtk = 0, critRate = 5, critDmg = 50, dmgInc = 0, amp = 0, multiHit = 1.0, unbalanceDmg = 0, originiumArts = 0, ultRecharge = 0, ultCostReduction = 0, skillMults = { all: { mult: 0, add: 0 } }, dmgIncMap = { all: 0, skill: 0, normal: 0, battle: 0, combo: 0, ult: 0, phys: 0, heat: 0, elec: 0, cryo: 0, nature: 0 };
+    let atkInc = 0, fixedAtk = 0, critRate = 5, critDmg = 50, dmgInc = 0, amp = 0, multiHit = 1.0, unbalanceDmg = 0, originiumArts = 0, ultRecharge = 0, ultCostReduction = 0, skillMults = { all: { mult: 0, add: 0 } }, bonusMults = { all: { mult: 0, add: 0 } }, dmgIncMap = { all: 0, skill: 0, normal: 0, battle: 0, combo: 0, ult: 0, phys: 0, heat: 0, elec: 0, cryo: 0, nature: 0 };
     let takenDmgMap = { all: 0, phys: 0, heat: 0, elec: 0, cryo: 0, nature: 0, arts: 0 };
     const vulnMap = { '물리 취약': 0, '아츠 취약': 0, '열기 취약': 0, '전기 취약': 0, '냉기 취약': 0, '자연 취약': 0, '취약': 0 };
     const vulnAmpEffects = [];
@@ -958,21 +958,24 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
             } else {
                 logs.crit.push({ txt: `[${displayName}] ${t} ${valDisplay}${stackSuffix}`, uid: eff.uid, tag: 'skillCrit', skillType: eff.skillType, stack: eff.stack, stackCount: eff._stackCount, _triggerFailed: eff._triggerFailed, type: isRate ? 'rate' : 'dmg' });
             }
-        } else if (t === '스킬 배율 증가') {
+        } else if (t === '스킬 배율 증가' || t === '추가 공격 피해 배율 증가') {
+            const isBonusMult = t === '추가 공격 피해 배율 증가';
+            const targetMults = isBonusMult ? bonusMults : skillMults;
+
             const addVal = eff.dmg ? resolveVal(eff.dmg, stats, eff.dmgScaling || eff.scaling, eff._sourceOpId, state) * (eff.forgeMult || 1.0) : 0;
-            const addSkillMult = (st) => {
+            const addTargetMult = (st) => {
                 const cat = getCat(st);
                 if (!checkDisabled(cat)) {
-                    if (typeof skillMults[st] === 'number') skillMults[st] = { mult: skillMults[st], add: 0 };
-                    else if (!skillMults[st]) skillMults[st] = { mult: 0, add: 0 };
-                    skillMults[st].mult += val;
-                    skillMults[st].add += addVal;
+                    if (typeof targetMults[st] === 'number') targetMults[st] = { mult: targetMults[st], add: 0 };
+                    else if (!targetMults[st]) targetMults[st] = { mult: 0, add: 0 };
+                    targetMults[st].mult += val;
+                    targetMults[st].add += addVal;
                 }
             };
             if (eff.skillType) {
-                eff.skillType.forEach(st => addSkillMult(st));
+                eff.skillType.forEach(st => addTargetMult(st));
             } else {
-                addSkillMult('all');
+                addTargetMult('all');
             }
             let typeLabel = t;
             if (eff.skillType) typeLabel += ` (<span class="tooltip-highlight">${eff.skillType.join(', ')}</span>)`;
@@ -1247,7 +1250,7 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
             mainStatName: STAT_NAME_MAP[opData.mainStat], mainStatVal: stats[opData.mainStat],
             subStatName: STAT_NAME_MAP[opData.subStat], subStatVal: stats[opData.subStat],
             str: stats.str, agi: stats.agi, int: stats.int, wil: stats.wil,
-            critExp, finalCritRate, critDmg, dmgInc, amp, vuln: opVuln, takenDmg: opTakenDmg, unbalanceDmg: finalUnbal, originiumArts, skillMults, dmgIncData: dmgIncMap,
+            critExp, finalCritRate, critDmg, dmgInc, amp, vuln: opVuln, takenDmg: opTakenDmg, unbalanceDmg: finalUnbal, originiumArts, skillMults, bonusMults, dmgIncData: dmgIncMap,
             skillCritData, resistance: activeResVal, resMult, defMult, enemyDefense: defVal, ultRecharge, finalUltCost, vulnMap, takenDmgMap, vulnAmpEffects,
             allRes: resistance, armorBreakVal: abVal, gamsunVal: gamsunVal, baseTakenDmg: takenDmgMap.all,
             resIgnore: resIgnore, levelCoeffPhys: LEVEL_COEFF_PHYS, levelCoeffArts: LEVEL_COEFF_ARTS, artsSecondary, abnormalMults
@@ -1317,7 +1320,7 @@ function isApplicableEffect(opData, effectType, effectName) {
         '공격력 증가', '치명타 확률', '치명타 피해', '최대 생명력', '궁극기 충전 효율', '궁극기 에너지 감소', '치유 효율', '연타',
         '주는 피해', '스탯', '스탯%', '스킬 피해', '궁극기 피해', '연계 스킬 피해', '배틀 스킬 피해',
         '일반 공격 피해', '오리지늄 아츠', '오리지늄 아츠 강도', '모든 스킬 피해', '스킬 배율 증가',
-        '스킬 치명타 확률', '스킬 치명타 피해', '상태 이상 배율'
+        '스킬 치명타 확률', '스킬 치명타 피해', '상태 이상 배율', '추가 공격 피해 배율 증가'
     ];
     if (ALWAYS_ON.includes(type) || type === '불균형 목표에 주는 피해') return true;
 
@@ -1565,7 +1568,7 @@ function calcSingleSkillDamage(type, state, res) {
         if (lvlData.desc !== undefined) skillDef.desc = lvlData.desc;
     }
 
-    const { finalAtk, atkInc, baseAtk, statBonusPct, skillAtkIncData = { all: 0 }, critExp, finalCritRate, critDmg, amp, vuln, takenDmg, unbalanceDmg, resMult, defMult = 1, originiumArts = 0, skillMults = { all: { mult: 0, add: 0 } }, dmgIncData = { all: 0, skill: 0, normal: 0, battle: 0, combo: 0, ult: 0 }, skillCritData = { rate: { all: 0 }, dmg: { all: 0 } }, vulnMap = {}, takenDmgMap = { all: 0, phys: 0, arts: 0, heat: 0, elec: 0, cryo: 0, nature: 0 }, vulnAmpEffects = [] } = res.stats;
+    const { finalAtk, atkInc, baseAtk, statBonusPct, skillAtkIncData = { all: 0 }, critExp, finalCritRate, critDmg, amp, vuln, takenDmg, unbalanceDmg, resMult, defMult = 1, originiumArts = 0, skillMults = { all: { mult: 0, add: 0 } }, bonusMults = { all: { mult: 0, add: 0 } }, dmgIncData = { all: 0, skill: 0, normal: 0, battle: 0, combo: 0, ult: 0 }, skillCritData = { rate: { all: 0 }, dmg: { all: 0 } }, vulnMap = {}, takenDmgMap = { all: 0, phys: 0, arts: 0, heat: 0, elec: 0, cryo: 0, nature: 0 }, vulnAmpEffects = [] } = res.stats;
 
     // dmg 파싱
     const parseDmgPct = (v) => {
@@ -1582,6 +1585,23 @@ function calcSingleSkillDamage(type, state, res) {
     const skillTypes = skillDef.type ? (Array.isArray(skillDef.type) ? skillDef.type : [skillDef.type]) : [];
 
     const baseSkillElement = skillDef.element || (opData.type === 'phys' ? 'phys' : opData.element);
+
+    const bSkillName = Array.isArray(type) ? type[0] : type;
+    const bBaseType = bSkillName.startsWith('강화 ') ? bSkillName.substring(3) : bSkillName;
+    let bMult = 0;
+    if (bonusMults) {
+        if (typeof bonusMults === 'number') {
+            bMult = bonusMults;
+        } else {
+            const addObjB = (obj) => {
+                if (typeof obj === 'number') { bMult += obj; }
+                else if (obj) { bMult += (obj.mult || 0); }
+            };
+            addObjB(bonusMults.all);
+            addObjB(bonusMults[bBaseType]);
+            if (type !== bBaseType) addObjB(bonusMults[type]);
+        }
+    }
 
     if (skillDef.bonus) {
         skillDef.bonus.forEach(b => {
@@ -1620,7 +1640,7 @@ function calcSingleSkillDamage(type, state, res) {
 
                     const bp = b.perStack;
                     const bb = b.base !== undefined ? b.base : (b.val !== undefined ? b.val : 0);
-                    const bonusVal = (parseFloat(bb) + parseFloat(bp) * stackCount) / 100;
+                    const bonusVal = ((parseFloat(bb) + parseFloat(bp) * stackCount) / 100) * (1 + bMult / 100);
 
                     if (bonusVal > 0) {
                         const isStackable = b.perStack !== undefined && parseFloat(b.perStack) !== 0;
@@ -1644,7 +1664,7 @@ function calcSingleSkillDamage(type, state, res) {
                         }
                     }
                 } else if (b.val) {
-                    const bonusVal = parsePct(b.val);
+                    const bonusVal = parsePct(b.val) * (1 + bMult / 100);
                     if (b.element && b.element !== baseSkillElement) {
                         bonusList.push({
                             name: trName,

@@ -521,9 +521,7 @@ window.updateSkillLevelButtonsUI = function () {
         if (skillDef?.masterySource) {
             baseType = skillDef.masterySource;
         } else {
-            if (type === '연계 스킬') {
-                baseType = '배틀 스킬';
-            } else if (type.startsWith('강화 ')) {
+            if (type.startsWith('강화 ')) {
                 baseType = type.substring(3);
             }
         }
