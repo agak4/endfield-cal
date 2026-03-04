@@ -506,10 +506,10 @@ const DATA_OPERATORS = [
             {
                 skillType: ['궁극기'], element: 'nature', cost: 90, desc: '5초간 지속되는 중력 혼란 구역을 생성하여, 구역 내의 적에게 즉시 1회의 자연 피해를 주고 자연 부착 상태를 부여합니다. 구역 내 목표에게 감속과 아츠 취약 상태(기본 30%)를 부여합니다. 목표가 방어 불능 상태일 경우, 아츠 취약 효과는 방어 불능 1스택당 3%씩 추가로 증가됩니다(최대 4스택). 구역 내 목표가 띄우기 상태일 경우, 구역 효과가 종료될 때까지 띄우기 상태를 유지합니다.',
                 levels: {
-                    M0: { dmg: '600%', type: [{ type: '자연 부착', target: '적' }, { type: '아츠 취약', val: '26%', target: '적', triggerTarget: ['방어 불능'], perStack: '2.5%' }, { type: '감속', target: '적' }] },
-                    M1: { dmg: '642%', type: [{ type: '자연 부착', target: '적' }, { type: '아츠 취약', val: '30%', target: '적', triggerTarget: ['방어 불능'], perStack: '3%' }, { type: '감속', target: '적' }] },
-                    M2: { dmg: '692%', type: [{ type: '자연 부착', target: '적' }, { type: '아츠 취약', val: '30%', target: '적', triggerTarget: ['방어 불능'], perStack: '3%' }, { type: '감속', target: '적' }] },
-                    M3: { dmg: '750%', type: [{ type: '자연 부착', target: '적' }, { type: '아츠 취약', val: '30%', target: '적', triggerTarget: ['방어 불능'], perStack: '3%' }, { type: '감속', target: '적' }] }
+                    M0: { dmg: '600%', type: [{ type: '자연 부착', target: '적' }, { type: '아츠 취약', val: '26%', target: '적', trigger: ['방어 불능'], perStack: '2.5%' }, { type: '감속', target: '적' }] },
+                    M1: { dmg: '642%', type: [{ type: '자연 부착', target: '적' }, { type: '아츠 취약', val: '30%', target: '적', trigger: ['방어 불능'], perStack: '3%' }, { type: '감속', target: '적' }] },
+                    M2: { dmg: '692%', type: [{ type: '자연 부착', target: '적' }, { type: '아츠 취약', val: '30%', target: '적', trigger: ['방어 불능'], perStack: '3%' }, { type: '감속', target: '적' }] },
+                    M3: { dmg: '750%', type: [{ type: '자연 부착', target: '적' }, { type: '아츠 취약', val: '30%', target: '적', trigger: ['방어 불능'], perStack: '3%' }, { type: '감속', target: '적' }] }
                 }
             }
         ],
@@ -523,7 +523,7 @@ const DATA_OPERATORS = [
             [{ desc: '배틀 스킬 비전 지팡이 · 중력 모드의 효과 범위 +20%' }],
             [
                 { type: ['방어 불능 보정'], val: 1, skillType: ['궁극기'] },
-                { type: ['아츠 취약'], triggerTarget: ['방어 불능'], perStack: '3%', target: '적', skillType: ['궁극기'], desc: '잠재2: 궁극기 판정 시 방어 불능 스택 +1 및 스택당 아츠 취약 +3% 추가', desc: '적이 궁극기 비전 지팡이 · 중력장의 중력 혼란 구역에 영향받을 때, 방어 불능 1스택마다 아츠 취약의 증폭 효과가 두 배로 증가합니다. 또한 판정 시 목표가 추가로 방어 불능 1스택을 가진 것으로 간주합니다.(최대 4스택을 초과할 수 없습니다)' }
+                { type: ['아츠 취약'], trigger: ['방어 불능'], perStack: '3%', target: '적', skillType: ['궁극기'], desc: '잠재2: 궁극기 판정 시 방어 불능 스택 +1 및 스택당 아츠 취약 +3% 추가', desc: '적이 궁극기 비전 지팡이 · 중력장의 중력 혼란 구역에 영향받을 때, 방어 불능 1스택마다 아츠 취약의 증폭 효과가 두 배로 증가합니다. 또한 판정 시 목표가 추가로 방어 불능 1스택을 가진 것으로 간주합니다.(최대 4스택을 초과할 수 없습니다)' }
             ],
             [{ type: ['궁극기 충전 효율'], val: '5%', target: '팀', targetClass: ['guard', 'caster', 'supporter'], desc: '재능 "전달자의 노래" 효과 강화: 궁극기 충전 효율 추가 +5%' }],
             [{ type: ['궁극기 에너지 감소'], val: '15%', desc: '궁극기 비전 지팡이 · 중력장의 사용에 필요한 궁극기 에너지 -15%' }],
