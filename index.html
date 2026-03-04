@@ -932,10 +932,10 @@
         <section class="panel analysis-panel">
             <div class="analysis-header">
                 <h2>전투 분석</h2>
-                <div class="analysis-tabs">
+                <!-- <div class="analysis-tabs">
                     <button class="analysis-tab active" data-tab="solo">솔로</button>
                     <button class="analysis-tab" data-tab="party">파티</button>
-                </div>
+                </div> -->
             </div>
 
             <!-- 솔로 분석 컨텐츠 -->
@@ -1045,10 +1045,10 @@
                 </div>
             </div>
 
-            <!-- 파티 분석 컨텐츠 -->
+            <!-- 파티 분석 컨텐츠 (비활성화)
             <div id="analysis-party-content" class="analysis-tab-content">
-                <!-- party_contribution.js에서 동적으로 렌더링됨 -->
-            </div>
+                party_contribution.js에서 동적으로 렌더링됨
+            </div> -->
         </section>
     </div>
     <!-- 오퍼레이터 선택 모달 -->
@@ -1156,7 +1156,7 @@
         })();
     </script>
     <script src="js/ui/damage_contribution.js"></script>
-    <script src="js/ui/party_contribution.js"></script>
+    <!-- <script src="js/ui/party_contribution.js"></script> -->
     <script src="js/ui/render.js" defer></script>
     <script src="js/ui/tooltip.js" defer></script>
 

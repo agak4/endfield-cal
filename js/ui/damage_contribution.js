@@ -26,10 +26,26 @@ function renderDamageContribution(cycleRes) {
         });
     };
 
-    const createExcludedState = (effectsToExclude) => {
+    const createExcludedState = (effectsToExclude, excludedOpIds = []) => {
         const excludedState = { ...state };
         excludedState.disabledEffects = state.disabledEffects ? [...state.disabledEffects] : [];
         excludedState.effectStacks = state.effectStacks ? { ...state.effectStacks } : {};
+
+        // attribution에서 제외 대상 오퍼레이터의 귀속을 null로 처리한다.
+        // 귀속 오퍼레이터가 제외되면 그 오퍼레이터의 부가 효과 증강도 제외되어야 한다.
+        if (excludedOpIds.length > 0 && state.debuffState?.attribution) {
+            const newAttribution = { ...state.debuffState.attribution };
+            let attributionChanged = false;
+            for (const key of Object.keys(newAttribution)) {
+                if (excludedOpIds.includes(newAttribution[key])) {
+                    newAttribution[key] = null;
+                    attributionChanged = true;
+                }
+            }
+            if (attributionChanged) {
+                excludedState.debuffState = { ...state.debuffState, attribution: newAttribution };
+            }
+        }
 
         effectsToExclude.forEach(eff => {
             excludedState.disabledEffects.push(eff.uid);
@@ -48,7 +64,7 @@ function renderDamageContribution(cycleRes) {
                 if (seq.customState) {
                     const customDisabled = seq.customState.disabledEffects ? [...seq.customState.disabledEffects] : [];
                     const customStacks = seq.customState.effectStacks ? { ...seq.customState.effectStacks } : {};
-                    
+
                     effectsToExclude.forEach(eff => {
                         customDisabled.push(eff.uid);
                         customDisabled.push(`${eff.uid}#common`);
@@ -61,12 +77,28 @@ function renderDamageContribution(cycleRes) {
                         }
                     });
 
+                    // customState의 attribution도 동일하게 제외 처리
+                    let customAttribution = seq.customState.debuffState?.attribution;
+                    let customAttributionChanged = false;
+                    if (excludedOpIds.length > 0 && customAttribution) {
+                        customAttribution = { ...customAttribution };
+                        for (const key of Object.keys(customAttribution)) {
+                            if (excludedOpIds.includes(customAttribution[key])) {
+                                customAttribution[key] = null;
+                                customAttributionChanged = true;
+                            }
+                        }
+                    }
+
                     return {
                         ...seq,
                         customState: {
                             ...seq.customState,
                             disabledEffects: customDisabled,
-                            effectStacks: customStacks
+                            effectStacks: customStacks,
+                            ...(customAttributionChanged && seq.customState.debuffState
+                                ? { debuffState: { ...seq.customState.debuffState, attribution: customAttribution } }
+                                : {})
                         }
                     };
                 }
@@ -84,7 +116,8 @@ function renderDamageContribution(cycleRes) {
         }
     });
 
-    const pureBaseState = createExcludedState(allSubEffects);
+    const allSubOpIds = state.subOps.filter(s => s && s.id).map(s => s.id);
+    const pureBaseState = createExcludedState(allSubEffects, allSubOpIds);
     const pureBaseRes = calculateDamage(pureBaseState, false, false);
     const pureBaseCycleRes = calculateCycleDamage(pureBaseState, pureBaseRes, false);
     const pureBaseDamage = pureBaseCycleRes ? pureBaseCycleRes.total : 0;
@@ -96,7 +129,7 @@ function renderDamageContribution(cycleRes) {
     state.subOps.forEach((subOp) => {
         if (!subOp || !subOp.id) return;
         const subEffects = getSubOpEffects(subOp.id);
-        const excludedState = createExcludedState(subEffects);
+        const excludedState = createExcludedState(subEffects, [subOp.id]);
 
         const resExc = calculateDamage(excludedState, false, false);
         const cycleResExc = calculateCycleDamage(excludedState, resExc, false);

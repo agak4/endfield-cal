@@ -57,7 +57,11 @@ function makeSeqId() {
  */
 function commitDebuffChange(propagateType) {
     saveState();
-    if (!state.selectedSeqIds || state.selectedSeqIds.length === 0) propagateGlobalStateToCustom(propagateType);
+    // 'debuff' 타입은 customState가 있는 스킬의 개별 디버프 설정을 보호하기 위해 전파하지 않는다.
+    // customState가 존재한다는 것은 해당 스킬이 별도의 디버프 설정을 갖고 있다는 의미이다.
+    if (!state.selectedSeqIds || state.selectedSeqIds.length === 0) {
+        if (propagateType !== 'debuff') propagateGlobalStateToCustom(propagateType);
+    }
     updateState();
 }
 

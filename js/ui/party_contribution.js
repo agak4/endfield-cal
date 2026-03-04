@@ -64,28 +64,40 @@ function renderPartyContribution() {
         }
 
         // 저장된 오퍼레이터별 사이클/디버프 상태 적용
-        // 1. 저장된 사이클이 있으면 적용, 없으면 기본 콤보
-        const savedSequence = settings.skillSequence || [];
-        if (savedSequence.length > 0) {
-            virtualState.skillSequence = savedSequence;
+        // 메인 오퍼레이터는 현재 state를 그대로 사용하여 솔로 분석과 동일한 기반으로 계산한다.
+        // 서브 오퍼레이터는 저장된 opSettings에서 각자의 사이클/디버프 설정을 불러온다.
+        if (member.type === 'main') {
+            // 1. 현재 state의 사이클/디버프/소모품/효과 상태를 그대로 유지
+            virtualState.skillSequence = state.skillSequence;
+            virtualState.debuffState = state.debuffState;
+            virtualState.usables = state.usables;
+            virtualState.disabledEffects = state.disabledEffects ? [...state.disabledEffects] : [];
+            virtualState.effectStacks = state.effectStacks ? { ...state.effectStacks } : {};
         } else {
-            virtualState.skillSequence = ['일반 공격', '배틀 스킬', '연계 스킬', '궁극기'].map((t, i) => ({
-                id: `def_${Date.now()}_${i}`,
-                type: t,
-                customState: null
-            }));
+            // 1. 저장된 사이클이 있으면 적용, 없으면 기본 콤보
+            const savedSequence = settings.skillSequence || [];
+            if (savedSequence.length > 0) {
+                virtualState.skillSequence = savedSequence;
+            } else {
+                virtualState.skillSequence = ['일반 공격', '배틀 스킬', '연계 스킬', '궁극기'].map((t, i) => ({
+                    id: `def_${Date.now()}_${i}`,
+                    type: t,
+                    customState: null
+                }));
+            }
+
+            // 2. 스킬 레벨 적용
+            if (settings.skillLevels) {
+                virtualState.mainOp.skillLevels = settings.skillLevels;
+            }
+
+            // 3. 오퍼레이터별 개별 전역 설정 적용 (디버프, 소모품 등)
+            virtualState.debuffState = settings.debuffState ? migrateDebuffState(settings.debuffState) : DEFAULT_DEBUFF_STATE();
+            virtualState.usables = settings.usables ? { ...settings.usables } : DEFAULT_USABLES();
+            virtualState.disabledEffects = [];
+            virtualState.effectStacks = {};
         }
 
-        // 2. 스킬 레벨 적용
-        if (settings.skillLevels) {
-            virtualState.mainOp.skillLevels = settings.skillLevels;
-        }
-
-        // 3. 오퍼레이터별 개별 전역 설정 적용 (디버프, 소모품 등)
-        virtualState.debuffState = settings.debuffState ? migrateDebuffState(settings.debuffState) : DEFAULT_DEBUFF_STATE();
-        virtualState.usables = settings.usables ? { ...settings.usables } : DEFAULT_USABLES();
-        virtualState.disabledEffects = [];
-        virtualState.effectStacks = {};
         virtualState.selectedSeqIds = [];
 
         // 데미지 계산
