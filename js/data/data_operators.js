@@ -573,10 +573,10 @@ const DATA_OPERATORS = [
             {
                 skillType: ['궁극기'], element: 'nature', cost: 90, desc: '아델리아가 3초간 이동 가능한 지속 시전 상태에 들어가며, 돌리 씨를 소환하여 돌리 씨의 분신을 무작위로 사방에 던집니다. 각 분신이 적을 공격할 때마다 자연 피해를 주고, 적은 0.3초마다 최대 1회만 피해를 받습니다.',
                 levels: {
-                    M0: { dmg: '1320%', type: ['부식 부여'], target: '적' },
-                    M1: { dmg: '1410%', type: ['부식 부여'], target: '적' },
-                    M2: { dmg: '1520%', type: ['부식 부여'], target: '적' },
-                    M3: { dmg: '1650%', type: ['부식 부여'], target: '적' } // 이론상 최대치
+                    M0: { dmg: '1320%', target: '적' },
+                    M1: { dmg: '1410%', target: '적' },
+                    M2: { dmg: '1520%', target: '적' },
+                    M3: { dmg: '1650%', target: '적' } // 이론상 최대치
                 }
             }
         ],

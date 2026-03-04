@@ -659,19 +659,13 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
         if (!entry.setId || !entry.opData) return;
         const isSelf = (idx === 0);
         const setEffects = getSetEffects(entry.setId, entry.opData, isSelf);
+        if (!setEffects || setEffects.length === 0) return;
 
-        setEffects.forEach(eff => {
-            if (eff.nonStack) {
-                const key = `${entry.setId}_${eff.type}`;
-                if (activeNonStackTypes.has(key)) return;
-                activeNonStackTypes.add(key);
-            }
-            if (idx > 0 && !isSubOpTargetValid(eff)) return;
+        const setName = DATA_SETS.find(s => s.id === entry.setId)?.name || entry.setId;
+        const setLabel = `${entry.name} ${setName} 세트효과`;
+        const uidPrefix = `set_${entry.setId}_${idx}`;
 
-            const setName = DATA_SETS.find(s => s.id === entry.setId)?.name || entry.setId;
-            const uid = `set_${entry.setId}_${eff.type}_${idx}`;
-            allEffects.push({ ...eff, name: `${entry.name} ${setName} 세트효과`, uid, _opData: entry.opData }); // 세트 효과는 판정 시 _opData 필요할 수 있음
-        });
+        addEffect(setEffects, setLabel, 1.0, !isSelf, false, forceMaxStack, entry.opData, uidPrefix);
     });
 }
 
@@ -1926,7 +1920,7 @@ function calcSingleSkillDamage(type, state, res) {
     if (visibleAbnormals.length > 0) {
         const artsStrengthMult = 1 + (originiumArts / 100);
         const descParts = visibleAbnormals.map(a => {
-            const boostedMult = (a.isArts || a.name === '아츠 폭발') ? a.mult * artsStrengthMult : a.mult;
+            const boostedMult = a.mult * artsStrengthMult;
             return `${a.name} +${(boostedMult * 100).toFixed(0)}%`;
         });
         abnormalDesc = ` (${descParts.join(', ')})`;
@@ -2039,13 +2033,13 @@ function calcSingleSkillDamage(type, state, res) {
 
     abnormalList.forEach(a => {
         const aData = DATA_ABNORMALS[a.name] || DATA_ABNORMALS[a.name.replace('(이상)', '')];
+        const aElem = a.element || (aData ? aData.element : null);
         let aResMult = resMult;
         let aVuln = vuln;
         let aTaken = takenDmg;
         let aInc = abnormalInc; // 기본은 dmgIncData.all
 
         if (aData) {
-            const aElem = a.element || aData.element;
             const activeResKey = aElem === 'phys' ? '물리' : (resKeyMap[aElem] || null);
 
             if (activeResKey && res.stats.allRes) {
@@ -2075,9 +2069,8 @@ function calcSingleSkillDamage(type, state, res) {
             }
         }
 
-        const aLevelCoeff = (a.element === 'phys' || a.name === '강타') ? (1 + LEVEL_COEFF_PHYS) : (1 + LEVEL_COEFF_ARTS);
-        const isAStrengthApplicable = (a.isArts || a.name === '아츠 폭발');
-        const currentArtsStrengthMult = isAStrengthApplicable ? artsStrengthMult : 1;
+        const aLevelCoeff = (aElem === 'phys' && a.name !== '쇄빙') ? (1 + LEVEL_COEFF_PHYS) : (1 + LEVEL_COEFF_ARTS);
+        const currentArtsStrengthMult = artsStrengthMult;
         const aCommonMults = adjCritExp * (1 + aInc / 100) * (1 + amp / 100) * (1 + aTaken / 100) * (1 + aVuln / 100) * (1 + unbalanceDmg / 100) * aResMult * defMult * currentArtsStrengthMult * aLevelCoeff;
         let aDmg = adjFinalAtk * a.mult * aCommonMults;
 
@@ -2293,13 +2286,13 @@ function collectProcEffects(opData, currentState) {
     // 무기 특성
     if (currentState.mainOp?.wepId) {
         const wepData = DATA_WEAPONS.find(w => w.id === currentState.mainOp.wepId);
-        const wepRefine = Math.max(0, (Number(currentState.mainOp.wepRefine) || 1) - 1);
         if (wepData?.traits) {
-            wepData.traits.forEach(trait => {
+            wepData.traits.forEach((trait, idx) => {
                 const isProcType = trait.dmg || (Array.isArray(trait.type) && trait.type.includes('물리 데미지'));
                 if (isProcType && trait.trigger) {
+                    const finalLv = calculateWeaponTraitLevel(idx, currentState.mainOp.wepState, currentState.mainOp.wepPot);
                     let dmgValue = trait.dmg;
-                    if (!dmgValue && trait.valByLevel) dmgValue = trait.valByLevel[wepRefine];
+                    if (!dmgValue && trait.valByLevel) dmgValue = calculateWeaponTraitValue(trait, finalLv);
                     if (dmgValue) procEffects.push({ ...trait, dmg: dmgValue, label: `무기:${wepData.name}` });
                 }
             });
@@ -2314,7 +2307,6 @@ function collectProcEffects(opData, currentState) {
                 const isProcType = eff.dmg || (Array.isArray(eff.type) && eff.type.includes('물리 데미지'));
                 if (isProcType && eff.trigger) {
                     let dmgValue = eff.dmg;
-                    // dmg가 배열인 경우 첫 번째 값 사용 (예: ['250%'])
                     if (Array.isArray(dmgValue)) dmgValue = dmgValue[0];
                     if (dmgValue) procEffects.push({ ...eff, dmg: dmgValue, label: `세트:${setData.name}` });
                 }

@@ -185,8 +185,6 @@ window.updateStaticCycleButtonsElementColor = updateStaticCycleButtonsElementCol
  */
 function renderResult(res) {
     if (!res) {
-        const el = document.getElementById('final-damage');
-        if (el) el.innerText = '0';
         return;
     }
 
@@ -207,7 +205,6 @@ function renderResult(res) {
     // 3. Render all UI values using the displayRes (either global or isolated custom state)
     // 최종 데미지 박스는 언제나 전역 기준값(res)을 사용하도록 변경
     const mapping = {
-        'final-damage': Math.floor(res.finalDmg).toLocaleString(),
         'stat-atk': Math.floor(displayRes.stats.finalAtk).toLocaleString(),
         'stat-atk-inc': displayRes.stats.atkInc.toFixed(1) + '%',
         'stat-str-val': Math.floor(displayRes.stats.str || 0),
