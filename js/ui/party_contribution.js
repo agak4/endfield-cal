@@ -25,7 +25,12 @@ function renderPartyContribution() {
         ...state.subOps.map((sub, idx) => ({ type: 'sub', id: sub.id, index: idx }))
     ].filter(p => p.id);
 
-    const results = party.map(member => {
+    const aggregatedDamage = {};
+    party.forEach(p => {
+        if (p.id) aggregatedDamage[p.id] = 0;
+    });
+
+    party.forEach(member => {
         const opData = getOperatorData(member.id);
         const settings = loadOpSettings(member.id) || {};
 
@@ -48,7 +53,7 @@ function renderPartyContribution() {
                 gears: [...targetSub.gears],
                 gearForged: [...targetSub.gearForged],
                 skillLevels: targetSub.skillLevels || { '일반 공격': 'M3', '배틀 스킬': 'M3', '연계 스킬': 'M3', '궁극기': 'M3' },
-                specialStack: settings.specialStack || {},
+                specialStack: settings.specialStack || {}, // 서브 전용 스택이 있다면 반영
             };
 
             virtualState.subOps[member.index] = {
@@ -64,8 +69,6 @@ function renderPartyContribution() {
         }
 
         // 저장된 오퍼레이터별 사이클/디버프 상태 적용
-        // 메인 오퍼레이터는 현재 state를 그대로 사용하여 솔로 분석과 동일한 기반으로 계산한다.
-        // 서브 오퍼레이터는 저장된 opSettings에서 각자의 사이클/디버프 설정을 불러온다.
         if (member.type === 'main') {
             // 1. 현재 state의 사이클/디버프/소모품/효과 상태를 그대로 유지
             virtualState.skillSequence = state.skillSequence;
@@ -100,15 +103,26 @@ function renderPartyContribution() {
 
         virtualState.selectedSeqIds = [];
 
-        // 데미지 계산
+        // 데미지 계산 및 기여도 추출
         const res = calculateDamage(virtualState);
         const cycleRes = res ? calculateCycleDamage(virtualState, res) : null;
-        const totalDmg = cycleRes ? cycleRes.total : 0;
 
+        if (typeof calculateDamageContribution === 'function') {
+            const contributions = calculateDamageContribution(virtualState, cycleRes);
+            contributions.forEach(c => {
+                if (c.opId) {
+                    aggregatedDamage[c.opId] = (aggregatedDamage[c.opId] || 0) + c.damage;
+                }
+            });
+        }
+    });
+
+    const results = party.map(member => {
+        const opData = getOperatorData(member.id);
         return {
             id: member.id,
             name: opData?.name || 'Unknown',
-            damage: totalDmg,
+            damage: aggregatedDamage[member.id] || 0,
             isMain: member.type === 'main'
         };
     });

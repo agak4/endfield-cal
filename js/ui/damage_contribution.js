@@ -7,17 +7,13 @@
  * - 메인 오퍼레이터 코어 데미지 = 전체 데미지 - 모든 서브 오퍼레이터 기여도의 합
  */
 
-function renderDamageContribution(cycleRes) {
-    const containerItem = document.getElementById('damage-contribution-box');
-    if (!containerItem) return;
-
-    if (!cycleRes || typeof calculateCycleDamage !== 'function' || !state.mainOp.id || cycleRes.total === 0) {
-        containerItem.style.display = 'none';
-        return;
+function calculateDamageContribution(targetState, cycleRes) {
+    if (!cycleRes || typeof calculateCycleDamage !== 'function' || !targetState.mainOp.id || cycleRes.total === 0) {
+        return [];
     }
 
     // Get active effects from baseline run to identify which ones belong to which subOp
-    const baseRes = calculateDamage(state, false, false);
+    const baseRes = calculateDamage(targetState, false, false);
     const activeEffects = baseRes ? baseRes.activeEffects : [];
 
     const getSubOpEffects = (subOpId) => {
@@ -27,14 +23,14 @@ function renderDamageContribution(cycleRes) {
     };
 
     const createExcludedState = (effectsToExclude, excludedOpIds = []) => {
-        const excludedState = { ...state };
-        excludedState.disabledEffects = state.disabledEffects ? [...state.disabledEffects] : [];
-        excludedState.effectStacks = state.effectStacks ? { ...state.effectStacks } : {};
+        const excludedState = { ...targetState };
+        excludedState.disabledEffects = targetState.disabledEffects ? [...targetState.disabledEffects] : [];
+        excludedState.effectStacks = targetState.effectStacks ? { ...targetState.effectStacks } : {};
 
         // attribution에서 제외 대상 오퍼레이터의 귀속을 null로 처리한다.
         // 귀속 오퍼레이터가 제외되면 그 오퍼레이터의 부가 효과 증강도 제외되어야 한다.
-        if (excludedOpIds.length > 0 && state.debuffState?.attribution) {
-            const newAttribution = { ...state.debuffState.attribution };
+        if (excludedOpIds.length > 0 && targetState.debuffState?.attribution) {
+            const newAttribution = { ...targetState.debuffState.attribution };
             let attributionChanged = false;
             for (const key of Object.keys(newAttribution)) {
                 if (excludedOpIds.includes(newAttribution[key])) {
@@ -43,7 +39,7 @@ function renderDamageContribution(cycleRes) {
                 }
             }
             if (attributionChanged) {
-                excludedState.debuffState = { ...state.debuffState, attribution: newAttribution };
+                excludedState.debuffState = { ...targetState.debuffState, attribution: newAttribution };
             }
         }
 
@@ -59,8 +55,8 @@ function renderDamageContribution(cycleRes) {
             }
         });
 
-        if (state.skillSequence) {
-            excludedState.skillSequence = state.skillSequence.map(seq => {
+        if (targetState.skillSequence) {
+            excludedState.skillSequence = targetState.skillSequence.map(seq => {
                 if (seq.customState) {
                     const customDisabled = seq.customState.disabledEffects ? [...seq.customState.disabledEffects] : [];
                     const customStacks = seq.customState.effectStacks ? { ...seq.customState.effectStacks } : {};
@@ -110,13 +106,13 @@ function renderDamageContribution(cycleRes) {
 
     // 1. Calculate Pure Base Damage (Main Op Only)
     let allSubEffects = [];
-    state.subOps.forEach(subOp => {
+    targetState.subOps.forEach(subOp => {
         if (subOp && subOp.id) {
             allSubEffects = allSubEffects.concat(getSubOpEffects(subOp.id));
         }
     });
 
-    const allSubOpIds = state.subOps.filter(s => s && s.id).map(s => s.id);
+    const allSubOpIds = targetState.subOps.filter(s => s && s.id).map(s => s.id);
     const pureBaseState = createExcludedState(allSubEffects, allSubOpIds);
     const pureBaseRes = calculateDamage(pureBaseState, false, false);
     const pureBaseCycleRes = calculateCycleDamage(pureBaseState, pureBaseRes, false);
@@ -126,7 +122,7 @@ function renderDamageContribution(cycleRes) {
     const marginals = [];
     let sumMarginals = 0;
 
-    state.subOps.forEach((subOp) => {
+    targetState.subOps.forEach((subOp) => {
         if (!subOp || !subOp.id) return;
         const subEffects = getSubOpEffects(subOp.id);
         const excludedState = createExcludedState(subEffects, [subOp.id]);
@@ -162,22 +158,35 @@ function renderDamageContribution(cycleRes) {
     });
 
     // 4. Main Op Data (Fixed at Pure Base Damage)
-    const mainOpData = getOperatorData(state.mainOp.id);
+    const mainOpData = getOperatorData(targetState.mainOp.id);
     contributions.push({
-        opId: state.mainOp.id,
+        opId: targetState.mainOp.id,
         opName: mainOpData ? mainOpData.name : 'Unknown',
         damage: pureBaseDamage,
         isMain: true
     });
 
-    const finalSum = pureBaseDamage + totalSubDamage;
-
-    // 4. Sort (Main is always top, others descending)
+    // 5. Sort (Main is always top, others descending)
     contributions.sort((a, b) => {
         if (a.isMain) return -1;
         if (b.isMain) return 1;
         return b.damage - a.damage;
     });
+
+    return contributions;
+}
+
+function renderDamageContribution(cycleRes) {
+    const containerItem = document.getElementById('damage-contribution-box');
+    if (!containerItem) return;
+
+    if (!cycleRes || typeof calculateCycleDamage !== 'function' || !state.mainOp.id || cycleRes.total === 0) {
+        containerItem.style.display = 'none';
+        return;
+    }
+
+    const contributions = calculateDamageContribution(state, cycleRes);
+    const finalSum = contributions.reduce((sum, item) => sum + item.damage, 0);
 
     // 5. Update DOM
     // Hide all items initially
