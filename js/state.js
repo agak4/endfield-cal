@@ -244,8 +244,14 @@ function updateState() {
     const defenseEl = document.getElementById('enemy-defense');
     state.enemyDefense = defenseEl ? (parseInt(defenseEl.value || defenseEl.innerText) || 0) : 100;
 
-    // 장비/무기 등 변경되었을 수 있으므로 서브 오퍼레이터 캐시 초기화
-    state._subStatsCache = null;
+    // 서브 오퍼레이터 설정 해시 생성하여 캐시 유지 여부 결정
+    const newSubHash = JSON.stringify(state.subOps.map(sub => ({
+        id: sub.id, pot: sub.pot, wepId: sub.wepId, wepPot: sub.wepPot, wepState: sub.wepState, gears: sub.gears, gearForged: sub.gearForged, skillLevels: sub.skillLevels
+    })));
+    if (state._subHash !== newSubHash) {
+        state._subStatsCache = null;
+        state._subHash = newSubHash;
+    }
 
     // 계산 → 렌더링
     const result = calculateDamage(state);

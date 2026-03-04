@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ui/render.js — 결과 렌더링
  *
  * [역할]
@@ -178,7 +178,7 @@ function updateStaticCycleButtonsElementColor(opId) {
     const targetId = opId || (state && state.mainOp && state.mainOp.id);
     if (!targetId) return;
 
-    const opData = DATA_OPERATORS.find(o => o.id === targetId);
+    const opData = typeof getOperatorData === 'function' ? getOperatorData(targetId) : getOperatorData(targetId);
     if (!opData) return;
 
     const buttons = document.querySelectorAll('.cycle-add-buttons .cycle-btn:not(.cycle-btn-enhanced)');
@@ -323,7 +323,7 @@ function renderElemSplit(containerId, logs, label) {
     if (!container) return;
     container.innerHTML = '';
 
-    const opData = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
+    const opData = getOperatorData(state.mainOp.id);
 
     // 오퍼레이터 스킬에서 고유 element 목록 추출 (최대 2개)
     const skillElements = [];
@@ -351,8 +351,18 @@ function renderElemSplit(containerId, logs, label) {
 
     (logs || []).forEach(log => {
         let val = 0;
-        const valMatch = log.txt?.match(/([+-]?\s*\d+(\.\d+)?)\s*%/);
-        if (valMatch) val = parseFloat(valMatch[1].replace(/\s/g, ''));
+        if (log.val !== undefined) {
+            val = log.val;
+        } else if (log.txt) {
+            const pctIdx = log.txt.indexOf('%');
+            if (pctIdx !== -1) {
+                let start = pctIdx - 1;
+                while (start >= 0 && (log.txt[start] === '.' || (log.txt[start] >= '0' && log.txt[start] <= '9') || log.txt[start] === '+' || log.txt[start] === '-' || log.txt[start] === ' ')) {
+                    start--;
+                }
+                val = parseFloat(log.txt.substring(start + 1, pctIdx).replace(/\s/g, '')) || 0;
+            }
+        }
 
         const tag = log.tag || 'all';
         const uiLog = { ...log, _uiUid: log.uid };
@@ -431,7 +441,7 @@ function updateActiveSetUI() {
     if (!state.activeSetId) return;
 
     const set = DATA_SETS.find(s => s.id === state.activeSetId);
-    const opData = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
+    const opData = getOperatorData(state.mainOp.id);
     if (!set || !opData) return;
 
     const isViable = checkSetViability(state.activeSetId, opData);
@@ -550,7 +560,7 @@ function renderCycleSequence(cycleRes) {
         else if (type.includes('배틀')) baseType = '배틀 스킬';
         else if (type.includes('일반')) baseType = '일반 공격';
 
-        const opData = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
+        const opData = getOperatorData(state.mainOp.id);
         const color = AppTooltip.getSkillElementColor(opData, type);
 
         const imgSrc = imgMap[baseType] || imgMap['일반 공격'];
@@ -561,7 +571,7 @@ function renderCycleSequence(cycleRes) {
 
         // 강화 스킬인 경우 오퍼레이터 이미지를 백그라운드로 사용
         if (type.startsWith('강화')) {
-            const opDataEnhanced = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
+            const opDataEnhanced = getOperatorData(state.mainOp.id);
             if (opDataEnhanced?.name) {
                 cardContainer.classList.add('seq-has-enhanced-bg');
 
@@ -635,7 +645,7 @@ function renderCycleSequence(cycleRes) {
                 rateHtml = item.dmgRate || '0%';
             }
 
-            const opData = DATA_OPERATORS.find(o => o.id === (state.mainOp?.id || ''));
+            const opData = getOperatorData(state.mainOp?.id);
             const activeEffects = item.activeEffects || (window.lastCalcResult ? window.lastCalcResult.activeEffects : []);
             const targetSt = buildTargetState(item.customState);
 
@@ -785,7 +795,7 @@ function renderCyclePerSkill(cycleRes) {
         // 툴팁 이벤트
         header.onmouseenter = (e) => {
             if (item.type === 'skill') {
-                const opData = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
+                const opData = getOperatorData(state.mainOp.id);
                 const skillDef = opData?.skill?.find(s => {
                     const entry = s;
                     return entry?.skillType?.includes(name);
@@ -873,7 +883,7 @@ function renderWeaponComparison(res, cycleRes, skipAnimation = false) {
     const box = document.getElementById('weapon-comparison');
     if (!box || !state.mainOp.id || !res) return;
 
-    const currentOp = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
+    const currentOp = getOperatorData(state.mainOp.id);
     if (!currentOp) return;
 
     // 기준값 결정 (사이클 합산 > 0 이면 사이클 데미지, 아니면 최종 데미지)
@@ -997,7 +1007,7 @@ function renderDmgInc(res, cycleRes) {
     statsBotEl.innerHTML = '';
     listBotEl.innerHTML = '';
 
-    const opData = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
+    const opData = getOperatorData(state.mainOp.id);
 
     // 오퍼레이터 스킬에서 고유 element 목록 추출 (최대 2개)
     const skillElements = [];
@@ -1068,9 +1078,15 @@ function renderDmgInc(res, cycleRes) {
         if (!isMult) {
             if (log.val !== undefined) {
                 val = log.val;
-            } else {
-                const valMatch = log.txt.match(/([+-]?\s*\d+(\.\d+)?)\s*%/);
-                if (valMatch) val = parseFloat(valMatch[1].replace(/\s/g, ''));
+            } else if (log.txt) {
+                const pctIdx = log.txt.indexOf('%');
+                if (pctIdx !== -1) {
+                    let start = pctIdx - 1;
+                    while (start >= 0 && (log.txt[start] === '.' || (log.txt[start] >= '0' && log.txt[start] <= '9') || log.txt[start] === '+' || log.txt[start] === '-' || log.txt[start] === ' ')) {
+                        start--;
+                    }
+                    val = parseFloat(log.txt.substring(start + 1, pctIdx).replace(/\s/g, '')) || 0;
+                }
             }
         }
         const targetState = getTargetState();
@@ -1191,7 +1207,7 @@ function renderLevelCoeff(res) {
     if (!container) return;
     container.innerHTML = '';
 
-    const opData = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
+    const opData = getOperatorData(state.mainOp.id);
 
     // 오퍼레이터 스킬에서 고유 element 목록 추출 (최대 2개)
     const skillElements = [];
@@ -1258,7 +1274,7 @@ function updateEnhancedSkillButtons(opId) {
 
     if (!opId) return;
 
-    const opData = DATA_OPERATORS.find(o => o.id === opId);
+    const opData = getOperatorData(opId);
     if (!opData || !opData.skill) return;
 
     // '강화'가 들어간 스킬을 찾음
@@ -1286,7 +1302,7 @@ function updateEnhancedSkillButtons(opId) {
         };
 
         btn.onmouseenter = (e) => {
-            const opData = DATA_OPERATORS.find(o => o.id === opId);
+            const opData = getOperatorData(opId);
             const activeEffects = window.lastCalcResult ? window.lastCalcResult.activeEffects : [];
             const content = AppTooltip.renderSkillTooltip(skillName, es, opData, '', activeEffects, getTargetState());
             AppTooltip.showCustom(content, e, { width: '350px' });

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ui/party_contribution.js — 파티 내 오퍼레이터별 개별 데미지 합산 표시
  *
  * [역할]
@@ -26,18 +26,18 @@ function renderPartyContribution() {
     ].filter(p => p.id);
 
     const results = party.map(member => {
-        const opData = DATA_OPERATORS.find(o => o.id === member.id);
+        const opData = getOperatorData(member.id);
         const settings = loadOpSettings(member.id) || {};
 
         // 해당 오퍼레이터를 메인으로 하는 가상 상태(virtual state) 생성
-        let virtualState = deepClone(state);
+        let virtualState = { ...state, subOps: [...state.subOps] };
         virtualState._subStatsCache = null; // 캐시 무효화 (기존 mainOp이 sub가 되므로 갱신 필요)
 
         // 메인/서브 위치에 따른 데이터 교체
         if (member.type === 'sub') {
             // 현재 메인을 서브로, 타겟 서브를 메인으로 교체
-            const currentMain = deepClone(virtualState.mainOp);
-            const targetSub = deepClone(virtualState.subOps[member.index]);
+            const currentMain = { ...state.mainOp };
+            const targetSub = { ...state.subOps[member.index] };
 
             virtualState.mainOp = {
                 id: targetSub.id,

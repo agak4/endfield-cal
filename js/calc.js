@@ -33,6 +33,16 @@
  */
 
 // ============ 공통 상수 ============
+let OPERATOR_MAP = null;
+function getOperatorData(id) {
+    if (!OPERATOR_MAP) {
+        OPERATOR_MAP = {};
+        if (typeof DATA_OPERATORS !== 'undefined') {
+            DATA_OPERATORS.forEach(op => OPERATOR_MAP[op.id] = op);
+        }
+    }
+    return OPERATOR_MAP[id] || null;
+}
 
 // 스킬 타입명 → 카테고리 키 매핑 (여러 함수에서 공유)
 const SKILL_TYPE_CAT_MAP = {
@@ -89,7 +99,7 @@ function calcPerStackValue(perStack, base, stackCount) {
 // ============ 데미지 계산 엔진 ============
 
 function calculateDamage(currentState, forceMaxStack = false, isStatCalcOnly = false) {
-    const originalOpData = DATA_OPERATORS.find(o => o.id === currentState.mainOp.id);
+    const originalOpData = getOperatorData(currentState.mainOp.id);
     const wepData = DATA_WEAPONS.find(w => w.id === currentState.mainOp.wepId);
     if (!originalOpData || !wepData) return null;
 
@@ -165,7 +175,7 @@ function getAdjustedStackCount(triggerName, state, opData, skillTypes) {
     if (triggerName === '방어 불능') {
         count = state.debuffState?.physDebuff?.defenseless || 0;
         const mainOp = state.mainOp;
-        const op = opData || DATA_OPERATORS.find(o => o.id === mainOp.id);
+        const op = opData;
         if (op) {
             let opPot = 0;
             if (op.id === mainOp?.id) {
@@ -193,10 +203,10 @@ function getAdjustedStackCount(triggerName, state, opData, skillTypes) {
     }
 
     // 스페셜 스택
-    const op = opData || DATA_OPERATORS.find(o => o.id === (state.mainOp?.id));
+    const op2 = opData;
     const specialStackVal = state.getSpecialStack ? state.getSpecialStack() : (state.mainOp?.specialStack || {});
-    if (op && op.specialStack) {
-        const stacks = Array.isArray(op.specialStack) ? op.specialStack : [op.specialStack];
+    if (op2 && op2.specialStack) {
+        const stacks = Array.isArray(op2.specialStack) ? op2.specialStack : [op2.specialStack];
         const matchingStack = stacks.find(s => s.triggers && s.triggers.includes(triggerName));
         if (matchingStack) {
             const stackId = matchingStack.id || 'default';
@@ -214,6 +224,58 @@ function getAdjustedStackCount(triggerName, state, opData, skillTypes) {
     return count;
 }
 
+const MERGE_EFFECTS_CACHE = new Map();
+
+function getStrForMerge(v) {
+    if (v == null) return '';
+    if (typeof v === 'string' || typeof v === 'number') return String(v);
+    if (Array.isArray(v)) return v.map(getStrForMerge).join(',');
+    if (typeof v === 'object') return v.type ? getStrForMerge(v.type) : JSON.stringify(v);
+    return String(v);
+}
+
+function mergeEffects(effs, combineValues) {
+    if (!effs || effs.length === 0) return [];
+    if (MERGE_EFFECTS_CACHE.has(effs)) return MERGE_EFFECTS_CACHE.get(effs);
+
+    const groups = {};
+    effs.forEach(eff => {
+        if (!eff) return;
+        const typeStr = getStrForMerge(eff.type);
+        const triggerStr = getStrForMerge(eff.trigger);
+        const skillTypeStr = getStrForMerge(eff.skillType);
+        const key = `${typeStr}|${triggerStr}|${eff.target}|${skillTypeStr}|${eff.cond}`;
+
+        if (!groups[key]) {
+            groups[key] = deepClone(eff);
+        } else {
+            const g = groups[key];
+            if (eff.val !== undefined) g.val = combineValues(g.val, eff.val);
+            if (eff.dmg !== undefined) g.dmg = combineValues(g.dmg, eff.dmg);
+            if (eff.bonus) {
+                if (!g.bonus) g.bonus = [];
+                eff.bonus.forEach(eb => {
+                    const bTypeStr = getStrForMerge(eb.type);
+                    const bTriggerStr = getStrForMerge(eb.trigger);
+                    const existingBonus = g.bonus.find(gb =>
+                        getStrForMerge(gb.type) === bTypeStr &&
+                        getStrForMerge(gb.trigger) === bTriggerStr &&
+                        gb.target === eb.target
+                    );
+                    if (existingBonus) {
+                        if (eb.val !== undefined) existingBonus.val = combineValues(existingBonus.val, eb.val);
+                    } else {
+                        g.bonus.push(deepClone(eb));
+                    }
+                });
+            }
+        }
+    });
+    const res = Object.values(groups);
+    MERGE_EFFECTS_CACHE.set(effs, res);
+    return res;
+}
+
 // ---- 효과 수집 ----
 function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxStack = false) {
     const activeNonStackTypes = new Set();
@@ -228,44 +290,6 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
         const sum = parseFloat((n1 + n2).toPrecision(12));
         if (isPct1 || isPct2) return sum + '%';
         return sum;
-    };
-
-    const mergeEffects = (effs) => {
-        if (!effs || effs.length === 0) return [];
-        const groups = {};
-        effs.forEach(eff => {
-            if (!eff) return;
-            const typeStr = JSON.stringify(eff.type);
-            const triggerStr = JSON.stringify(eff.trigger);
-            const skillTypeStr = JSON.stringify(eff.skillType);
-            const key = `${typeStr}|${triggerStr}|${eff.target}|${skillTypeStr}|${eff.cond}`;
-
-            if (!groups[key]) {
-                groups[key] = deepClone(eff);
-            } else {
-                const g = groups[key];
-                if (eff.val !== undefined) g.val = combineValues(g.val, eff.val);
-                if (eff.dmg !== undefined) g.dmg = combineValues(g.dmg, eff.dmg);
-                if (eff.bonus) {
-                    if (!g.bonus) g.bonus = [];
-                    eff.bonus.forEach(eb => {
-                        const bTypeStr = JSON.stringify(eb.type);
-                        const bTriggerStr = JSON.stringify(eb.trigger);
-                        const existingBonus = g.bonus.find(gb =>
-                            JSON.stringify(gb.type) === bTypeStr &&
-                            JSON.stringify(gb.trigger) === bTriggerStr &&
-                            gb.target === eb.target
-                        );
-                        if (existingBonus) {
-                            if (eb.val !== undefined) existingBonus.val = combineValues(existingBonus.val, eb.val);
-                        } else {
-                            g.bonus.push(deepClone(eb));
-                        }
-                    });
-                }
-            }
-        });
-        return Object.values(groups);
     };
 
     const addEffect = (source, name, forgeMult = 1.0, isSub = false, isSkillSource = false, forceMaxStack = false, effectiveOpData = opData, uidPrefix = null) => {
@@ -297,7 +321,7 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
                 if (!eff.targetClass.includes(opData.class)) baseTriggerMet = false;
             }
 
-            const typeArr = eff.type ? (Array.isArray(eff.type) ? eff.type : [eff.type]).map(item => typeof item === 'string' ? { type: item } : item) : [];
+            const typeArr = eff.type ? (Array.isArray(eff.type) ? eff.type : [eff.type]).map(item => typeof item === 'string' ? { type: item } : { ...item }) : [];
             const bonuses = eff.bonus || [];
 
             const evaluatedBonuses = bonuses.map(b => {
@@ -451,7 +475,7 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
     const gearsToProcess = [
         { isMain: true, opData: opData, gears: state.mainOp.gears, gearForged: state.mainOp.gearForged, name: opData.name },
         ...state.subOps.map((sub, idx) => {
-            const sOpData = DATA_OPERATORS.find(o => o.id === sub.id);
+            const sOpData = getOperatorData(sub.id);
             return { isMain: false, opData: sOpData, gears: sub.gears || [], gearForged: sub.gearForged || [], name: sOpData ? sOpData.name : `서브${idx + 1}` };
         })
     ];
@@ -506,7 +530,7 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
     const weaponsToProcess = [
         { data: wepData, state: state.mainOp.wepState, pot: state.mainOp.wepPot, name: opData.name, isMain: true, ownerOp: opData },
         ...state.subOps.map((sub, idx) => {
-            const sOpData = DATA_OPERATORS.find(o => o.id === sub.id);
+            const sOpData = getOperatorData(sub.id);
             const sWep = DATA_WEAPONS.find(w => w.id === sub.wepId);
             return { data: sWep, state: sub.wepState, pot: sub.wepPot, name: sOpData ? sOpData.name : `서브${idx + 1}`, isMain: false, ownerOp: sOpData };
         })
@@ -569,7 +593,7 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
     if (opData.talents) {
         opData.talents.forEach((t, i) => {
             if (!t || t.length === 0) return;
-            const merged = mergeEffects(t);
+            const merged = mergeEffects(t, combineValues);
             addEffect(merged, `${opData.name} ${i + 1}재능`, 1.0, false, false, false, opData, `${opData.id}_talent${i}`);
         });
     }
@@ -578,7 +602,7 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
     for (let p = 0; p < mainPot; p++) {
         const pot = opData.potential?.[p];
         if (!pot || pot.length === 0) continue;
-        const merged = mergeEffects(pot);
+        const merged = mergeEffects(pot, combineValues);
 
         const processedPot = merged.map(eff => {
             if (eff.levels) {
@@ -598,7 +622,7 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
     // 4. 서브 오퍼레이터 시너지
     state.subOps.forEach((sub, idx) => {
         if (!sub.id) return;
-        const subOpData = DATA_OPERATORS.find(o => o.id === sub.id);
+        const subOpData = getOperatorData(sub.id);
         if (!subOpData?.talents) return;
         const prefix = subOpData.name;
 
@@ -621,7 +645,7 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
         if (subOpData.talents) {
             subOpData.talents.forEach((t, ti) => {
                 if (!t || t.length === 0) return;
-                const merged = mergeEffects(t);
+                const merged = mergeEffects(t, combineValues);
                 addEffect(merged, `${prefix} ${ti + 1}재능`, 1.0, true, false, false, subOpData, `${subOpData.id}_talent${ti}`);
             });
         }
@@ -630,7 +654,7 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
         for (let sp = 0; sp < subPot; sp++) {
             const pot = subOpData.potential?.[sp];
             if (!pot || pot.length === 0) continue;
-            const merged = mergeEffects(pot);
+            const merged = mergeEffects(pot, combineValues);
 
             const processedPot = merged.map(eff => {
                 if (eff.levels) {
@@ -652,7 +676,7 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
     const opsForSet = [
         { opData, setId: getActiveSetID(state.mainOp.gears), name: opData.name },
         ...state.subOps.map((sub, idx) => {
-            const sData = DATA_OPERATORS.find(o => o.id === sub.id);
+            const sData = getOperatorData(sub.id);
             return { opData: sData, setId: getActiveSetID(sub.gears || []), name: sData ? sData.name : `서브${idx + 1}` };
         })
     ];
@@ -1134,7 +1158,7 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
                 arts = cached.originiumArts || 0;
                 abnM = cached.abnormalMults || {};
             }
-            const subOpData = typeof DATA_OPERATORS !== 'undefined' ? DATA_OPERATORS.find(o => o.id === opId) : null;
+            const subOpData = typeof DATA_OPERATORS !== 'undefined' ? getOperatorData(opId) : null;
             if (subOpData) pName = subOpData.name;
         }
         return { ampRaw: (2 * arts) / (300 + arts), abnormalMults: abnM, opName: pName };
@@ -1425,7 +1449,7 @@ function getSetEffects(setId, opData, isSelf = true) {
 }
 
 function getValidWeapons(opId) {
-    const op = DATA_OPERATORS.find(o => o.id === opId);
+    const op = getOperatorData(opId);
     return op?.usableWeapons ? DATA_WEAPONS.filter(w => op.usableWeapons.includes(w.type)) : [];
 }
 
@@ -1444,6 +1468,8 @@ function checkSetViability(setId, opData) {
     if (cond.length === 0) return true;
     return cond.some(eff => eff.triggers.some(matchTrigger));
 }
+
+const OP_CAPABILITY_CACHE = new Map();
 
 /**
  * 스킬 bonus.trigger 조건을 평가한다.
@@ -1494,7 +1520,7 @@ function evaluateTrigger(trigger, state, opData, triggerType, evalMode = 'both',
             }
             if (isTriggerMet) return true;
 
-            const op = opData || DATA_OPERATORS.find(o => o.id === (state.mainOp?.id));
+            const op = opData;
             if (op && op.specialStack) {
                 const stacks = Array.isArray(op.specialStack) ? op.specialStack : [op.specialStack];
                 const matchingStack = stacks.find(s => s.triggers && s.triggers.includes(t));
@@ -1512,6 +1538,12 @@ function evaluateTrigger(trigger, state, opData, triggerType, evalMode = 'both',
         if (opData && (evalMode === 'both' || evalMode === 'op')) {
             const checkOpCapability = (targetOp) => {
                 if (!targetOp) return false;
+                
+                const triggerTypeStr = Array.isArray(triggerType) ? triggerType.join(',') : (triggerType || '');
+                const cacheKey = `${targetOp.id}_${t}_${triggerTypeStr}`;
+                if (OP_CAPABILITY_CACHE.has(cacheKey)) return OP_CAPABILITY_CACHE.get(cacheKey);
+
+                let result = false;
                 let skillPool = targetOp.skill || [];
                 if (triggerType && (Array.isArray(triggerType) ? triggerType.length > 0 : !!triggerType)) {
                     const triggerTypeArr = Array.isArray(triggerType) ? triggerType : [triggerType];
@@ -1535,23 +1567,26 @@ function evaluateTrigger(trigger, state, opData, triggerType, evalMode = 'both',
                         return Array.isArray(tName) ? tName.some(tn => checkTypes.includes(tn)) : checkTypes.includes(tName);
                     });
                 });
-                if (hasInSkill) return true;
-
-                if (!triggerType || (Array.isArray(triggerType) ? triggerType.length === 0 : !triggerType)) {
+                
+                if (hasInSkill) {
+                    result = true;
+                } else if (!triggerType || (Array.isArray(triggerType) ? triggerType.length === 0 : !triggerType)) {
                     let hasInOther = false;
                     const checkArr = (arr) => arr.some(subArr => subArr && subArr.some(e => e.type && (Array.isArray(e.type) ? e.type.some(et => checkTypes.includes(et)) : checkTypes.includes(e.type))));
                     if (targetOp.talents && checkArr(targetOp.talents)) hasInOther = true;
                     if (!hasInOther && targetOp.potential && checkArr(targetOp.potential)) hasInOther = true;
 
-                    if (hasInOther) return true;
-                    if (t === targetOp.type || t === targetOp.element) return true;
+                    if (hasInOther) result = true;
+                    else if (t === targetOp.type || t === targetOp.element) result = true;
                 }
-                return false;
+                
+                OP_CAPABILITY_CACHE.set(cacheKey, result);
+                return result;
             };
 
             if (checkOpCapability(opData)) return true;
             if (effectTarget === '팀' && !strictMode) {
-                const mainOpData = DATA_OPERATORS.find(o => o.id === (state.mainOp?.id));
+                const mainOpData = getOperatorData(state.mainOp?.id);
                 if (mainOpData && mainOpData.id !== opData.id && checkOpCapability(mainOpData)) return true;
             }
         }
@@ -1575,7 +1610,7 @@ function evaluateTrigger(trigger, state, opData, triggerType, evalMode = 'both',
 // - state: 모든 상태 관련 함수(collectAllEffects, evaluateTrigger 등)와 동일하게 state로 통일
 // - res: calculateDamage 반환값. render.js 및 호출부(calculateCycleDamage)의 관례(res, specificRes, cRes)에 맞춰 통일
 function calcSingleSkillDamage(type, state, res) {
-    const opData = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
+    const opData = getOperatorData(state.mainOp.id);
     const skillMap = {};
     opData.skill.forEach(s => {
         if (s?.skillType) {
@@ -1607,8 +1642,11 @@ function calcSingleSkillDamage(type, state, res) {
     // dmg 파싱
     const parseDmgPct = (v) => {
         if (!v || v === 0) return 0;
-        const m = String(v).match(/([\d.]+)%/);
-        return m ? parseFloat(m[1]) / 100 : 0;
+        if (typeof v === 'string') {
+            const idx = v.indexOf('%');
+            return idx !== -1 ? parseFloat(v.substring(0, idx)) / 100 : (parseFloat(v) / 100 || 0);
+        }
+        return v / 100 || 0;
     };
     let dmgMult = parseDmgPct(skillDef.dmg);
 
@@ -2160,7 +2198,14 @@ function calcSingleSkillDamage(type, state, res) {
         abnormalDesc = ` (${descParts.join(', ')})`;
     }
 
-    const myLogs = deepClone(res.logs);
+    const myLogs = {
+        ...res.logs,
+        dmgInc: [...(res.logs.dmgInc || [])],
+        atk: [...(res.logs.atk || [])],
+        arts: [...(res.logs.arts || [])],
+        vuln: [...(res.logs.vuln || [])],
+        crit: [...(res.logs.crit || [])]
+    };
 
     // 스킬 전용 로그 필터링
     myLogs.dmgInc = (res.logs.dmgInc || []).filter(l => {
@@ -2332,7 +2377,7 @@ function calculateCycleDamage(currentState, baseRes, forceMaxStack = false) {
     if (!baseRes || !baseRes.stats || !currentState.mainOp?.id) return null;
     const sequenceInput = currentState.skillSequence || [];
 
-    const opData = DATA_OPERATORS.find(o => o.id === currentState.mainOp.id);
+    const opData = getOperatorData(currentState.mainOp.id);
     const skillMap = {};
     if (opData?.skill) {
         opData.skill.forEach(s => {
@@ -2467,8 +2512,12 @@ function calculateCycleDamage(currentState, baseRes, forceMaxStack = false) {
 
                     // 계수 파싱
                     const parsePct = (v) => {
-                        const m = String(v).match(/([\d.]+)%/);
-                        return m ? parseFloat(m[1]) / 100 : 0;
+                        if (!v || v === 0) return 0;
+                        if (typeof v === 'string') {
+                            const idx = v.indexOf('%');
+                            return idx !== -1 ? parseFloat(v.substring(0, idx)) / 100 : (parseFloat(v) / 100 || 0);
+                        }
+                        return v / 100 || 0;
                     };
                     const dmgMult = parsePct(pe.dmg);
 

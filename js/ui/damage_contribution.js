@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ui/damage_contribution.js — 오퍼레이터별 딜 지분 시각화
  *
  * [역할]
@@ -27,9 +27,9 @@ function renderDamageContribution(cycleRes) {
     };
 
     const createExcludedState = (effectsToExclude) => {
-        const excludedState = deepClone(state);
-        if (!excludedState.disabledEffects) excludedState.disabledEffects = [];
-        if (!excludedState.effectStacks) excludedState.effectStacks = {};
+        const excludedState = { ...state };
+        excludedState.disabledEffects = state.disabledEffects ? [...state.disabledEffects] : [];
+        excludedState.effectStacks = state.effectStacks ? { ...state.effectStacks } : {};
 
         effectsToExclude.forEach(eff => {
             excludedState.disabledEffects.push(eff.uid);
@@ -43,24 +43,34 @@ function renderDamageContribution(cycleRes) {
             }
         });
 
-        if (excludedState.skillSequence) {
-            excludedState.skillSequence.forEach(seq => {
+        if (state.skillSequence) {
+            excludedState.skillSequence = state.skillSequence.map(seq => {
                 if (seq.customState) {
-                    if (!seq.customState.disabledEffects) seq.customState.disabledEffects = [];
-                    if (!seq.customState.effectStacks) seq.customState.effectStacks = {};
-
+                    const customDisabled = seq.customState.disabledEffects ? [...seq.customState.disabledEffects] : [];
+                    const customStacks = seq.customState.effectStacks ? { ...seq.customState.effectStacks } : {};
+                    
                     effectsToExclude.forEach(eff => {
-                        seq.customState.disabledEffects.push(eff.uid);
-                        seq.customState.disabledEffects.push(`${eff.uid}#common`);
-                        seq.customState.disabledEffects.push(`${eff.uid}#normal`);
-                        seq.customState.disabledEffects.push(`${eff.uid}#battle`);
-                        seq.customState.disabledEffects.push(`${eff.uid}#combo`);
-                        seq.customState.disabledEffects.push(`${eff.uid}#ult`);
+                        customDisabled.push(eff.uid);
+                        customDisabled.push(`${eff.uid}#common`);
+                        customDisabled.push(`${eff.uid}#normal`);
+                        customDisabled.push(`${eff.uid}#battle`);
+                        customDisabled.push(`${eff.uid}#combo`);
+                        customDisabled.push(`${eff.uid}#ult`);
                         if (eff.stack) {
-                            seq.customState.effectStacks[eff.uid] = 0;
+                            customStacks[eff.uid] = 0;
                         }
                     });
+
+                    return {
+                        ...seq,
+                        customState: {
+                            ...seq.customState,
+                            disabledEffects: customDisabled,
+                            effectStacks: customStacks
+                        }
+                    };
                 }
+                return seq;
             });
         }
         return excludedState;
@@ -102,7 +112,7 @@ function renderDamageContribution(cycleRes) {
     const contributions = [];
 
     marginals.forEach(({ subOpId, marginalContribution }) => {
-        const opData = DATA_OPERATORS.find(o => o.id === subOpId);
+        const opData = getOperatorData(subOpId);
         let apportioned = 0;
         if (sumMarginals > 0) {
             apportioned = totalSubDamage * (marginalContribution / sumMarginals);
@@ -119,7 +129,7 @@ function renderDamageContribution(cycleRes) {
     });
 
     // 4. Main Op Data (Fixed at Pure Base Damage)
-    const mainOpData = DATA_OPERATORS.find(o => o.id === state.mainOp.id);
+    const mainOpData = getOperatorData(state.mainOp.id);
     contributions.push({
         opId: state.mainOp.id,
         opName: mainOpData ? mainOpData.name : 'Unknown',
