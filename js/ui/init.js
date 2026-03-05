@@ -829,6 +829,7 @@ function applyOpSettingsToUI(opId, type, subIdx) {
     const s = loadOpSettings(opId);
 
     if (type === 'main') {
+        state.mainOp.id = opId;
         document.getElementById('main-op-pot').value = s?.pot || 0;
         setupPotencyButtons('main-op-pot', 'main-op-pot-group');
 
