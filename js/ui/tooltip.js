@@ -32,7 +32,7 @@ const AppTooltip = {
         '쇄빙': 'kw-phys',
         '일반 공격': 'kw-special', '배틀 스킬': 'kw-special', '연계 스킬': 'kw-special', '궁극기': 'kw-special',
         '불균형': 'kw-special', '치유': 'kw-nature', '보호': 'kw-nature', '비호': 'kw-nature', '연타': 'kw-special', '스킬 게이지': 'kw-special', '소모': 'kw-special', '궁극기 에너지': 'kw-special', '궁극기 충전 효율': 'kw-special', '치명타 확률': 'kw-special', '치명타 피해': 'kw-special',
-        '녹아내린 불꽃': 'kw-heat', '썬더랜스': 'kw-elec', '강력한 썬더랜스': 'kw-elec',
+        '녹아내린 불꽃': 'tag-target', '썬더랜스': 'tag-target', '강력한 썬더랜스': 'tag-target',
         '아츠 폭발': 'kw-special',
         '재능': 'kw-desc', '잠재': 'kw-desc',
     },
@@ -259,15 +259,16 @@ const AppTooltip = {
     /** 툴팁을 숨긴다. */
     hide() { if (this.el) this.el.style.display = 'none'; },
 
-    /** 트리거 값별 CSS 클래스 매핑 */
     TRIGGER_CLASS_MAP: {
-        '물리': 'tag-phys', '물리 이상': 'tag-phys', '강타': 'tag-phys', '띄우기': 'tag-phys', '넘어뜨리기': 'tag-phys', '방어 불능': 'tag-phys', '갑옷 파괴': 'tag-phys', '쇄빙': 'tag-phys', '오리지늄 결정': 'tag-phys',
-        '열기': 'tag-heat', '연소': 'tag-heat', '열기 부착': 'tag-heat',
-        '전기': 'tag-elec', '감전': 'tag-elec', '전기 부착': 'tag-elec',
-        '냉기': 'tag-cryo', '동결': 'tag-cryo', '냉기 부착': 'tag-cryo',
-        '자연': 'tag-nature', '부식': 'tag-nature', '자연 부착': 'tag-nature',
+        '물리': 'tag-phys', '물리 이상': 'tag-phys', '강타': 'tag-phys', '띄우기': 'tag-phys', '강제 띄우기': 'tag-phys', '넘어뜨리기': 'tag-phys', '강제 넘어뜨리기': 'tag-phys', '방어 불능 부여': 'tag-phys', '갑옷 파괴': 'tag-phys', '쇄빙': 'tag-phys', '오리지늄 결정': 'tag-phys',
+        '열기': 'tag-heat', '연소': 'tag-heat', '열기 부착': 'tag-heat', '열기 부착 소모': 'tag-heat', '연소 부여': 'tag-heat', '연소 소모': 'tag-heat',
+        '전기': 'tag-elec', '감전': 'tag-elec', '전기 부착': 'tag-elec', '전기 부착 소모': 'tag-elec', '감전 부여': 'tag-elec', '감전 소모': 'tag-elec',
+        '냉기': 'tag-cryo', '동결': 'tag-cryo', '냉기 부착': 'tag-cryo', '냉기 부착 소모': 'tag-cryo', '동결 부여': 'tag-cryo', '동결 소모': 'tag-cryo',
+        '자연': 'tag-nature', '부식': 'tag-nature', '자연 부착': 'tag-nature', '자연 부착 소모': 'tag-nature', '부식 부여': 'tag-nature', '부식 소모': 'tag-nature',
+        '스킬 게이지 회복': 'tag-special',
         '일반 공격': 'tag-special', '배틀 스킬': 'tag-special', '연계 스킬': 'tag-special', '궁극기': 'tag-special', '불균형': 'tag-special', '치명타': 'tag-special', '연타': 'tag-special',
-        '보호': 'tag-synergy', '치유': 'tag-synergy', '비호': 'tag-synergy', '도발': 'tag-synergy', '실드': 'tag-synergy', '무적': 'tag-synergy', '은신': 'tag-synergy',
+        '보호': 'tag-synergy', '치유': 'tag-synergy', '비호': 'tag-synergy',
+        '썬더랜스': 'tag-target', '강력한 썬더랜스': 'tag-target',
     },
 
     /**
@@ -640,18 +641,21 @@ const AppTooltip = {
                     const typeNames = Array.isArray(t.type) ? t.type : [t.type];
 
                     const displayVal = (t.val && t.val !== '0%') ? String(t.val).replace('+', '').trim() : '';
+                    const scalingLabel = t.scaling ? `+${getStatName(t.scaling.stat)} 비례` : '';
 
                     typeNames.forEach(tn => {
                         const customClass = this.TRIGGER_CLASS_MAP[tn] || 'tag-synergy';
-                        const label = displayVal ? `${tn}:${displayVal}` : tn;
+                        let label = tn;
+                        if (displayVal || scalingLabel) {
+                            label += ':' + displayVal + scalingLabel;
+                        }
                         effectTags.push(`<span class="trigger-tag ${customClass}">${label}</span>`);
                     });
 
-                    const scalingSuffix = t.scaling ? ` (<span class="tooltip-muted">+${getStatName(t.scaling.stat)} 비례</span>)` : '';
                     const stackSuffix = t.stack ? ` (최대 ${t.stack}중첩)` : '';
 
-                    if (scalingSuffix || stackSuffix) {
-                        additionalTextArr.push(`${typeNames.join('/')}${scalingSuffix}${stackSuffix}`);
+                    if (stackSuffix) {
+                        additionalTextArr.push(`${typeNames.join('/')}${stackSuffix}`);
                     }
                 } else if (typeof t === 'string') {
                     const customClass = this.TRIGGER_CLASS_MAP[t] || 'tag-synergy';

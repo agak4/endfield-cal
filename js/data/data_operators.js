@@ -444,10 +444,10 @@ const DATA_OPERATORS = [
             {
                 skillType: ['궁극기'], element: 'phys', cost: 80, desc: '대검을 휘둘러 전방으로 빠르게 2단 베기를 사용하여, 물리 피해를 주고, 8초 동안 허약 상태를 부여합니다. 마지막에 아래로 힘차게 내리찍어 목표 범위 내의 모든 적에게 대량의 물리 피해를 주고, 적을 넘어뜨리기 상태로 만듭니다.',
                 levels: {
-                    M0: { dmg: '696%', type: [{ type: '허약', target: '적' }, { type: '방어 불능 부여', target: '적' }] },
-                    M1: { dmg: '745%', type: [{ type: '허약', target: '적' }, { type: '방어 불능 부여', target: '적' }] },
-                    M2: { dmg: '803%', type: [{ type: '허약', target: '적' }, { type: '방어 불능 부여', target: '적' }] },
-                    M3: { dmg: '1005%', type: [{ type: '허약', target: '적' }, { type: '방어 불능 부여', target: '적' }] }
+                    M0: { dmg: '696%', type: [{ type: '허약', target: '적' }, { type: '넘어뜨리기', target: '적' }] },
+                    M1: { dmg: '745%', type: [{ type: '허약', target: '적' }, { type: '넘어뜨리기', target: '적' }] },
+                    M2: { dmg: '803%', type: [{ type: '허약', target: '적' }, { type: '넘어뜨리기', target: '적' }] },
+                    M3: { dmg: '1005%', type: [{ type: '허약', target: '적' }, { type: '넘어뜨리기', target: '적' }] }
                 }
             }
         ],
@@ -1209,7 +1209,7 @@ const DATA_OPERATORS = [
                 }
             },
             {
-                skillType: ['연계 스킬'], element: 'elec', desc: '메인 컨트롤 오퍼레이터가 전기 부착 혹은 감전 상태의 목표에 강력한 일격을 준 후 사용할 수 있습니다. 점프하여 목표에 30초간 존재하는 썬더랜스 3개를 던져, 전방 범위 내의 적에게 전기 피해를 줍니다.',
+                skillType: ['연계 스킬'], element: 'elec', type: ['썬더랜스'], desc: '메인 컨트롤 오퍼레이터가 전기 부착 혹은 감전 상태의 목표에 강력한 일격을 준 후 사용할 수 있습니다. 점프하여 목표에 30초간 존재하는 썬더랜스 3개를 던져, 전방 범위 내의 적에게 전기 피해를 줍니다.',
                 levels: {
                     M0: { dmg: '304%' },
                     M1: { dmg: '325%' },
@@ -1218,7 +1218,7 @@ const DATA_OPERATORS = [
                 }
             },
             {
-                skillType: ['궁극기'], element: 'elec', cost: 100, desc: '목표 구역에 30초간 존재하는 강력한 썬더랜스 하나를 투척하여 주변의 적에게 대량의 전기 피해를 줍니다.',
+                skillType: ['궁극기'], element: 'elec', cost: 100, type: ['강력한 썬더랜스'], desc: '목표 구역에 30초간 존재하는 강력한 썬더랜스 하나를 투척하여 주변의 적에게 대량의 전기 피해를 줍니다.',
                 levels: {
                     M0: { dmg: '760%' },
                     M1: { dmg: '813%' },
@@ -1386,12 +1386,12 @@ const DATA_OPERATORS = [
                 }
             },
             {
-                skillType: ['배틀 스킬'], element: 'elec', desc: '적의 옆으로 순간 이동해 2회의 베기 공격을 하며 소량의 물리 피해를 줍니다. 적이 감전 상태일 경우, 감전 상태를 소모하여 추가로 1회 공격하고 전기 피해를 주며 일정량의 스킬 게이지를 회복합니다.',
+                skillType: ['배틀 스킬'], element: 'phys', desc: '적의 옆으로 순간 이동해 2회의 베기 공격을 하며 소량의 물리 피해를 줍니다. 적이 감전 상태일 경우, 감전 상태를 소모하여 추가로 1회 공격하고 전기 피해를 주며 일정량의 스킬 게이지를 회복합니다.',
                 levels: {
-                    M0: { dmg: '162%', type: ['감전 소모', '스킬 게이지 회복'], bonus: [{ triggerTarget: ['감전'], val: '324%' }] },
-                    M1: { dmg: '174%', type: ['감전 소모', '스킬 게이지 회복'], bonus: [{ triggerTarget: ['감전'], val: '347%' }] },
-                    M2: { dmg: '186%', type: ['감전 소모', '스킬 게이지 회복'], bonus: [{ triggerTarget: ['감전'], val: '374%' }] },
-                    M3: { dmg: '202%', type: ['감전 소모', '스킬 게이지 회복'], bonus: [{ triggerTarget: ['감전'], val: '405%' }] }
+                    M0: { dmg: '162%', type: ['감전 소모', '스킬 게이지 회복'], bonus: [{ triggerTarget: ['감전'], val: '324%', element: 'elec' }] },
+                    M1: { dmg: '174%', type: ['감전 소모', '스킬 게이지 회복'], bonus: [{ triggerTarget: ['감전'], val: '347%', element: 'elec' }] },
+                    M2: { dmg: '186%', type: ['감전 소모', '스킬 게이지 회복'], bonus: [{ triggerTarget: ['감전'], val: '374%', element: 'elec' }] },
+                    M3: { dmg: '202%', type: ['감전 소모', '스킬 게이지 회복'], bonus: [{ triggerTarget: ['감전'], val: '405%', element: 'elec' }] }
                 }
             },
             {
