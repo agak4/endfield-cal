@@ -260,7 +260,8 @@ const AppTooltip = {
     hide() { if (this.el) this.el.style.display = 'none'; },
 
     TRIGGER_CLASS_MAP: {
-        '물리': 'tag-phys', '물리 이상': 'tag-phys', '강타': 'tag-phys', '띄우기': 'tag-phys', '강제 띄우기': 'tag-phys', '넘어뜨리기': 'tag-phys', '강제 넘어뜨리기': 'tag-phys', '방어 불능 부여': 'tag-phys', '갑옷 파괴': 'tag-phys', '쇄빙': 'tag-phys', '오리지늄 결정': 'tag-phys',
+        '물리': 'tag-phys', '물리 이상': 'tag-phys', '강타': 'tag-phys', '띄우기': 'tag-phys', '강제 띄우기': 'tag-phys', '넘어뜨리기': 'tag-phys', '강제 넘어뜨리기': 'tag-phys', '방어 불능': 'tag-phys', '방어 불능 부여': 'tag-phys', '갑옷 파괴': 'tag-phys', '쇄빙': 'tag-phys', '오리지늄 결정': 'tag-phys',
+        '아츠 부착': 'tag-arts',
         '열기': 'tag-heat', '연소': 'tag-heat', '열기 부착': 'tag-heat', '열기 부착 소모': 'tag-heat', '연소 부여': 'tag-heat', '연소 소모': 'tag-heat',
         '전기': 'tag-elec', '감전': 'tag-elec', '전기 부착': 'tag-elec', '전기 부착 소모': 'tag-elec', '감전 부여': 'tag-elec', '감전 소모': 'tag-elec',
         '냉기': 'tag-cryo', '동결': 'tag-cryo', '냉기 부착': 'tag-cryo', '냉기 부착 소모': 'tag-cryo', '동결 부여': 'tag-cryo', '동결 소모': 'tag-cryo',
@@ -269,14 +270,16 @@ const AppTooltip = {
         '일반 공격': 'tag-special', '배틀 스킬': 'tag-special', '연계 스킬': 'tag-special', '궁극기': 'tag-special', '불균형': 'tag-special', '치명타': 'tag-special', '연타': 'tag-special',
         '보호': 'tag-synergy', '치유': 'tag-synergy', '비호': 'tag-synergy',
         '썬더랜스': 'tag-target', '강력한 썬더랜스': 'tag-target',
+        '물리 취약': 'tag-synergy', '아츠 취약': 'tag-synergy'
     },
 
     /**
      * 데이터 객체에서 trigger, triggerTarget, triggerType을 추출하여 HTML 태그 내에 표시한다.
      * @param {object} data - trigger 관련 필드를 포함할 수 있는 객체
+     * @param {boolean} isWeapon - 무기 전용 접두사 표시 여부
      * @returns {string} HTML 문자열
      */
-    makeTriggerTags(data) {
+    makeTriggerTags(data, isWeapon = false) {
         if (!data) return '';
         const tags = [];
 
@@ -285,8 +288,13 @@ const AppTooltip = {
             const vals = Array.isArray(val) ? val : [val];
             vals.forEach(v => {
                 let label = v;
-                if (typeClass === 'tag-target') {
-                    label = (v === '연타') ? `버프:${v}` : `적:${v}`;
+                if (isWeapon) {
+                    if (typeClass === 'tag-target') label = `적:${v}`;
+                    else if (typeClass === '') label = `장착자:${v}`;
+                } else {
+                    if (typeClass === 'tag-target') {
+                        label = (v === '연타') ? `버프:${v}` : `적:${v}`;
+                    }
                 }
                 const customClass = this.TRIGGER_CLASS_MAP[v] || typeClass || '';
                 tags.push(`<span class="trigger-tag ${customClass}">${label}</span>`);
@@ -530,6 +538,14 @@ const AppTooltip = {
         const lastTrait = wep.traits[wep.traits.length - 1];
         const traitDesc = lastTrait?.desc ? this.colorizeText(lastTrait.desc) : '';
 
+        // 트리거 태그 추출
+        const allTriggers = [], allTargets = [];
+        wep.traits.forEach(t => {
+            if (t.trigger) (Array.isArray(t.trigger) ? t.trigger : [t.trigger]).forEach(v => { if (!allTriggers.includes(v)) allTriggers.push(v); });
+            if (t.triggerTarget) (Array.isArray(t.triggerTarget) ? t.triggerTarget : [t.triggerTarget]).forEach(v => { if (!allTargets.includes(v)) allTargets.push(v); });
+        });
+        const triggerTags = this.makeTriggerTags({ trigger: allTriggers, triggerTarget: allTargets }, true);
+
         return `
             <div class="tooltip-header">
                 <div class="tooltip-icon"><img src="images/weapons/${wep.name}.webp?v=${APP_VERSION}" loading="eager" decoding="async"></div>
@@ -543,6 +559,7 @@ const AppTooltip = {
                     <div class="tooltip-stat-item"><span class="tooltip-stat-key">공격력</span><span class="tooltip-stat-val">${wep.baseAtk}</span></div>
                 </div>
             `)}
+            ${triggerTags ? this.makeSection('추가 효과 조건', `<div class="tooltip-bullet-point">${triggerTags}</div>`) : ''}
             ${traitItems.length > 0 ? this.makeSection('무기 특성', `<div class="tooltip-traits">${traitItems.join('')}</div>${traitDesc ? `<div class="tooltip-desc" style="margin-top:8px;">${traitDesc}</div>` : ''}`) : ''}
             ${synergyItems.length > 0 ? this.makeSection('시너지', `<div class="tooltip-traits">${synergyItems.join('')}</div>`, 'color:#FFFA00') : ''}
         `;

@@ -911,6 +911,11 @@
     color: var(--skill-element-phys);
 }
 
+.tag-arts {
+    border-color: var(--skill-element-arts);
+    color: var(--skill-element-arts);
+}
+
 .tag-heat {
     border-color: var(--skill-element-heat);
     color: var(--skill-element-heat);
