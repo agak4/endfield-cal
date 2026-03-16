@@ -1254,7 +1254,7 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
         ...logs.atkBuffs,
         ...logs.fixedAtk,
         ...statLogs,
-        { txt: `스탯 공격보너스: +${(statBonusPct * 100).toFixed(2)}%`, uid: 'stat_bonus_atk' },
+        { txt: `스탯 공격 보너스: +${(statBonusPct * 100).toFixed(2)}%`, uid: 'stat_bonus_atk' },
         ...logs.statAtkBuffs
     ];
 
@@ -1747,7 +1747,7 @@ function calcSingleSkillDamage(type, state, res) {
                     if (bonusVal > 0) {
                         const isStackable = b.perStack !== undefined && parseFloat(b.perStack) !== 0;
                         const isSeparate = b.isSeparateHit || (b.element && b.element !== baseSkillElement);
-                        
+
                         if (isSeparate) {
                             bonusList.push({
                                 name: trName,
@@ -1780,23 +1780,23 @@ function calcSingleSkillDamage(type, state, res) {
                     if (valAtStack) {
                         const bonusVal = parsePct(valAtStack) * (1 + bMult / 100);
                         if (bonusVal > 0) {
-                        const isSeparate = b.isSeparateHit || (b.element && b.element !== baseSkillElement);
-                        if (isSeparate) {
-                            bonusList.push({
-                                name: trName + ` (${stackCount}스택)`,
-                                val: bonusVal,
-                                isSeparateHit: true,
-                                element: b.element || baseSkillElement,
-                                bonusDmgInc: b.bonusDmgInc,
-                                skillType: b.skillType
-                            });
-                        } else {
-                            dmgMult += bonusVal;
-                            bonusList.push({
-                                name: trName + ` (${stackCount}스택)`,
-                                val: bonusVal
-                            });
-                        }
+                            const isSeparate = b.isSeparateHit || (b.element && b.element !== baseSkillElement);
+                            if (isSeparate) {
+                                bonusList.push({
+                                    name: trName + ` (${stackCount}스택)`,
+                                    val: bonusVal,
+                                    isSeparateHit: true,
+                                    element: b.element || baseSkillElement,
+                                    bonusDmgInc: b.bonusDmgInc,
+                                    skillType: b.skillType
+                                });
+                            } else {
+                                dmgMult += bonusVal;
+                                bonusList.push({
+                                    name: trName + ` (${stackCount}스택)`,
+                                    val: bonusVal
+                                });
+                            }
                         }
                     }
                 } else if (b.val) {
@@ -2576,14 +2576,57 @@ function calculateCycleDamage(currentState, baseRes, forceMaxStack = false) {
                     };
                     const dmgMult = parsePct(pe.dmg);
 
+                    // proc 효과의 속성 기반으로 dmgInc / vuln / takenDmg / resMult 개별 산출
+                    const peElem = pe.element; // 'phys', 'heat', 'elec', 'cryo', 'nature' 등
+                    const _resKeyMapProc = { heat: '열기', elec: '전기', cryo: '냉기', nature: '자연' };
+                    const peElemKO = peElem === 'phys' ? '물리' : (_resKeyMapProc[peElem] || null);
+
+                    // 1) dmgInc: all + 속성별 누산 (|| 연산자 대신 + 로 합산)
+                    let procDmgInc = targetStats.dmgIncData?.all || 0;
+                    if (peElem === 'phys') {
+                        procDmgInc += (targetStats.dmgIncData?.phys || 0);
+                    } else if (peElem) {
+                        procDmgInc += (targetStats.dmgIncData?.[peElem] || 0);
+                    }
+
+                    // 2) 취약: 공통 취약 + 속성 취약 + (아츠면 아츠 취약)
+                    let procVuln = targetStats.vulnMap?.['취약'] || 0;
+                    if (peElemKO && targetStats.vulnMap) {
+                        procVuln += (targetStats.vulnMap[`${peElemKO} 취약`] || 0);
+                        if (peElem !== 'phys') {
+                            procVuln += (targetStats.vulnMap['아츠 취약'] || 0);
+                        }
+                    }
+                    if (!targetStats.vulnMap) procVuln = targetStats.vuln || 0;
+
+                    // 3) 받는 피해: all + 속성별
+                    let procTakenDmg = targetStats.takenDmgMap?.all || 0;
+                    if (targetStats.takenDmgMap) {
+                        if (peElem === 'phys') {
+                            procTakenDmg += (targetStats.takenDmgMap.phys || 0);
+                        } else if (peElem) {
+                            procTakenDmg += (targetStats.takenDmgMap.arts || 0);
+                            if (targetStats.takenDmgMap[peElem]) procTakenDmg += targetStats.takenDmgMap[peElem];
+                        }
+                    } else {
+                        procTakenDmg = targetStats.takenDmg || 0;
+                    }
+
+                    // 4) 저항 배율: proc 속성에 맞는 저항 적용
+                    let procResMult = targetStats.resMult || 1;
+                    if (peElemKO && targetStats.allRes) {
+                        const procResVal = (targetStats.allRes[peElemKO] || 0) - (targetStats.resIgnore || 0);
+                        procResMult = 1 - procResVal / 100;
+                    }
+
                     // 공통 승수 (스킬 전용 버프 제외한 전역 버프들)
                     const commonMults = targetStats.critExp *
-                        (1 + (targetStats.dmgIncData?.all || targetStats.dmgInc || 0) / 100) *
+                        (1 + procDmgInc / 100) *
                         (1 + (targetStats.amp || 0) / 100) *
-                        (1 + (targetStats.takenDmg || 0) / 100) *
-                        (1 + (targetStats.vuln || 0) / 100) *
+                        (1 + procTakenDmg / 100) *
+                        (1 + procVuln / 100) *
                         (1 + (targetStats.unbalanceDmg || 0) / 100) *
-                        (targetStats.resMult || 1) *
+                        procResMult *
                         (targetStats.defMult || 1);
 
                     const procDmg = Math.floor(targetStats.finalAtk * dmgMult * commonMults);
