@@ -88,7 +88,7 @@ const DATA_GEAR = [
   { id: 'gear_42.2', name: '펄스식 시험침', part: 'kit', set: 'set_pulse', stat1: 'int', val1: 32, val1_f: 41, stat2: 'agi', val2: 21, val2_f: 27, trait: [{ type: ['오리지늄 아츠 강도'], val: 41, val_f: 53 }] },
   { id: 'gear_43', name: '펄스식 교정기', part: 'kit', set: 'set_pulse', stat1: 'int', val1: 41, val1_f: 53, stat2: null, val2: 0, trait: [{ type: ['오리지늄 아츠 강도'], val: 41, val_f: 53 }] },
   { id: 'gear_44', name: '펄스식 장갑', part: 'gloves', set: 'set_pulse', stat1: 'wil', val1: 65, val1_f: 84, stat2: 'int', val2: 43, val2_f: 55, trait: [{ type: ['냉기 피해'], val: '19.2%', val_f: '24.9%' }, { type: ['전기 피해'], val: '19.2%', val_f: '24.9%' }] },
-  { id: 'gear_45', name: '펄스식 방해 슈트', part: 'armor', set: 'set_pulse', stat1: 'int', val1: 87, val1_f: 113, stat2: 'wil', val2: 58, val2_f: 75, trait: [{ type: ['오리지늄 아츠 강도'], val: 20, val_f: 27 }] },
+  { id: 'gear_45', name: '펄스식 교란 방어구', part: 'armor', set: 'set_pulse', stat1: 'int', val1: 87, val1_f: 113, stat2: 'wil', val2: 58, val2_f: 75, trait: [{ type: ['오리지늄 아츠 강도'], val: 20, val_f: 27 }] },
 
   // 본 크러셔
   { id: 'gear_46', name: '본 크러셔 조각상 · I', part: 'kit', set: 'set_bone_crusher', stat1: 'wil', val1: 32, val1_f: 41, stat2: 'int', val2: 21, val2_f: 27, trait: [{ type: ['연계 스킬 피해'], val: '41.4%', val_f: '53.8%' }] },
