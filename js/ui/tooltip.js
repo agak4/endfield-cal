@@ -786,11 +786,31 @@ const AppTooltip = {
         const catKey = this.SKILL_TYPE_MAP[skillType]
             || (skillType.includes('일반 공격') ? 'normal' : skillType.includes('배틀 스킬') ? 'battle' : 'common');
 
+        // 현재 스킬의 속성 파악
+        let currentSkillElement = null;
+        const opDataLocal = opData || (st?.mainOp?.id ? DATA_OPERATORS?.find(o => o.id === st.mainOp.id) : null);
+        if (opDataLocal) {
+            const rawSkill = opDataLocal.skill?.find(s => s.skillType?.includes(skillType));
+            if (rawSkill) {
+                // 스킬 정의에 속성이 명시되어 있으면 사용, 없으면 오퍼레이터 기본 속성 사용
+                currentSkillElement = rawSkill.element || opDataLocal.element || 'phys';
+            }
+        }
+        const currentElemKR = this.ELEMENT_NAME_MAP[currentSkillElement] || '';
+
         // 현재 스킬 타입에 맞는 활성화된 효과 필터링
         const filteredEffects = activeEffects.filter(eff => {
             const stTypes = eff.skillType || [];
             const t = Array.isArray(eff.type) ? eff.type[0] : eff.type;
             const baseSkillType = skillType.startsWith('강화 ') ? skillType.substring(3) : skillType;
+
+            // 0% 효과 제외
+            if (eff.val === 0 || eff.val === '0' || eff.val === '0%' || eff.val === '+0%') return false;
+
+            // 속성 불일치 필터링: '냉기 피해', '자연 피해' 등 속성이 명시된 경우 현재 스킬 속성과 다르면 제외
+            if (t.endsWith(' 피해') && !['주는 피해', '모든 스킬 피해', '일반 공격 피해', '배틀 스킬 피해', '연계 스킬 피해', '궁극기 피해'].includes(t)) {
+                if (currentElemKR && !t.startsWith(currentElemKR)) return false;
+            }
 
             if (st?.disabledEffects) {
                 if (st.disabledEffects.includes(`${eff.uid}#${catKey}`) || st.disabledEffects.includes(`${eff.uid}#common`)) return false;
@@ -809,7 +829,7 @@ const AppTooltip = {
             if (isBattle && t === '배틀 스킬 피해') return true;
             if (isCombo && t === '연계 스킬 피해') return true;
             if (isUlt && t === '궁극기 피해') return true;
-            if ((isBattle || isCombo || isUlt) && (t === '모든 스킬 피해' || t === '스킬 배율 증가' || t === '추가 공격 피해 배율 증가')) {
+            if ((isBattle || isCombo || isUlt) && (t === '모든 스킬 피해' || t === '모든 아츠 피해' || t === '스킬 배율 증가' || t === '추가 공격 피해 배율 증가')) {
                 return stTypes.length === 0 || stTypes.includes(skillType) || stTypes.includes(baseSkillType);
             }
             return false;
@@ -835,20 +855,19 @@ const AppTooltip = {
             if (physDebuff?.combo > 0) {
                 const isBattleOrUlt = skillType === '배틀 스킬' || skillType.includes('강화 배틀 스킬');
                 const multTable = isBattleOrUlt ? [0, 1.3, 1.45, 1.6, 1.75] : (skillType === '궁극기' ? [0, 1.2, 1.3, 1.4, 1.5] : null);
-                extraEffects.push(multTable ? `연타 *${multTable[Math.min(physDebuff.combo, 4)].toFixed(2)}배` : `연타 ${physDebuff.combo}스택`);
+                if (multTable) extraEffects.push(`연타 *${multTable[Math.min(physDebuff.combo, 4)].toFixed(2)}배`);
             }
             if (artsAttach?.type && artsAttach.stacks > 0) extraEffects.push(`${artsAttach.type} ${artsAttach.stacks}스택`);
             Object.entries(artsAbnormal || {}).forEach(([n, s]) => { if (s > 0) extraEffects.push(`${n} ${s}스택`); });
         }
-        if (st?.mainOp?.specialStack && opData?.specialStack) {
-            (Array.isArray(opData.specialStack) ? opData.specialStack : [opData.specialStack]).forEach(s => {
+        if (st?.mainOp?.specialStack && opDataLocal?.specialStack) {
+            (Array.isArray(opDataLocal.specialStack) ? opDataLocal.specialStack : [opDataLocal.specialStack]).forEach(s => {
                 const c = st.mainOp.specialStack[s.id || 'default'] || 0;
                 if (c > 0) extraEffects.push(`${s.name} ${c}스택`);
             });
         }
 
         // 스킬 bonus 트리거 발동 여부 확인 후 표시
-        const opDataLocal = opData || DATA_OPERATORS?.find(o => o.id === st?.mainOp?.id);
         if (st && skillType && opDataLocal) {
             const rawSkill = opDataLocal.skill?.find(s => s.skillType?.includes(skillType));
             if (rawSkill) {
@@ -861,6 +880,7 @@ const AppTooltip = {
                 }
 
                 (Array.isArray(skillDef.bonus) ? skillDef.bonus : []).forEach(b => {
+                    if (b.val === 0 || b.val === '0' || b.val === '0%' || b.val === '+0%') return;
                     const opTrMet = !b.trigger || evaluateTrigger(b.trigger, st, opDataLocal, null, 'op', null, true);
                     const tgTrMet = !b.triggerTarget || evaluateTrigger(b.triggerTarget, st, opDataLocal, null, 'target', null, true);
                     if ((b.trigger || b.triggerTarget) && opTrMet && tgTrMet) {
@@ -880,7 +900,7 @@ const AppTooltip = {
         if (filteredEffects.length === 0 && extraEffects.length === 0) return '';
 
         let html = '<div style="margin-top:8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top:8px;"></div>';
-        html += '<div class="tooltip-label" color:var(--accent); margin-bottom:4px;">적용 중인 추가 효과</div>';
+        html += '<div class="tooltip-label" style="color:var(--accent); margin-bottom:4px;">적용 중인 추가 효과</div>';
 
         filteredEffects.forEach(eff => {
             const t = Array.isArray(eff.type) ? eff.type[0] : eff.type;
