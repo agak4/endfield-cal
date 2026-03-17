@@ -621,8 +621,12 @@ function collectAllEffects(state, opData, wepData, stats, allEffects, forceMaxSt
     ];
 
     // ── 단일 파이프라인으로 처리 ──
+    // forceMaxStack은 무기 소스에만 적용한다.
+    // 소스에 forceMaxStack이 명시된 경우(무기)에만 해당 값을 전달하고,
+    // 그 외 소스(장비/오퍼레이터/세트효과 등)는 false로 고정하여 전역 플래그 전파를 차단한다.
     effectSources.forEach(source => {
-        processEffectSource(source, state, opData, allEffects, activeNonStackTypes, combineValues, forceMaxStack);
+        const sourceForceMaxStack = source.forceMaxStack !== undefined ? source.forceMaxStack : false;
+        processEffectSource(source, state, opData, allEffects, activeNonStackTypes, combineValues, sourceForceMaxStack);
     });
 }
 
@@ -644,7 +648,7 @@ function processEffectSource(source, state, opData, allEffects, activeNonStackTy
     } = source;
 
     // forceMaxStack: 소스 자체 설정이 있으면 그것을, 없으면 전역 값 사용
-    const forceMaxStack = source.forceMaxStack || globalForceMaxStack;
+    const forceMaxStack = source.forceMaxStack ?? globalForceMaxStack;
     const effectiveOpData = rawEffectiveOpData || opData;
 
     if (!effects || !Array.isArray(effects)) return;
