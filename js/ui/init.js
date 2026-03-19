@@ -552,20 +552,20 @@ function updateMainWeaponList(opId) {
     if (!wepSel) return;
 
     const currentVal = wepSel.value;
-    renderSelect('main-wep-select', validWeps);
+    wepSel.innerHTML = '';
+    wepSel.add(new Option('-', ''));
+
+    validWeps.forEach(w => wepSel.add(new Option(w.name, w.id)));
 
     const stillValid = validWeps.find(w => w.id === currentVal);
-    if (stillValid) {
+    if (stillValid && currentVal !== '') {
         wepSel.value = currentVal;
         setSelectBtnText('main-wep-select-btn', stillValid);
-    } else if (validWeps.length > 0) {
-        wepSel.value = validWeps[0].id;
-        setSelectBtnText('main-wep-select-btn', validWeps[0]);
-        updateEntityImage(validWeps[0].id, 'main-wep-image', 'weapons');
-        applyWepSettingsToUI(validWeps[0].id);
     } else {
-        setSelectBtnText('main-wep-select-btn', null, '선택 불가');
+        wepSel.value = '';
+        setSelectBtnText('main-wep-select-btn', null, '선택 안 함');
         updateEntityImage(null, 'main-wep-image', 'weapons');
+        applyWepSettingsToUI('');
     }
 }
 
@@ -833,7 +833,7 @@ function applyOpSettingsToUI(opId, type, subIdx) {
         document.getElementById('main-op-pot').value = s?.pot || 0;
         setupPotencyButtons('main-op-pot', 'main-op-pot-group');
 
-        // 무기: 저장값이 유효하면 적용, 아니면 현재 목록 기본값 유지
+        // 무기: 저장값이 유효하면 적용, 아니면 해제 상태 유지
         const wepSel = document.getElementById('main-wep-select');
         const savedWepId = s?.wepId;
         if (savedWepId && wepSel?.querySelector(`option[value="${savedWepId}"]`)) {
@@ -842,7 +842,10 @@ function applyOpSettingsToUI(opId, type, subIdx) {
             updateEntityImage(savedWepId, 'main-wep-image', 'weapons');
             applyWepSettingsToUI(savedWepId);
         } else {
-            applyWepSettingsToUI(wepSel?.value);
+            wepSel.value = '';
+            setSelectBtnText('main-wep-select-btn', null, '선택 안 함');
+            updateEntityImage(null, 'main-wep-image', 'weapons');
+            applyWepSettingsToUI('');
         }
 
         // 장비 슬롯

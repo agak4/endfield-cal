@@ -415,7 +415,7 @@ function collectSetEffectSources(state, mainOpData) {
 function calculateDamage(currentState, forceMaxStack = false, isStatCalcOnly = false) {
     const originalOpData = getOperatorData(currentState.mainOp.id);
     const wepData = DATA_WEAPONS.find(w => w.id === currentState.mainOp.wepId);
-    if (!originalOpData || !wepData) return null;
+    if (!originalOpData) return null; // 오퍼레이터 데이터가 없으면 중단
 
     const opData = { ...originalOpData };
 
@@ -870,7 +870,8 @@ const LEVEL_COEFF_PHYS = 89 / 392;
 const LEVEL_COEFF_ARTS = 89 / 196;
 
 function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, activeEffects) {
-    const baseAtk = opData.baseAtk + wepData.baseAtk;
+    const baseWepAtk = wepData ? wepData.baseAtk : 0;
+    const baseAtk = opData.baseAtk + baseWepAtk;
     let atkInc = 0, fixedAtk = 0, statBonusBase = 0, critRate = 5, critDmg = 50, dmgInc = 0, amp = 0, multiHit = 1.0, unbalanceDmg = 0, originiumArts = 0, ultRecharge = 0, ultCostReduction = 0,
         skillMults = { all: { mult: 0, add: 0 } },
         bonusMults = { all: { mult: 0, add: 0 } },
@@ -934,7 +935,7 @@ function computeFinalDamageOutput(state, opData, wepData, stats, allEffects, act
 
     const atkBaseLogs = [
         { txt: `오퍼레이터 공격력: ${opData.baseAtk.toLocaleString()}`, uid: 'base_op_atk' },
-        { txt: `무기 공격력: ${wepData.baseAtk.toLocaleString()}`, uid: 'base_wep_atk' }
+        { txt: `무기 공격력: ${baseWepAtk.toLocaleString()}${!wepData ? ' (장착 안 함)' : ''}`, uid: 'base_wep_atk' }
     ];
     if (tsUsables?.['푹 삶은 갈비 미삼탕']) {
         atkBaseLogs.push({ txt: `사용 아이템 공격력: 180 (푹 삶은 갈비 미삼탕)`, uid: 'base_usable_atk' });

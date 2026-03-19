@@ -297,12 +297,28 @@ function updateState() {
 
     for (let i = 0; i < 3; i++) {
         const sub = state.subOps[i];
-        if (sub.id) saveOpSettings(sub.id, {
-            pot: sub.pot,
-            wepId: sub.wepId, wepPot: sub.wepPot, wepState: sub.wepState,
-            gears: sub.gears, gearForged: sub.gearForged,
-            skillLevels: sub.skillLevels
-        });
+        if (sub.id) {
+            const prefix = `sub_${i}_`;
+            const subDisabled = state.disabledEffects
+                .filter(uid => uid.startsWith(prefix))
+                .map(uid => uid.replace(prefix, ''));
+            
+            const subStacks = {};
+            Object.keys(state.effectStacks).forEach(uid => {
+                if (uid.startsWith(prefix)) {
+                    subStacks[uid.replace(prefix, '')] = state.effectStacks[uid];
+                }
+            });
+
+            saveOpSettings(sub.id, {
+                pot: sub.pot,
+                wepId: sub.wepId, wepPot: sub.wepPot, wepState: sub.wepState,
+                gears: sub.gears, gearForged: sub.gearForged,
+                skillLevels: sub.skillLevels,
+                disabledEffects: subDisabled,
+                effectStacks: subStacks
+            });
+        }
     }
 }
 

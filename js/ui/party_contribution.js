@@ -68,19 +68,60 @@ function renderPartyContribution() {
             };
         }
 
-        // 저장된 오퍼레이터별 사이클/디버프 상태 적용
-        if (member.type === 'main') {
-            // 1. 현재 state의 사이클/디버프/소모품/효과 상태를 그대로 유지
-            virtualState.skillSequence = state.skillSequence;
-            virtualState.debuffState = state.debuffState;
-            virtualState.usables = state.usables;
-            virtualState.disabledEffects = state.disabledEffects ? [...state.disabledEffects] : [];
-            virtualState.effectStacks = state.effectStacks ? { ...state.effectStacks } : {};
-        } else {
-            // 1. 저장된 사이클이 있으면 적용, 없으면 기본 콤보
-            const savedSequence = settings.skillSequence || [];
-            if (savedSequence.length > 0) {
-                virtualState.skillSequence = savedSequence;
+        // 1. 모든 파티 멤버의 설정을 수집하여 가상 상태의 disabledEffects / effectStacks 구성
+        const mergedDisabled = [];
+        const mergedStacks = {};
+
+        party.forEach(p => {
+            const isTargetMain = p.id === member.id;
+            const pSettings = loadOpSettings(p.id) || {};
+            let prefix = '';
+
+            if (isTargetMain) {
+                // 이 멤버가 지금 계산 대상(메인)인 경우
+                prefix = '';
+            } else {
+                // 이 멤버가 가상 파티에서 서브인 경우
+                let vIdx = -1;
+                if (p.type === 'main') {
+                    // 원래 메인이었던 애가 p인 경우, 현재 계산 대상의 인덱스 위치로 감
+                    vIdx = member.index;
+                } else {
+                    // 원래 서브였던 애가 p인 경우, 인덱스가 유지됨 (p.id !== member.id 상황)
+                    vIdx = p.index;
+                }
+                prefix = `sub_${vIdx}_`;
+            }
+
+            // 비활성 효과 병합
+            const dEffs = isTargetMain && p.type === 'main' ? (state.disabledEffects || []) : (pSettings.disabledEffects || []);
+            dEffs.forEach(uid => {
+                if (!uid.startsWith('sub_')) { // 이미 접두사가 있는 경우는 무시하거나 처리 (구조상 없을 것)
+                    mergedDisabled.push(prefix + uid);
+                }
+            });
+
+            // 스택 병합
+            const eStacks = isTargetMain && p.type === 'main' ? (state.effectStacks || {}) : (pSettings.effectStacks || {});
+            Object.entries(eStacks).forEach(([uid, val]) => {
+                if (!uid.startsWith('sub_')) {
+                    mergedStacks[prefix + uid] = val;
+                }
+            });
+        });
+
+        virtualState.disabledEffects = mergedDisabled;
+        virtualState.effectStacks = mergedStacks;
+
+        // 2. 현재 상태의 소모품 및 적 상태 등 기타 환경 적용
+        virtualState.debuffState = state.debuffState;
+        virtualState.usables = state.usables;
+
+        // [New] 만약 메인 계산 대상의 개별 설정에 사이클이나 레벨이 있다면 덮어쓰기
+        if (member.type === 'sub') {
+            const subSettings = settings;
+            if (subSettings.skillSequence && subSettings.skillSequence.length > 0) {
+                virtualState.skillSequence = subSettings.skillSequence;
             } else {
                 virtualState.skillSequence = ['일반 공격', '배틀 스킬', '연계 스킬', '궁극기'].map((t, i) => ({
                     id: `def_${Date.now()}_${i}`,
@@ -88,17 +129,11 @@ function renderPartyContribution() {
                     customState: null
                 }));
             }
-
-            // 2. 스킬 레벨 적용
-            if (settings.skillLevels) {
-                virtualState.mainOp.skillLevels = settings.skillLevels;
+            if (subSettings.skillLevels) {
+                virtualState.mainOp.skillLevels = subSettings.skillLevels;
             }
-
-            // 3. 오퍼레이터별 개별 전역 설정 적용 (디버프, 소모품 등)
-            virtualState.debuffState = settings.debuffState ? migrateDebuffState(settings.debuffState) : DEFAULT_DEBUFF_STATE();
-            virtualState.usables = settings.usables ? { ...settings.usables } : DEFAULT_USABLES();
-            virtualState.disabledEffects = settings.disabledEffects ? [...settings.disabledEffects] : [];
-            virtualState.effectStacks = settings.effectStacks ? deepClone(settings.effectStacks) : {};
+        } else {
+            virtualState.skillSequence = state.skillSequence;
         }
 
         virtualState.selectedSeqIds = [];
