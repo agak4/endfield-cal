@@ -349,6 +349,36 @@ function ensureCustomState() {
 }
 
 /**
+ * 선택된 시퀀스 항목의 customState가 전역 설정과 동일하면 null로 초기화한다.
+ * seq-is-custom 상태를 자동으로 해제하기 위해 옵션 변경 후 호출한다.
+ * @param {string[]} [ids] - 검사할 시퀀스 id 목록 (생략 시 선택된 전체)
+ */
+function releaseCustomStateIfMatchesGlobal(ids) {
+    const targetIds = ids || (state.selectedSeqIds || []);
+    if (!targetIds.length) return;
+
+    targetIds.forEach(id => {
+        const item = state.skillSequence.find(s => s.id === id);
+        if (!item || !item.customState) return;
+
+        const cs = item.customState;
+
+        const isDebuffEqual = JSON.stringify(cs.debuffState) === JSON.stringify(state.debuffState);
+        const isUsablesEqual = JSON.stringify(cs.usables) === JSON.stringify(state.usables);
+        const isDisabledEqual = JSON.stringify(cs.disabledEffects) === JSON.stringify(state.disabledEffects);
+        const isStacksEqual = JSON.stringify(cs.effectStacks) === JSON.stringify(state.effectStacks);
+        const isUnbalancedEqual = cs.enemyUnbalanced === state.enemyUnbalanced;
+        const isSpecialStackEqual = JSON.stringify(cs.specialStack) === JSON.stringify(state.mainOp.specialStack);
+
+        if (isDebuffEqual && isUsablesEqual && isDisabledEqual && isStacksEqual && isUnbalancedEqual && isSpecialStackEqual) {
+            item.customState = null;
+        }
+    });
+}
+
+window.releaseCustomStateIfMatchesGlobal = releaseCustomStateIfMatchesGlobal;
+
+/**
  * 활성 상태인 모든 커스텀 state에 대한 프록시 접근자 배열을 반환한다.
  * 다중 선택 시 선택된 모든 아이템의 customState를 동시에 변경해야 할 때 사용한다.
  */

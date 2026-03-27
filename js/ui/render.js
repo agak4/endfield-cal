@@ -164,6 +164,7 @@ function createEffectListItem(log, options = {}) {
             }
         });
         if (!state.selectedSeqIds || state.selectedSeqIds.length === 0) propagateGlobalStateToCustom('effects');
+        else releaseCustomStateIfMatchesGlobal();
         updateState();
     };
 

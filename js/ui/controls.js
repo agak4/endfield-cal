@@ -59,6 +59,8 @@ function commitDebuffChange(propagateType, keys) {
     saveState();
     if (!state.selectedSeqIds || state.selectedSeqIds.length === 0) {
         propagateGlobalStateToCustom(propagateType, keys);
+    } else {
+        releaseCustomStateIfMatchesGlobal();
     }
     updateState();
 }

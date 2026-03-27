@@ -197,6 +197,7 @@ function initUI() {
             });
             updateToggleButton(enemyBtn, next, '불균형');
             if (!state.selectedSeqIds || state.selectedSeqIds.length === 0) propagateGlobalStateToCustom('unbalanced');
+            else releaseCustomStateIfMatchesGlobal();
             updateState();
         };
         updateToggleButton(enemyBtn, enemyCb.checked, '불균형');
