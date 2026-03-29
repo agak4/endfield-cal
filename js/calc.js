@@ -776,15 +776,19 @@ function processEffectSource(source, state, opData, allEffects, activeNonStackTy
                     b._applied = true;
                 });
 
+                const finalTarget = typeItem.target || eff.target;
+                const isGlobalTarget = (finalTarget === '팀' || finalTarget === '팀_외' || finalTarget === '자신');
+                const skillType = isGlobalTarget ? (typeItem.skillType || null) : (typeItem.skillType || eff.skillType || eff.skilltype);
+
                 const expanded = {
                     ...eff,
                     ...typeItem,
                     type: typeItem.type,
                     val: currentVal,
-                    target: typeItem.target || eff.target,
-                    skillType: typeItem.skillType || eff.skillType || eff.skilltype,
+                    target: finalTarget,
+                    skillType: skillType,
                     _stackCount: typeItem._stackCount,
-                    _isExternal: !isSkillSource || !!(typeItem.skillType),
+                    _isExternal: !isSkillSource || !!(typeItem.skillType) || (finalTarget === '팀' || finalTarget === '팀_외'),
                     _triggerFailed: triggerFailed,
                     _sourceOpId: effectiveOpData ? effectiveOpData.id : null,
                 };

@@ -1769,10 +1769,10 @@ const DATA_OPERATORS = [
             {
                 skillType: ['연계 스킬'], element: 'phys', desc: '적이 동시에 방어 불능과 아츠 부착 상태일 때 발동할 수 있습니다. 로시의 연계 스킬은 연속으로 2회 발동할 수 있습니다, 첫 공격은 목표에 물리 피해를 줍니다.<br>두 번째 공격은 목표의 아츠 부착을 모두 소모한 뒤, 적에게 소모한 스택 수치에 따른 물리 피해와 띄우기 피해를 주고, 일정 시간 동안 자신의 치명타 확률과 치명타 피해를 증가시킵니다.<br>연계 스킬의 두 번째 공격이 정확하게 연계되면, 추가로 방어 불능 1스택을 쌓습니다.',
                 levels: {
-                    M0: { dmg: '120%', type: ['띄우기', '아츠 부착 소모', '방어 불능 부여', { type: '치명타 확률', val: '21%' }, { type: '치명타 피해', val: '42%' }], bonus: [{ triggerTarget: ['아츠 부착'], base: '240%', perStack: '144%' }] },
-                    M1: { dmg: '128%', type: ['띄우기', '아츠 부착 소모', '방어 불능 부여', { type: '치명타 확률', val: '21%' }, { type: '치명타 피해', val: '42%' }], bonus: [{ triggerTarget: ['아츠 부착'], base: '257%', perStack: '154%' }] },
-                    M2: { dmg: '138%', type: ['띄우기', '아츠 부착 소모', '방어 불능 부여', { type: '치명타 확률', val: '23%' }, { type: '치명타 피해', val: '46%' }], bonus: [{ triggerTarget: ['아츠 부착'], base: '277%', perStack: '166%' }] },
-                    M3: { dmg: '150%', type: ['띄우기', '아츠 부착 소모', '방어 불능 부여', { type: '치명타 확률', val: '25%' }, { type: '치명타 피해', val: '50%' }], bonus: [{ triggerTarget: ['아츠 부착'], base: '300%', perStack: '180%' }] }
+                    M0: { dmg: '120%', type: ['띄우기', '아츠 부착 소모', '방어 불능 부여', { type: '치명타 확률', val: '21%', target: '자신' }, { type: '치명타 피해', val: '42%', target: '자신' }], bonus: [{ triggerTarget: ['아츠 부착'], base: '240%', perStack: '144%' }] },
+                    M1: { dmg: '128%', type: ['띄우기', '아츠 부착 소모', '방어 불능 부여', { type: '치명타 확률', val: '21%', target: '자신' }, { type: '치명타 피해', val: '42%', target: '자신' }], bonus: [{ triggerTarget: ['아츠 부착'], base: '257%', perStack: '154%' }] },
+                    M2: { dmg: '138%', type: ['띄우기', '아츠 부착 소모', '방어 불능 부여', { type: '치명타 확률', val: '23%', target: '자신' }, { type: '치명타 피해', val: '46%', target: '자신' }], bonus: [{ triggerTarget: ['아츠 부착'], base: '277%', perStack: '166%' }] },
+                    M3: { dmg: '150%', type: ['띄우기', '아츠 부착 소모', '방어 불능 부여', { type: '치명타 확률', val: '25%', target: '자신' }, { type: '치명타 피해', val: '50%', target: '자신' }], bonus: [{ triggerTarget: ['아츠 부착'], base: '300%', perStack: '180%' }] }
                 }
             },
             {
